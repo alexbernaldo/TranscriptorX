@@ -26,3 +26,6 @@ GEMINI.md
 # distribuyen como assets del Release (ver scripts/fetch_binaries.sh).
 TranscriptorNative/AudioEngine/lib/demucs-bundled
 TranscriptorNative/AudioEngine/lib/deep-filter
+
+# Imagen de disco generada localmente (se distribuye vía Release)
+/dist/
