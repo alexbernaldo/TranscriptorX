@@ -66,6 +66,7 @@ La arquitectura de la aplicación separa claramente la capa visual (UI) de los s
 - **Xcode & xcodebuild:** Entorno de compilación, orquestador e interfaz del empaquetado base (`.xcodeproj`).
 - **CMake:** Sistema cruzado utilizado para la compilación profunda del motor C/C++ de `whisper.cpp`.
 - **Homebrew:** Gestor de paquetes primario en macOS usado para delegar la instalación de dependencias nativas.
+- **`scripts/build_dmg.py` + `scripts/make_background.swift`:** Generación de la imagen de disco de instalación (véase *Opción 3*).
 
 ---
 
@@ -125,6 +126,23 @@ xcodebuild -project TranscriptorNative.xcodeproj \
 
 # Abre y ejecuta la aplicación macOS empacada
 open "./DerivedData-CI/Build/Products/Debug/TranscriptorNative.app"
+```
+
+#### Opción 3: Imagen de disco (DMG) «arrastra a Aplicaciones»
+1. Descarga `TranscriptorX-2.0.dmg` desde la página de **Releases** y ábrelo con
+   doble clic.
+2. Arrastra **TranscriptorX** a la carpeta **Aplicaciones** (la flecha del fondo
+   indica exactamente eso).
+3. Al abrirla por primera vez, en otros Mac distinto del de desarrollo macOS te
+   pedirá confirmación al no estar la app firmada: clic derecho → *Abrir* →
+   *Abrir*. Solo es necesario una vez.
+
+Para regenerar el DMG tras compilar (requiere Xcode Command Line Tools y `swift`):
+
+```bash
+python3 scripts/build_dmg.py \
+  --app DerivedData-CI/Build/Products/Release/TranscriptorNative.app \
+  --output dist/TranscriptorX-2.0.dmg
 ```
 
 #### Construcción Manual de Dependencias

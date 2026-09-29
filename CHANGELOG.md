@@ -7,7 +7,14 @@ el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [No publicado]
 
-Nada pendiente todavía.
+### Añadido
+
+- `scripts/make_background.swift`: dibuja el fondo del DMG con SF Symbols y la
+  tipografía del sistema (flecha nítida a 2x y texto de instalación en español
+  e inglés).
+- `scripts/build_dmg.py`: empaquetado del DMG "drag to install" con fondo,
+  tamaño de ventana y posición de los iconos aplicados por el propio Finder,
+  de la misma forma que create-dmg e install4j.
 
 ## [2.0] - 2026-09-29
 
