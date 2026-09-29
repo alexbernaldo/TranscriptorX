@@ -1,0 +1,589 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1100000000000001 /* TranscriptorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000001 /* TranscriptorApp.swift */; };
+		1100000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000002 /* AppDelegate.swift */; };
+		1100000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000003 /* ContentView.swift */; };
+		1100000000000004 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000004 /* Theme.swift */; };
+		1100000000000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000005 /* Models.swift */; };
+		1100000000000007 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000007 /* TranscriptionService.swift */; };
+		1100000000000008 /* TranscriptionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000008 /* TranscriptionViewModel.swift */; };
+		110000000000000E /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000E /* Components.swift */; };
+		110000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000F /* Assets.xcassets */; };
+		1100000000000010 /* DependencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000011 /* DependencyManager.swift */; };
+		1100000000000012 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000013 /* SetupView.swift */; };
+		1100000000000013 /* ModelDownloadSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000014 /* ModelDownloadSheet.swift */; };
+		1100000000000016 /* SystemAudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000016 /* SystemAudioRecorder.swift */; };
+		1100000000000018 /* NewTranscriptionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000018 /* NewTranscriptionSheet.swift */; };
+		1100000000000019 /* RecorderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000019 /* RecorderSheet.swift */; };
+		110000000000001A /* PreferencesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001A /* PreferencesSheet.swift */; };
+		110000000000001B /* TranscriptViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001B /* TranscriptViewer.swift */; };
+		110000000000001C /* RecordingFloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001C /* RecordingFloatingPanel.swift */; };
+		110000000000001D /* RecoveryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001D /* RecoveryManager.swift */; };
+		110000000000001E /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001E /* AppLogger.swift */; };
+		110000000000001F /* ModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001F /* ModelManager.swift */; };
+		1100000000000020 /* AppStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000020 /* AppStates.swift */; };
+		1100000000000021 /* RecoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000021 /* RecoveryViews.swift */; };
+		1100000000000022 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000022 /* SplashScreenView.swift */; };
+		1100000000000024 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000025 /* TopBarView.swift */; };
+		1100000000000025 /* BottomDockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000026 /* BottomDockView.swift */; };
+		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
+		EA04EB242F32B4550093692F /* TranscriptionJob.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA04EB232F32B4550093692F /* TranscriptionJob.swift */; };
+		EA04EB262F32B4600093692F /* JobManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA04EB252F32B4600093692F /* JobManager.swift */; };
+		EA04EB282F32B46E0093692F /* JobQueuePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA04EB272F32B46E0093692F /* JobQueuePanel.swift */; };
+		EA1000000000000C /* MasterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1000000000000D /* MasterView.swift */; };
+		EA1000000000000E /* URLTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA1000000000000F /* URLTranscriptionService.swift */; };
+		EA10000000000010 /* URLInputSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA10000000000011 /* URLInputSheet.swift */; };
+		EA6384292F2AB30500FC5152 /* AudioPreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6384282F2AB30500FC5152 /* AudioPreprocessor.swift */; };
+		EA63842A2F2AB40000FC5152 /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA63842B2F2AB40000FC5152 /* AudioEngineManager.swift */; };
+		EA63842C2F2AB40100FC5152 /* DeepFilterBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA63842D2F2AB40100FC5152 /* DeepFilterBridge.swift */; };
+		EA63842E2F2AB40200FC5152 /* DemucsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA63842F2F2AB40200FC5152 /* DemucsProcessor.swift */; };
+		EA6384302F2AB40300FC5152 /* deep-filter in Resources */ = {isa = PBXBuildFile; fileRef = EA6384312F2AB40300FC5152 /* deep-filter */; };
+		EA6384342F2AB50000FC5152 /* demucs-bundled in Resources */ = {isa = PBXBuildFile; fileRef = EA6384352F2AB50000FC5152 /* demucs-bundled */; };
+		EA7000000000000001 /* FileInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000002 /* FileInputService.swift */; };
+		EA7000000000000003 /* LocalizationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000004 /* LocalizationHelpers.swift */; };
+		EA8000000000000001 /* ResponsiveMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8000000000000002 /* ResponsiveMetrics.swift */; };
+		EA9000000000000001 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000002 /* AppLanguage.swift */; };
+		EA9000000000000003 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000004 /* AppPreferences.swift */; };
+		EA9000000000000005 /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000006 /* LocalizationManager.swift */; };
+		EA9000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA9000000000000008 /* Localizable.xcstrings */; };
+		EAB000000000000001 /* ExportDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000002 /* ExportDocument.swift */; };
+		EAB000000000000003 /* ExportGenerators.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000004 /* ExportGenerators.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0800000000000000 /* TranscriptorNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TranscriptorNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1000000000000001 /* TranscriptorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptorApp.swift; sourceTree = "<group>"; };
+		1000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		1000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1000000000000004 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		1000000000000005 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		1000000000000007 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
+		1000000000000008 /* TranscriptionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionViewModel.swift; sourceTree = "<group>"; };
+		100000000000000E /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		100000000000000F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1000000000000010 /* TranscriptorNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TranscriptorNative.entitlements; sourceTree = "<group>"; };
+		1000000000000011 /* DependencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyManager.swift; sourceTree = "<group>"; };
+		1000000000000013 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		1000000000000014 /* ModelDownloadSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadSheet.swift; sourceTree = "<group>"; };
+		1000000000000016 /* SystemAudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioRecorder.swift; sourceTree = "<group>"; };
+		1000000000000018 /* NewTranscriptionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTranscriptionSheet.swift; sourceTree = "<group>"; };
+		1000000000000019 /* RecorderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderSheet.swift; sourceTree = "<group>"; };
+		100000000000001A /* PreferencesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSheet.swift; sourceTree = "<group>"; };
+		100000000000001B /* TranscriptViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptViewer.swift; sourceTree = "<group>"; };
+		100000000000001C /* RecordingFloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingFloatingPanel.swift; sourceTree = "<group>"; };
+		100000000000001D /* RecoveryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryManager.swift; sourceTree = "<group>"; };
+		100000000000001E /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		100000000000001F /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
+		1000000000000020 /* AppStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStates.swift; sourceTree = "<group>"; };
+		1000000000000021 /* RecoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryViews.swift; sourceTree = "<group>"; };
+		1000000000000022 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
+		1000000000000025 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
+		1000000000000026 /* BottomDockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomDockView.swift; sourceTree = "<group>"; };
+		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
+		EA04EB232F32B4550093692F /* TranscriptionJob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionJob.swift; sourceTree = "<group>"; };
+		EA04EB252F32B4600093692F /* JobManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobManager.swift; sourceTree = "<group>"; };
+		EA04EB272F32B46E0093692F /* JobQueuePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobQueuePanel.swift; sourceTree = "<group>"; };
+		EA1000000000000D /* MasterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterView.swift; sourceTree = "<group>"; };
+		EA1000000000000F /* URLTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLTranscriptionService.swift; sourceTree = "<group>"; };
+		EA10000000000011 /* URLInputSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInputSheet.swift; sourceTree = "<group>"; };
+		EA6384282F2AB30500FC5152 /* AudioPreprocessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPreprocessor.swift; sourceTree = "<group>"; };
+		EA63842B2F2AB40000FC5152 /* AudioEngineManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineManager.swift; sourceTree = "<group>"; };
+		EA63842D2F2AB40100FC5152 /* DeepFilterBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepFilterBridge.swift; sourceTree = "<group>"; };
+		EA63842F2F2AB40200FC5152 /* DemucsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemucsProcessor.swift; sourceTree = "<group>"; };
+		EA6384312F2AB40300FC5152 /* deep-filter */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "deep-filter"; sourceTree = "<group>"; };
+		EA6384352F2AB50000FC5152 /* demucs-bundled */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "demucs-bundled"; sourceTree = "<group>"; };
+		EA7000000000000002 /* FileInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileInputService.swift; sourceTree = "<group>"; };
+		EA7000000000000004 /* LocalizationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationHelpers.swift; sourceTree = "<group>"; };
+		EA8000000000000002 /* ResponsiveMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponsiveMetrics.swift; sourceTree = "<group>"; };
+		EA9000000000000002 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		EA9000000000000004 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
+		EA9000000000000006 /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
+		EA9000000000000008 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		EAB000000000000002 /* ExportDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportDocument.swift; sourceTree = "<group>"; };
+		EAB000000000000004 /* ExportGenerators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportGenerators.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0500000000000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0000000000000000 = {
+			isa = PBXGroup;
+			children = (
+				0100000000000000 /* TranscriptorNative */,
+				0900000000000000 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0100000000000000 /* TranscriptorNative */ = {
+			isa = PBXGroup;
+			children = (
+				0200000000000000 /* App */,
+				EA6384322F2AB40400FC5152 /* AudioEngine */,
+				0300000000000000 /* Views */,
+				0400000000000001 /* ViewModels */,
+				0400000000000002 /* Services */,
+				0400000000000003 /* Models */,
+				0400000000000004 /* Resources */,
+				1000000000000010 /* TranscriptorNative.entitlements */,
+			);
+			path = TranscriptorNative;
+			sourceTree = "<group>";
+		};
+		0200000000000000 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000001 /* TranscriptorApp.swift */,
+				1000000000000002 /* AppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		0300000000000000 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000003 /* ContentView.swift */,
+				0300000000000002 /* Main */,
+				0300000000000003 /* Components */,
+				0300000000000004 /* Setup */,
+				0300000000000005 /* Sheets */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		0300000000000002 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000001B /* TranscriptViewer.swift */,
+				EA1000000000000D /* MasterView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		0300000000000003 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				EA04EB272F32B46E0093692F /* JobQueuePanel.swift */,
+				100000000000000E /* Components.swift */,
+				1000000000000021 /* RecoveryViews.swift */,
+				1000000000000022 /* SplashScreenView.swift */,
+				1000000000000025 /* TopBarView.swift */,
+				1000000000000026 /* BottomDockView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		0300000000000004 /* Setup */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000013 /* SetupView.swift */,
+				1000000000000014 /* ModelDownloadSheet.swift */,
+			);
+			path = Setup;
+			sourceTree = "<group>";
+		};
+		0300000000000005 /* Sheets */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000018 /* NewTranscriptionSheet.swift */,
+				1000000000000019 /* RecorderSheet.swift */,
+				100000000000001A /* PreferencesSheet.swift */,
+				100000000000001C /* RecordingFloatingPanel.swift */,
+				EA10000000000011 /* URLInputSheet.swift */,
+			);
+			path = Sheets;
+			sourceTree = "<group>";
+		};
+		0400000000000001 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000008 /* TranscriptionViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		0400000000000002 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				EA04EB252F32B4600093692F /* JobManager.swift */,
+				EA6384282F2AB30500FC5152 /* AudioPreprocessor.swift */,
+				1000000000000007 /* TranscriptionService.swift */,
+				1000000000000011 /* DependencyManager.swift */,
+				1000000000000016 /* SystemAudioRecorder.swift */,
+				100000000000001D /* RecoveryManager.swift */,
+				100000000000001E /* AppLogger.swift */,
+				100000000000001F /* ModelManager.swift */,
+				100000000000002A /* TranscriptionStorage.swift */,
+				EA1000000000000F /* URLTranscriptionService.swift */,
+				EA7000000000000002 /* FileInputService.swift */,
+				EA7000000000000004 /* LocalizationHelpers.swift */,
+				EA9000000000000006 /* LocalizationManager.swift */,
+				EAB000000000000002 /* ExportDocument.swift */,
+				EAB000000000000004 /* ExportGenerators.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		0400000000000003 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				EA04EB232F32B4550093692F /* TranscriptionJob.swift */,
+				1000000000000005 /* Models.swift */,
+				EA9000000000000002 /* AppLanguage.swift */,
+				EA9000000000000004 /* AppPreferences.swift */,
+				1000000000000020 /* AppStates.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		0400000000000004 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1000000000000004 /* Theme.swift */,
+				EA8000000000000002 /* ResponsiveMetrics.swift */,
+				100000000000000F /* Assets.xcassets */,
+				EA9000000000000008 /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		0900000000000000 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0800000000000000 /* TranscriptorNative.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EA6384322F2AB40400FC5152 /* AudioEngine */ = {
+			isa = PBXGroup;
+			children = (
+				EA63842B2F2AB40000FC5152 /* AudioEngineManager.swift */,
+				EA63842D2F2AB40100FC5152 /* DeepFilterBridge.swift */,
+				EA63842F2F2AB40200FC5152 /* DemucsProcessor.swift */,
+				EA6384332F2AB40500FC5152 /* lib */,
+			);
+			path = AudioEngine;
+			sourceTree = "<group>";
+		};
+		EA6384332F2AB40500FC5152 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				EA6384312F2AB40300FC5152 /* deep-filter */,
+				EA6384352F2AB50000FC5152 /* demucs-bundled */,
+			);
+			path = lib;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0700000000000000 /* TranscriptorNative */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0C00000000000000 /* Build configuration list for PBXNativeTarget "TranscriptorNative" */;
+			buildPhases = (
+				0400000000000000 /* Sources */,
+				0500000000000000 /* Frameworks */,
+				0600000000000000 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TranscriptorNative;
+			productName = TranscriptorNative;
+			productReference = 0800000000000000 /* TranscriptorNative.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					0700000000000000 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 0B00000000000000 /* Build configuration list for PBXProject "TranscriptorNative" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = es;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				es,
+				Base,
+			);
+			mainGroup = 0000000000000000;
+			productRefGroup = 0900000000000000 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0700000000000000 /* TranscriptorNative */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0600000000000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				110000000000000F /* Assets.xcassets in Resources */,
+				EA9000000000000007 /* Localizable.xcstrings in Resources */,
+				EA6384302F2AB40300FC5152 /* deep-filter in Resources */,
+				EA6384342F2AB50000FC5152 /* demucs-bundled in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0400000000000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1100000000000001 /* TranscriptorApp.swift in Sources */,
+				1100000000000002 /* AppDelegate.swift in Sources */,
+				1100000000000003 /* ContentView.swift in Sources */,
+				1100000000000004 /* Theme.swift in Sources */,
+				1100000000000005 /* Models.swift in Sources */,
+				1100000000000007 /* TranscriptionService.swift in Sources */,
+				1100000000000008 /* TranscriptionViewModel.swift in Sources */,
+				EA6384292F2AB30500FC5152 /* AudioPreprocessor.swift in Sources */,
+				EA63842A2F2AB40000FC5152 /* AudioEngineManager.swift in Sources */,
+				EA63842C2F2AB40100FC5152 /* DeepFilterBridge.swift in Sources */,
+				EA63842E2F2AB40200FC5152 /* DemucsProcessor.swift in Sources */,
+				110000000000000E /* Components.swift in Sources */,
+				1100000000000010 /* DependencyManager.swift in Sources */,
+				1100000000000012 /* SetupView.swift in Sources */,
+				1100000000000013 /* ModelDownloadSheet.swift in Sources */,
+				EA04EB242F32B4550093692F /* TranscriptionJob.swift in Sources */,
+				1100000000000016 /* SystemAudioRecorder.swift in Sources */,
+				1100000000000018 /* NewTranscriptionSheet.swift in Sources */,
+				1100000000000019 /* RecorderSheet.swift in Sources */,
+				110000000000001A /* PreferencesSheet.swift in Sources */,
+				110000000000001B /* TranscriptViewer.swift in Sources */,
+				110000000000001C /* RecordingFloatingPanel.swift in Sources */,
+				110000000000001D /* RecoveryManager.swift in Sources */,
+				110000000000001E /* AppLogger.swift in Sources */,
+				110000000000002A /* TranscriptionStorage.swift in Sources */,
+				110000000000001F /* ModelManager.swift in Sources */,
+				1100000000000020 /* AppStates.swift in Sources */,
+				EA04EB282F32B46E0093692F /* JobQueuePanel.swift in Sources */,
+				1100000000000021 /* RecoveryViews.swift in Sources */,
+				1100000000000022 /* SplashScreenView.swift in Sources */,
+				1100000000000024 /* TopBarView.swift in Sources */,
+				1100000000000025 /* BottomDockView.swift in Sources */,
+				EA1000000000000C /* MasterView.swift in Sources */,
+				EA04EB262F32B4600093692F /* JobManager.swift in Sources */,
+				EA1000000000000E /* URLTranscriptionService.swift in Sources */,
+				EA10000000000010 /* URLInputSheet.swift in Sources */,
+				EA7000000000000001 /* FileInputService.swift in Sources */,
+				EA7000000000000003 /* LocalizationHelpers.swift in Sources */,
+				EA8000000000000001 /* ResponsiveMetrics.swift in Sources */,
+				EA9000000000000001 /* AppLanguage.swift in Sources */,
+				EA9000000000000003 /* AppPreferences.swift in Sources */,
+				EA9000000000000005 /* LocalizationManager.swift in Sources */,
+				EAB000000000000001 /* ExportDocument.swift in Sources */,
+				EAB000000000000003 /* ExportGenerators.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0A00000000000000 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0A00000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		0A00000000000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TranscriptorNative/TranscriptorNative.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriptorX;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "TranscriptorX necesita acceso al micrófono para grabar audio y transcribirlo.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.alexbernaldo.transcriptorx;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0A00000000000003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TranscriptorNative/TranscriptorNative.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriptorX;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "TranscriptorX necesita acceso al micrófono para grabar audio y transcribirlo.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.alexbernaldo.transcriptorx;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0B00000000000000 /* Build configuration list for PBXProject "TranscriptorNative" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A00000000000000 /* Debug */,
+				0A00000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0C00000000000000 /* Build configuration list for PBXNativeTarget "TranscriptorNative" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A00000000000002 /* Debug */,
+				0A00000000000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0000000000000001 /* Project object */;
+}

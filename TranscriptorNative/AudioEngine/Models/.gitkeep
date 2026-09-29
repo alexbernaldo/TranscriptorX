@@ -1,0 +1,23 @@
+# Placeholder for htdemucs_vocals.mlmodelc
+
+Este directorio debe contener el modelo CoreML de HTDemucs.
+
+## Instrucciones de conversión
+
+```bash
+# 1. Crear entorno Python
+python3 -m venv demucs_env
+source demucs_env/bin/activate
+pip install torch torchaudio coremltools demucs
+
+# 2. Ejecutar script de conversión (ver README.md del directorio padre)
+python convert_demucs.py
+
+# 3. Compilar modelo
+xcrun coremlcompiler compile htdemucs_vocals.mlpackage .
+
+# 4. Copiar el directorio resultante aquí:
+# htdemucs_vocals.mlmodelc/
+```
+
+Una vez que el modelo esté aquí, la opción "Aislar voz" se habilitará automáticamente en la app.

@@ -1,0 +1,21 @@
+# Placeholder for libdeepfilter.dylib
+
+Este directorio debe contener `libdeepfilter.dylib` compilada desde DeepFilterNet.
+
+## Instrucciones de compilación
+
+```bash
+# 1. Instalar Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+
+# 2. Clonar y compilar
+git clone https://github.com/Rikorose/DeepFilterNet.git
+cd DeepFilterNet/libDF
+cargo build --release --features capi
+
+# 3. Copiar la librería aquí
+cp target/release/libdeep_filter_ladspa.dylib libdeepfilter.dylib
+```
+
+Una vez que el archivo esté aquí, la opción "Reducción de ruido" se habilitará automáticamente en la app.

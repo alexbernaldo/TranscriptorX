@@ -1,0 +1,28 @@
+.DS_Store
+
+# Build de Xcode
+DerivedData*/
+build/
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+
+# Salidas del motor de audio (PyInstaller / venv)
+TranscriptorNative/AudioEngine/demucs_env/
+TranscriptorNative/AudioEngine/build/
+TranscriptorNative/AudioEngine/dist/
+__pycache__/
+*.log
+
+# Estado local de herramientas y artefactos de agentes (no se publican)
+.opencode/
+.agents/
+docs/superpowers/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+
+# Binarios del motor de audio: superan el límite de 100 MB de GitHub y se
+# distribuyen como assets del Release (ver scripts/fetch_binaries.sh).
+TranscriptorNative/AudioEngine/lib/demucs-bundled
+TranscriptorNative/AudioEngine/lib/deep-filter

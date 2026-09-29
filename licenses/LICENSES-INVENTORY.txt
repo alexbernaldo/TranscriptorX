@@ -1,0 +1,37 @@
+altgraph-0.17.5 :: MIT
+antlr4_python3_runtime-4.9.3 :: BSD
+attrs-25.4.0 :: 
+cattrs-25.3.0 :: MIT
+cloudpickle-3.1.2 :: BSD-3-Clause
+coremltools-9.0 :: BSD
+demucs-4.0.1 :: MIT License
+dora_search-0.1.12 :: MIT
+einops-0.8.2 :: MIT
+filelock-3.20.3 :: OSI Approved :: The Unlicense (Unlicense)
+fsspec-2026.1.0 :: 
+jinja2-3.1.6 :: OSI Approved :: BSD License
+julius-0.2.7 :: MIT License
+lameenc-1.8.1 :: GNU LESSER GENERAL PUBLIC LICENSE
+macholib-1.16.4 :: MIT
+markupsafe-3.0.3 :: 
+mpmath-1.3.0 :: BSD
+networkx-3.6.1 :: 
+numpy-2.4.1 :: 
+omegaconf-2.3.0 :: OSI Approved :: BSD License
+openunmix-1.3.0 :: MIT
+packaging-26.0 :: 
+pip-25.3 :: 
+protobuf-6.33.4 :: 3-Clause BSD License
+pyaml-25.7.0 :: WTFPL
+pyinstaller_hooks_contrib-2026.0 :: OSI Approved :: Apache Software License
+pyinstaller-6.18.0 :: GPLv2-or-later with a special exception which allows to use PyInstaller to build and distribute non-free programs (including commercial ones)
+pyyaml-6.0.3 :: MIT
+retrying-1.4.2 :: 
+setuptools-80.10.1 :: 
+submitit-1.5.4 :: OSI Approved :: MIT License
+sympy-1.14.0 :: BSD
+torch-2.10.0 :: BSD-3-Clause
+torchaudio-2.10.0 :: OSI Approved :: BSD License
+tqdm-4.67.1 :: MPL-2.0 AND MIT
+treetable-0.2.6 :: Unlicense license
+typing_extensions-4.15.0 :: 
