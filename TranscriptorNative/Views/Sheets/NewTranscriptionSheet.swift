@@ -40,6 +40,7 @@ struct NewTranscriptionSheet: View {
     @State private var translate = false
     @State private var keepAudioFileInHistory = true
     @State private var initialPrompt = ""
+    @State private var activePreset: TranscriptionPreset?
 
     // Model download (needed for multi-file queue flow)
     @State private var modelDownloadTarget: ModelDownloadTarget?
@@ -257,6 +258,37 @@ struct NewTranscriptionSheet: View {
                         
                         InsetDivider()
                         
+                        // Quick presets (above the quality selector)
+                        VStack(alignment: .leading, spacing: 8) {
+                            NativeSectionHeader(title: localizationManager.text("presets.title", fallback: "Quick settings"))
+                            HStack(spacing: 8) {
+                                ForEach(TranscriptionPreset.allCases) { preset in
+                                    Button {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            applyPreset(preset)
+                                        }
+                                    } label: {
+                                        Text(preset.title(localizationManager))
+                                            .font(.caption)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(activePreset == preset ? Color.accentPrimary : Color.bgElevated)
+                                            .foregroundColor(activePreset == preset ? .white : .textPrimary)
+                                            .clipShape(Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(preset.title(localizationManager))
+                                    .accessibilityHint(localizationManager.text("a11y.hazClic", fallback: "haz clic para aplicar el ajuste"))
+                                }
+                            }
+                        }
+                        .onChange(of: selectedLanguage) { newValue in
+                            if activePreset?.settings.language != newValue { activePreset = nil }
+                        }
+                        .onChange(of: useVAD) { newValue in
+                            if activePreset?.settings.useVAD != newValue { activePreset = nil }
+                        }
+                        
                         // Quality
                         SettingRow(title: localizationManager.text("newTranscription.quality", fallback: "Calidad"), icon: "sparkles", iconColor: .purple) {
                             HStack(spacing: 6) {
@@ -270,6 +302,9 @@ struct NewTranscriptionSheet: View {
                                     .frame(width: 200)
                                     .onChange(of: selectedQuality) { newValue in
                                         selectedModelId = newValue.modelId
+                                        if activePreset?.settings.selectedModelId != newValue.modelId {
+                                            activePreset = nil
+                                        }
                                     }
                                 } else {
                                     Picker("", selection: $selectedModelId) {
@@ -421,6 +456,29 @@ struct NewTranscriptionSheet: View {
         }
     }
     
+    private func applyPreset(_ preset: TranscriptionPreset) {
+        let s = preset.settings
+        selectedLanguage = s.language
+        useVAD = s.useVAD
+        vadThreshold = s.vadThreshold
+        enableDiarization = s.enableDiarization
+        deepfilter = s.deepfilter
+        isolateVoice = s.isolateVoice
+        normalize = s.normalize
+        suppressNonSpeech = s.suppressNonSpeech
+        translate = s.translate
+        initialPrompt = s.initialPrompt
+        if let q = TranscriptionQuality.fromModelId(s.selectedModelId) {
+            selectedQuality = q
+            selectedModelId = q.modelId
+            useCustomModel = false
+        } else {
+            selectedModelId = s.selectedModelId
+            useCustomModel = true
+        }
+        activePreset = preset
+    }
+
     private func currentFileSettings() -> TranscriptionSettings {
         // Start from global settings so inherited fields (timestamps, beamSize,
         // bestOf, thresholds, VAD timing, etc.) carry over automatically.
@@ -1254,5 +1312,25 @@ struct VADThresholdIndicator: View {
                 ? "Sensibilidad baja: solo voz clara (puede cortar susurros)"
                 : "Low sensitivity: only clear voice (may cut whispers)"
         }
+    }
+}
+
+
+// MARK: - Preset
+enum TranscriptionPreset: String, CaseIterable, Identifiable {
+    case lecture, podcast, interview
+    var id: String { rawValue }
+
+    var settings: TranscriptionSettings {
+        switch self {
+        case .lecture: return .lecture
+        case .podcast: return .podcast
+        case .interview: return .interview
+        }
+    }
+
+    @MainActor
+    func title(_ lm: LocalizationManager) -> String {
+        lm.text("presets.\(rawValue)", fallback: rawValue.capitalized)
     }
 }
