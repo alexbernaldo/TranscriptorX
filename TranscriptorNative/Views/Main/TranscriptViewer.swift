@@ -1335,6 +1335,15 @@ struct TranscriptContentView: View {
                                                 },
                                                 onDelete: {
                                                     viewModel.deleteSegment(id: segment.id)
+                                                },
+                                                onSplit: {
+                                                    viewModel.splitSegment(segmentId: segment.id, at: viewModel.currentTime)
+                                                },
+                                                onMergeNext: {
+                                                    viewModel.mergeWithNext(segmentId: segment.id)
+                                                },
+                                                onAdjustStart: {
+                                                    viewModel.adjustSegmentStart(segmentId: segment.id, to: viewModel.currentTime)
                                                 }
                                             )
                                             .id(segment.id)
@@ -1715,6 +1724,9 @@ struct CinemaSegmentRow: View {
     let onRestoreOriginal: () -> Void
     let onUndoLastEdit: () -> Void
     let onDelete: () -> Void
+    let onSplit: (() -> Void)?          // nil → "Dividir aquí" oculto
+    let onMergeNext: (() -> Void)?      // nil → "Fusionar con el siguiente" oculto
+    let onAdjustStart: (() -> Void)?    // nil → "Ajustar inicio al playhead" oculto
     
     @State private var isHovered = false
     @State private var isEditing = false
@@ -1889,6 +1901,33 @@ struct CinemaSegmentRow: View {
             }
 
             if isEditMode {
+                if let onSplit {
+                    Section {
+                        Button {
+                            onActivate()
+                            onSplit()
+                        } label: {
+                            Label(localizationManager.text("segment.split", fallback: "Dividir aquí"), systemImage: "scissors")
+                        }
+                        if let onMergeNext {
+                            Button {
+                                onActivate()
+                                onMergeNext()
+                            } label: {
+                                Label(localizationManager.text("segment.mergeNext", fallback: "Fusionar con el siguiente"), systemImage: "arrow.down.to.line")
+                            }
+                        }
+                        if let onAdjustStart {
+                            Button {
+                                onActivate()
+                                onAdjustStart()
+                            } label: {
+                                Label(localizationManager.text("segment.adjustStart", fallback: "Ajustar inicio al playhead"), systemImage: "timer")
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     if !segment.editHistory.isEmpty {
                         Button {

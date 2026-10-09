@@ -3,8 +3,8 @@ import Foundation
 // MARK: - Transcription Segment (for interactive viewer)
 struct TranscriptionSegment: Identifiable, Codable {
     let id: UUID
-    let startTime: TimeInterval  // segundos
-    let endTime: TimeInterval
+    var startTime: TimeInterval  // segundos
+    var endTime: TimeInterval
     var text: String
     let speaker: Int?            // nil si no hay diarización, 0,1,2... si hay
     var isFavorite: Bool

@@ -938,6 +938,70 @@ class TranscriptionViewModel: ObservableObject {
         }
     }
     
+    /// Split segment at `time` (seconds). Right-hand segment keeps speaker and end time.
+    func splitSegment(segmentId: UUID, at time: TimeInterval) {
+        guard isEditMode, var result = transcriptionResult,
+              let idx = result.segments.firstIndex(where: { $0.id == segmentId }) else { return }
+        let seg = result.segments[idx]
+        guard time > seg.startTime + 0.1, time < seg.endTime - 0.1 else { return }
+
+        let ratio = (time - seg.startTime) / max(seg.endTime - seg.startTime, 0.1)
+        let cutOffset = min(seg.text.count, max(0, Int(Double(seg.text.count) * ratio)))
+        let cut = seg.text.index(seg.text.startIndex, offsetBy: cutOffset)
+        let left = String(seg.text[..<cut]).trimmingCharacters(in: .whitespaces)
+        let right = String(seg.text[cut...]).trimmingCharacters(in: .whitespaces)
+
+        // Left half: mutate in place (withText records editHistory)
+        result.segments[idx] = seg.withText(left)
+        result.segments[idx].endTime = time
+
+        // Right half: brand-new segment (no editHistory — it never existed before)
+        let newSegment = TranscriptionSegment(
+            startTime: time, endTime: seg.endTime, text: right, speaker: seg.speaker)
+        result.segments.insert(newSegment, at: idx + 1)
+
+        transcriptionResult = result
+        transcriptionText = visibleText(from: result.segments)
+        persistSegmentChanges()
+        showToast(localized("Segmento dividido", "Segment split"), type: .success)
+    }
+
+    /// Merge `segmentId` with the next non-deleted segment (soft-deletes the latter).
+    func mergeWithNext(segmentId: UUID) {
+        guard isEditMode, var result = transcriptionResult,
+              let idx = result.segments.firstIndex(where: { $0.id == segmentId }) else { return }
+        guard let nextIdx = (idx + 1..<result.segments.count).first(where: { !result.segments[$0].isDeleted })
+        else { return }
+        let a = result.segments[idx], b = result.segments[nextIdx]
+
+        result.segments[idx] = a.withText(
+            (a.text + " " + b.text).trimmingCharacters(in: .whitespaces))
+        result.segments[idx].endTime = b.endTime          // span both
+        result.segments[nextIdx].isDeleted = true         // soft-delete b (undo via edit history / restore)
+
+        transcriptionResult = result
+        transcriptionText = visibleText(from: result.segments)
+        persistSegmentChanges()
+        showToast(localized("Segmentos fusionados", "Segments merged"), type: .success)
+    }
+
+    /// Move a segment's start time (MacWhisper's "Adjust Start Timestamp").
+    func adjustSegmentStart(segmentId: UUID, to time: TimeInterval) {
+        guard isEditMode, var result = transcriptionResult,
+              let idx = result.segments.firstIndex(where: { $0.id == segmentId }) else { return }
+        let seg = result.segments[idx]
+        guard time >= 0, time < seg.endTime - 0.1 else { return }
+        if idx > 0 {
+            guard time > result.segments[idx - 1].startTime + 0.1 else { return } // keep order
+            result.segments[idx - 1].endTime = min(result.segments[idx - 1].endTime, time)
+        }
+        result.segments[idx].startTime = time
+        transcriptionResult = result
+        transcriptionText = visibleText(from: result.segments)
+        persistSegmentChanges()
+        showToast(localized("Inicio ajustado", "Start timestamp adjusted"), type: .success)
+    }
+    
     /// Restore a soft-deleted segment
     func restoreDeletedSegment(id: UUID) {
         guard isEditMode else { return }
