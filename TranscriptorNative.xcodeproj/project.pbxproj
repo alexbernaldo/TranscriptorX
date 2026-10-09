@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1100000000000001 /* TranscriptorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000001 /* TranscriptorApp.swift */; };
+		EA7400000000000001 /* TranscribeFileIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7400000000000002 /* TranscribeFileIntent.swift */; };
 		1100000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000002 /* AppDelegate.swift */; };
 		1100000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000003 /* ContentView.swift */; };
 		1100000000000004 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000004 /* Theme.swift */; };
@@ -65,6 +66,7 @@
 		EA7200000000000001 /* tx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tx; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA7200000000000002 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		1000000000000001 /* TranscriptorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptorApp.swift; sourceTree = "<group>"; };
+		EA7400000000000002 /* TranscribeFileIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeFileIntent.swift; sourceTree = "<group>"; };
 		1000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1000000000000004 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -159,11 +161,20 @@
 			path = TranscriptorNative;
 			sourceTree = "<group>";
 		};
+		EA7400000000000003 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				EA7400000000000002 /* TranscribeFileIntent.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
 		0200000000000000 /* App */ = {
 			isa = PBXGroup;
 			children = (
 				1000000000000001 /* TranscriptorApp.swift */,
 				1000000000000002 /* AppDelegate.swift */,
+				EA7400000000000003 /* Intents */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -417,6 +428,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1100000000000001 /* TranscriptorApp.swift in Sources */,
+				EA7400000000000001 /* TranscribeFileIntent.swift in Sources */,
 				1100000000000002 /* AppDelegate.swift in Sources */,
 				1100000000000003 /* ContentView.swift in Sources */,
 				1100000000000004 /* Theme.swift in Sources */,
