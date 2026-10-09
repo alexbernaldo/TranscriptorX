@@ -227,6 +227,7 @@ private struct NativeTabButton: View {
 private struct GeneralPreferencesView: View {
     @EnvironmentObject var viewModel: TranscriptionViewModel
     @EnvironmentObject var localizationManager: LocalizationManager
+    @ObservedObject private var watchedFolders = WatchedFoldersManager.shared
     @Environment(\.responsiveMetrics) private var metrics
     
     private var appLanguageBinding: Binding<AppLanguage> {
@@ -347,6 +348,42 @@ private struct GeneralPreferencesView: View {
                     range: 0...0.5,
                     step: 0.05
                 )
+            }
+            
+            // Watched Folders Section
+            NativeSettingsSection(title: localizationManager.text("preferences.section.watchFolders", fallback: "CARPETAS VIGILADAS")) {
+                ForEach(watchedFolders.folders, id: \.self) { folder in
+                    HStack {
+                        Image(systemName: "folder")
+                        Text(folder.path).font(.caption).lineLimit(1).truncationMode(.middle)
+                        Spacer()
+                        Button {
+                            watchedFolders.remove(folder)
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(localizationManager.text("a11y.eliminar", fallback: "eliminar"))
+                    }
+                }
+                
+                Button(localizationManager.text("preferences.watchFolders.add", fallback: "Añadir carpeta vigilada")) {
+                    let panel = NSOpenPanel()
+                    panel.canChooseDirectories = true
+                    panel.canChooseFiles = false
+                    panel.allowsMultipleSelection = false
+                    if panel.runModal() == .OK, let url = panel.url {
+                        watchedFolders.add(url)
+                    }
+                }
+                
+                Toggle(isOn: Binding(
+                    get: { watchedFolders.autoExport },
+                    set: { watchedFolders.setAutoExport($0) }
+                )) {
+                    Text(localizationManager.text("preferences.watchFolders.autoExport",
+                                                  fallback: "Exportar automáticamente al terminar"))
+                }
             }
         }
     }

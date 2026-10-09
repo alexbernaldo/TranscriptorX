@@ -328,5 +328,14 @@ final class JobManager: ObservableObject {
         
         storage.saveTranscription(transcription)
         AppLogger.shared.log("Job saved to history: \(title)", category: .transcription)
+        
+        // Watch folders: auto-export next to the source file when enabled
+        if WatchedFoldersManager.shared.autoExport,
+           WatchedFoldersManager.shared.folders.contains(where: { $0.path == job.fileURL.deletingLastPathComponent().path }) {
+            AutoExporter.export(transcription: transcription,
+                                settings: job.settings,
+                                format: .srt,
+                                destination: job.fileURL.deletingLastPathComponent())
+        }
     }
 }

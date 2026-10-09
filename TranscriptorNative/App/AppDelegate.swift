@@ -32,6 +32,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         CLIServer.shared.start()
+        
+        // Start persistent folder watchers without requiring Preferences to be opened
+        _ = WatchedFoldersManager.shared
     }
     
     func applicationWillTerminate(_ notification: Notification) {

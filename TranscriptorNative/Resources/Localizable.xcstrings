@@ -7,6 +7,23 @@
     "-%@" : {
 
     },
+    "a11y.eliminar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "delete"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "eliminar"
+          }
+        }
+      }
+    },
     "a11y.hazClic" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2835,6 +2852,23 @@
         }
       }
     },
+    "preferences.section.watchFolders" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WATCHED FOLDERS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CARPETAS VIGILADAS"
+          }
+        }
+      }
+    },
     "preferences.subtitle.advanced" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2984,6 +3018,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Detección automática"
+          }
+        }
+      }
+    },
+    "preferences.watchFolders.add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add watched folder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir carpeta vigilada"
+          }
+        }
+      }
+    },
+    "preferences.watchFolders.autoExport" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export automatically when finished"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar automáticamente al terminar"
           }
         }
       }

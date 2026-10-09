@@ -47,6 +47,8 @@
 		EA7000000000000001 /* FileInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000002 /* FileInputService.swift */; };
 		EA7100000000000001 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000003 /* CLIProtocol.swift */; };
 		EA7100000000000002 /* CLIServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000004 /* CLIServer.swift */; };
+		EA7300000000000001 /* WatchedFoldersManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7300000000000003 /* WatchedFoldersManager.swift */; };
+		EA7300000000000002 /* AutoExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7300000000000004 /* AutoExporter.swift */; };
 		EA7200000000000003 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7200000000000002 /* main.swift */; };
 		EA7200000000000004 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000003 /* CLIProtocol.swift */; };
 		EA7000000000000003 /* LocalizationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000004 /* LocalizationHelpers.swift */; };
@@ -103,6 +105,8 @@
 		EA7000000000000002 /* FileInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileInputService.swift; sourceTree = "<group>"; };
 		EA7100000000000003 /* CLIProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIProtocol.swift; sourceTree = "<group>"; };
 		EA7100000000000004 /* CLIServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIServer.swift; sourceTree = "<group>"; };
+		EA7300000000000003 /* WatchedFoldersManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedFoldersManager.swift; sourceTree = "<group>"; };
+		EA7300000000000004 /* AutoExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoExporter.swift; sourceTree = "<group>"; };
 		EA7000000000000004 /* LocalizationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationHelpers.swift; sourceTree = "<group>"; };
 		EA8000000000000002 /* ResponsiveMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponsiveMetrics.swift; sourceTree = "<group>"; };
 		EA9000000000000002 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
@@ -241,6 +245,8 @@
 				EA7000000000000002 /* FileInputService.swift */,
 				EA7100000000000003 /* CLIProtocol.swift */,
 				EA7100000000000004 /* CLIServer.swift */,
+				EA7300000000000003 /* WatchedFoldersManager.swift */,
+				EA7300000000000004 /* AutoExporter.swift */,
 				EA7000000000000004 /* LocalizationHelpers.swift */,
 				EA9000000000000006 /* LocalizationManager.swift */,
 				EAB000000000000002 /* ExportDocument.swift */,
@@ -447,6 +453,8 @@
 				EA7000000000000001 /* FileInputService.swift in Sources */,
 				EA7100000000000001 /* CLIProtocol.swift in Sources */,
 				EA7100000000000002 /* CLIServer.swift in Sources */,
+				EA7300000000000001 /* WatchedFoldersManager.swift in Sources */,
+				EA7300000000000002 /* AutoExporter.swift in Sources */,
 				EA7000000000000003 /* LocalizationHelpers.swift in Sources */,
 				EA8000000000000001 /* ResponsiveMetrics.swift in Sources */,
 				EA9000000000000001 /* AppLanguage.swift in Sources */,
