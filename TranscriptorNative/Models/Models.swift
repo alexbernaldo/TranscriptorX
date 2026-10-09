@@ -496,6 +496,9 @@ struct Transcription: Identifiable, Codable {
     var isFavorite: Bool
     var sourceURL: URL?
     var segments: [TranscriptionSegment]?
+    var aiTitle: String?
+    var aiSummary: String?
+    var aiTags: [String]?
     
     init(
         id: UUID = UUID(),
@@ -506,7 +509,10 @@ struct Transcription: Identifiable, Codable {
         createdAt: Date = Date(),
         isFavorite: Bool = false,
         sourceURL: URL? = nil,
-        segments: [TranscriptionSegment]? = nil
+        segments: [TranscriptionSegment]? = nil,
+        aiTitle: String? = nil,
+        aiSummary: String? = nil,
+        aiTags: [String]? = nil
     ) {
         self.id = id
         self.title = title
@@ -517,6 +523,9 @@ struct Transcription: Identifiable, Codable {
         self.isFavorite = isFavorite
         self.sourceURL = sourceURL
         self.segments = segments
+        self.aiTitle = aiTitle
+        self.aiSummary = aiSummary
+        self.aiTags = aiTags
     }
     
     var formattedDuration: String {
