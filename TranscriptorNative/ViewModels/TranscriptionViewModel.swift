@@ -852,6 +852,61 @@ class TranscriptionViewModel: ObservableObject {
         showToast(localized("Texto actualizado", "Text updated"), type: .success)
     }
     
+    /// Replace all occurrences of `find` across visible segments.
+    /// Works in read mode too; each replaced segment records its previous text via withText(_:).
+    @discardableResult
+    func replaceAll(find: String, replace: String, caseSensitive: Bool = false) -> Int {
+        guard !find.isEmpty, var result = transcriptionResult else { return 0 }
+        let options: String.CompareOptions = caseSensitive ? [] : [.caseInsensitive]
+        var count = 0
+        for i in result.segments.indices where !result.segments[i].isDeleted {
+            let text = result.segments[i].text
+            var searchRange = text.startIndex..<text.endIndex
+            var matches = 0
+            while let r = text.range(of: find, options: options, range: searchRange) {
+                matches += 1
+                searchRange = r.upperBound..<text.endIndex
+            }
+            guard matches > 0 else { continue }
+            let updated = text.replacingOccurrences(of: find, with: replace, options: options)
+            result.segments[i] = result.segments[i].withText(updated)
+            count += matches
+        }
+        guard count > 0 else {
+            showToast(localized("Sin coincidencias", "No matches"), type: .warning)
+            return 0
+        }
+        transcriptionResult = result
+        transcriptionText = visibleText(from: result.segments)
+        persistSegmentChanges()
+        showToast(localized("Reemplazadas \(count) coincidencias",
+                            "Replaced \(count) matches"), type: .success)
+        return count
+    }
+    
+    /// Replace within a single segment (no toast, no isEditMode requirement).
+    func replaceIn(segmentId: UUID, find: String, replace: String, caseSensitive: Bool = false) {
+        guard !find.isEmpty, var result = transcriptionResult,
+              let idx = result.segments.firstIndex(where: { $0.id == segmentId }),
+              !result.segments[idx].isDeleted else { return }
+        let options: String.CompareOptions = caseSensitive ? [] : [.caseInsensitive]
+        let updated = result.segments[idx].text.replacingOccurrences(of: find, with: replace, options: options)
+        guard updated != result.segments[idx].text else { return }
+        result.segments[idx] = result.segments[idx].withText(updated)
+        transcriptionResult = result
+        transcriptionText = visibleText(from: result.segments)
+        persistSegmentChanges()
+    }
+    
+    /// IDs of visible segments containing `query` (case-insensitive) — shared by search highlight and replace UI.
+    func matchSegments(query: String) -> [UUID] {
+        guard !query.isEmpty, let result = transcriptionResult else { return [] }
+        let q = query.lowercased()
+        return result.segments
+            .filter { !$0.isDeleted && $0.text.lowercased().contains(q) }
+            .map(\.id)
+    }
+    
     /// Soft-delete a segment with 5-second undo window
     func deleteSegment(id: UUID) {
         guard isEditMode else { return }

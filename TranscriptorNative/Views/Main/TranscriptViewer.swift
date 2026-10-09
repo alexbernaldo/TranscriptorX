@@ -849,26 +849,63 @@ struct CinemaToolbarButton: View {
 struct CinemaSearchBar: View {
     @Binding var text: String
     @FocusState private var isFocused: Bool
+    @EnvironmentObject var viewModel: TranscriptionViewModel
+    @EnvironmentObject var localizationManager: LocalizationManager
+    @State private var showReplace = false
+    @State private var replaceText = ""
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.bodyDefault)
-                .foregroundColor(.textSecondary)
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.bodyDefault)
+                    .foregroundColor(.textSecondary)
 
-            TextField("Buscar en transcripción...", text: $text)
-                .font(.bodyLarge)
-                .foregroundColor(.textPrimary)
-                .textFieldStyle(.plain)
-                .focused($isFocused)
-            
-            if !text.isEmpty {
-                Button(action: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill")
+                TextField("Buscar en transcripción...", text: $text)
+                    .font(.bodyLarge)
+                    .foregroundColor(.textPrimary)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+                
+                if !text.isEmpty {
+                    Button(action: { text = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.bodyDefault)
+                            .foregroundColor(.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                Button {
+                    withAnimation(.snappy) { showReplace.toggle() }
+                } label: {
+                    Image(systemName: "plusminus.circle")
                         .font(.bodyDefault)
-                        .foregroundColor(.textTertiary)
+                        .foregroundColor(showReplace ? .accentPrimary : .textTertiary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(localizationManager.text("find.toggleReplace", fallback: "Mostrar reemplazo"))
+            }
+            
+            if showReplace {
+                HStack(spacing: 8) {
+                    TextField(localizationManager.text("find.replaceWith", fallback: "Reemplazar con"),
+                              text: $replaceText)
+                        .font(.bodyLarge)
+                        .foregroundColor(.textPrimary)
+                        .textFieldStyle(.plain)
+                    Spacer(minLength: 0)
+                    Button(localizationManager.text("find.replaceAll", fallback: "Reemplazar todo")) {
+                        let n = viewModel.replaceAll(find: text, replace: replaceText)
+                        if n > 0 { text = "" }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(text.isEmpty)
+                    .accessibilityHint(localizationManager.text("a11y.hazClic",
+                        fallback: "haz clic para reemplazar todas las coincidencias"))
+                }
+                .padding(.top, 8)
             }
         }
         .padding(.horizontal, 16)
