@@ -12,13 +12,32 @@ final class AISummaryService: ObservableObject {
     private let models = ["llama3.2", "qwen2.5", "phi3"]
     private var client: (any LocalLLMClient)?
 
+    private struct OllamaTags: Decodable {
+        struct Model: Decodable { let name: String }
+        let models: [Model]?
+    }
+
+    /// Ollama with the first installed model: preferred names if present, else whatever the server has.
+    private func ollamaClient() async -> OllamaClient? {
+        let probe = OllamaClient(model: "")
+        guard await probe.isAvailable() else { return nil }
+        var req = URLRequest(url: probe.baseURL.appendingPathComponent("api/tags"))
+        req.timeoutInterval = 2
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let tags = try? JSONDecoder().decode(OllamaTags.self, from: data),
+              let installed = tags.models?.map({ $0.name }), !installed.isEmpty else { return nil }
+        let preferred = models.first { m in
+            installed.contains { $0 == m || $0.hasPrefix(m + ":") }
+        } ?? installed.first { !$0.contains("/") }
+            ?? installed.first
+        guard let model = preferred else { return nil }
+        return OllamaClient(model: model)
+    }
+
     /// First reachable local client, or nil (UI hides AI features then).
     func resolveClient() async -> (any LocalLLMClient)? {
         if let c = client, await c.isAvailable() { return c }
-        for m in models {
-            let ollama = OllamaClient(model: m)
-            if await ollama.isAvailable() { client = ollama; return ollama }
-        }
+        if let ollama = await ollamaClient() { client = ollama; return ollama }
         let lm = LMStudioClient(model: "")
         if await lm.isAvailable() { client = lm; return lm }
         if #available(macOS 26.0, *) {
