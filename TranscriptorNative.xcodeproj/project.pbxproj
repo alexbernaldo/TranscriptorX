@@ -47,6 +47,8 @@
 		EA7000000000000001 /* FileInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000002 /* FileInputService.swift */; };
 		EA7100000000000001 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000003 /* CLIProtocol.swift */; };
 		EA7100000000000002 /* CLIServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000004 /* CLIServer.swift */; };
+		EA7200000000000003 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7200000000000002 /* main.swift */; };
+		EA7200000000000004 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000003 /* CLIProtocol.swift */; };
 		EA7000000000000003 /* LocalizationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000004 /* LocalizationHelpers.swift */; };
 		EA8000000000000001 /* ResponsiveMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8000000000000002 /* ResponsiveMetrics.swift */; };
 		EA9000000000000001 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000002 /* AppLanguage.swift */; };
@@ -58,6 +60,8 @@
 
 /* Begin PBXFileReference section */
 		0800000000000000 /* TranscriptorNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TranscriptorNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA7200000000000001 /* tx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tx; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA7200000000000002 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		1000000000000001 /* TranscriptorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptorApp.swift; sourceTree = "<group>"; };
 		1000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		1000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -117,6 +121,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EA7200000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -124,6 +135,7 @@
 			isa = PBXGroup;
 			children = (
 				0100000000000000 /* TranscriptorNative */,
+				EA7200000000000005 /* CLI */,
 				0900000000000000 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -264,6 +276,7 @@
 			isa = PBXGroup;
 			children = (
 				0800000000000000 /* TranscriptorNative.app */,
+				EA7200000000000001 /* tx */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -288,6 +301,22 @@
 			path = lib;
 			sourceTree = "<group>";
 		};
+		EA7200000000000005 /* CLI */ = {
+			isa = PBXGroup;
+			children = (
+				EA7200000000000006 /* tx */,
+			);
+			path = CLI;
+			sourceTree = "<group>";
+		};
+		EA7200000000000006 /* tx */ = {
+			isa = PBXGroup;
+			children = (
+				EA7200000000000002 /* main.swift */,
+			);
+			path = tx;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -308,6 +337,22 @@
 			productReference = 0800000000000000 /* TranscriptorNative.app */;
 			productType = "com.apple.product-type.application";
 		};
+		EA7200000000000009 /* tx */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EA720000000000000C /* Build configuration list for PBXNativeTarget "tx" */;
+			buildPhases = (
+				EA7200000000000007 /* Sources */,
+				EA7200000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = tx;
+			productName = tx;
+			productReference = EA7200000000000001 /* tx */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -319,6 +364,9 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					0700000000000000 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					EA7200000000000009 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -338,6 +386,7 @@
 			projectRoot = "";
 			targets = (
 				0700000000000000 /* TranscriptorNative */,
+				EA7200000000000009 /* tx */,
 			);
 		};
 /* End PBXProject section */
@@ -404,6 +453,15 @@
 				EA9000000000000005 /* LocalizationManager.swift in Sources */,
 				EAB000000000000001 /* ExportDocument.swift in Sources */,
 				EAB000000000000003 /* ExportGenerators.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA7200000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EA7200000000000003 /* main.swift in Sources */,
+				EA7200000000000004 /* CLIProtocol.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -562,6 +620,24 @@
 			};
 			name = Release;
 		};
+		EA720000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		EA720000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -579,6 +655,15 @@
 			buildConfigurations = (
 				0A00000000000002 /* Debug */,
 				0A00000000000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EA720000000000000C /* Build configuration list for PBXNativeTarget "tx" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EA720000000000000A /* Debug */,
+				EA720000000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
