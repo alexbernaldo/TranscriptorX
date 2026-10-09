@@ -21,7 +21,6 @@
 		1100000000000013 /* ModelDownloadSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000014 /* ModelDownloadSheet.swift */; };
 		1100000000000016 /* SystemAudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000016 /* SystemAudioRecorder.swift */; };
 		1100000000000018 /* NewTranscriptionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000018 /* NewTranscriptionSheet.swift */; };
-		1100000000000019 /* RecorderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000019 /* RecorderSheet.swift */; };
 		110000000000001A /* PreferencesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001A /* PreferencesSheet.swift */; };
 		110000000000001B /* TranscriptViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001B /* TranscriptViewer.swift */; };
 		110000000000001C /* RecordingFloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001C /* RecordingFloatingPanel.swift */; };
@@ -30,7 +29,6 @@
 		110000000000001F /* ModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001F /* ModelManager.swift */; };
 		1100000000000020 /* AppStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000020 /* AppStates.swift */; };
 		1100000000000021 /* RecoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000021 /* RecoveryViews.swift */; };
-		1100000000000022 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000022 /* SplashScreenView.swift */; };
 		1100000000000024 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000025 /* TopBarView.swift */; };
 		1100000000000025 /* BottomDockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000026 /* BottomDockView.swift */; };
 		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
@@ -50,7 +48,6 @@
 		EA7000000000000003 /* LocalizationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000004 /* LocalizationHelpers.swift */; };
 		EA8000000000000001 /* ResponsiveMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8000000000000002 /* ResponsiveMetrics.swift */; };
 		EA9000000000000001 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000002 /* AppLanguage.swift */; };
-		EA9000000000000003 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000004 /* AppPreferences.swift */; };
 		EA9000000000000005 /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000006 /* LocalizationManager.swift */; };
 		EA9000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA9000000000000008 /* Localizable.xcstrings */; };
 		EAB000000000000001 /* ExportDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000002 /* ExportDocument.swift */; };
@@ -74,7 +71,6 @@
 		1000000000000014 /* ModelDownloadSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloadSheet.swift; sourceTree = "<group>"; };
 		1000000000000016 /* SystemAudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioRecorder.swift; sourceTree = "<group>"; };
 		1000000000000018 /* NewTranscriptionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTranscriptionSheet.swift; sourceTree = "<group>"; };
-		1000000000000019 /* RecorderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderSheet.swift; sourceTree = "<group>"; };
 		100000000000001A /* PreferencesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSheet.swift; sourceTree = "<group>"; };
 		100000000000001B /* TranscriptViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptViewer.swift; sourceTree = "<group>"; };
 		100000000000001C /* RecordingFloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingFloatingPanel.swift; sourceTree = "<group>"; };
@@ -83,7 +79,6 @@
 		100000000000001F /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
 		1000000000000020 /* AppStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStates.swift; sourceTree = "<group>"; };
 		1000000000000021 /* RecoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryViews.swift; sourceTree = "<group>"; };
-		1000000000000022 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		1000000000000025 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
 		1000000000000026 /* BottomDockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomDockView.swift; sourceTree = "<group>"; };
 		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
@@ -103,7 +98,6 @@
 		EA7000000000000004 /* LocalizationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationHelpers.swift; sourceTree = "<group>"; };
 		EA8000000000000002 /* ResponsiveMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponsiveMetrics.swift; sourceTree = "<group>"; };
 		EA9000000000000002 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
-		EA9000000000000004 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		EA9000000000000006 /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
 		EA9000000000000008 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EA9000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -181,7 +175,6 @@
 				EA04EB272F32B46E0093692F /* JobQueuePanel.swift */,
 				100000000000000E /* Components.swift */,
 				1000000000000021 /* RecoveryViews.swift */,
-				1000000000000022 /* SplashScreenView.swift */,
 				1000000000000025 /* TopBarView.swift */,
 				1000000000000026 /* BottomDockView.swift */,
 			);
@@ -201,7 +194,6 @@
 			isa = PBXGroup;
 			children = (
 				1000000000000018 /* NewTranscriptionSheet.swift */,
-				1000000000000019 /* RecorderSheet.swift */,
 				100000000000001A /* PreferencesSheet.swift */,
 				100000000000001C /* RecordingFloatingPanel.swift */,
 				EA10000000000011 /* URLInputSheet.swift */,
@@ -245,7 +237,6 @@
 				EA04EB232F32B4550093692F /* TranscriptionJob.swift */,
 				1000000000000005 /* Models.swift */,
 				EA9000000000000002 /* AppLanguage.swift */,
-				EA9000000000000004 /* AppPreferences.swift */,
 				1000000000000020 /* AppStates.swift */,
 			);
 			path = Models;
@@ -382,7 +373,6 @@
 				EA04EB242F32B4550093692F /* TranscriptionJob.swift in Sources */,
 				1100000000000016 /* SystemAudioRecorder.swift in Sources */,
 				1100000000000018 /* NewTranscriptionSheet.swift in Sources */,
-				1100000000000019 /* RecorderSheet.swift in Sources */,
 				110000000000001A /* PreferencesSheet.swift in Sources */,
 				110000000000001B /* TranscriptViewer.swift in Sources */,
 				110000000000001C /* RecordingFloatingPanel.swift in Sources */,
@@ -393,7 +383,6 @@
 				1100000000000020 /* AppStates.swift in Sources */,
 				EA04EB282F32B46E0093692F /* JobQueuePanel.swift in Sources */,
 				1100000000000021 /* RecoveryViews.swift in Sources */,
-				1100000000000022 /* SplashScreenView.swift in Sources */,
 				1100000000000024 /* TopBarView.swift in Sources */,
 				1100000000000025 /* BottomDockView.swift in Sources */,
 				EA1000000000000C /* MasterView.swift in Sources */,
@@ -404,7 +393,6 @@
 				EA7000000000000003 /* LocalizationHelpers.swift in Sources */,
 				EA8000000000000001 /* ResponsiveMetrics.swift in Sources */,
 				EA9000000000000001 /* AppLanguage.swift in Sources */,
-				EA9000000000000003 /* AppPreferences.swift in Sources */,
 				EA9000000000000005 /* LocalizationManager.swift in Sources */,
 				EAB000000000000001 /* ExportDocument.swift in Sources */,
 				EAB000000000000003 /* ExportGenerators.swift in Sources */,

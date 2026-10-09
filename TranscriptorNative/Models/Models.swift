@@ -1,34 +1,5 @@
 import Foundation
 
-// MARK: - Transcription Task
-struct TranscriptionTask: Identifiable, Codable {
-    let id: String
-    var status: TaskStatus
-    var progress: Int
-    var message: String
-    var text: String?
-    var logs: [LogEntry]
-    var steps: [StepProgress]
-    
-    enum TaskStatus: String, Codable {
-        case pending, processing, completed, error, cancelled
-    }
-    
-    struct LogEntry: Codable, Identifiable {
-        var id: String { "\(timestamp)-\(message.prefix(10))" }
-        let timestamp: String
-        let type: String
-        let message: String
-    }
-    
-    struct StepProgress: Codable, Identifiable {
-        var id: String { step }
-        let step: String
-        let progress: Int
-        let label: String
-    }
-}
-
 // MARK: - Transcription Segment (for interactive viewer)
 struct TranscriptionSegment: Identifiable, Codable {
     let id: UUID

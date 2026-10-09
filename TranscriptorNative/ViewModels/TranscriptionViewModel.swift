@@ -48,7 +48,6 @@ class TranscriptionViewModel: ObservableObject {
     @Published var statusMessage = "" {
         didSet { syncActiveTranscriptionProgress() }
     }
-    @Published var steps: [TranscriptionTask.StepProgress] = []
     
     // Active transcriptions (for sidebar with multiple jobs)
     @Published var activeTranscriptions: [ActiveTranscription] = []
@@ -207,7 +206,6 @@ class TranscriptionViewModel: ObservableObject {
         selectedTranscription = nil
         progress = 0
         statusMessage = ""
-        steps = []
         currentTime = 0
         duration = 0
         
@@ -713,7 +711,6 @@ class TranscriptionViewModel: ObservableObject {
         isTranscribing = false
         currentTaskId = nil
         statusMessage = localized("Transcripción cancelada", "Transcription cancelled")
-        steps = []
         
         // Clear active transcription cards
         withAnimation(.smooth(duration: 0.3)) {
