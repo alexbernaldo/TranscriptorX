@@ -240,6 +240,39 @@ struct TranscriptViewer: View {
                 isSearching: $isSearching
             )
 
+            // Saved AI results (title / summary / tags)
+            if let ai = viewModel.selectedTranscription,
+               ai.aiTitle != nil || ai.aiSummary != nil || ai.aiTags?.isEmpty == false {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let savedTitle = ai.aiTitle, !savedTitle.isEmpty, savedTitle != editableTitle {
+                        Text(savedTitle)
+                            .font(.labelDefault)
+                            .foregroundColor(.textSecondary)
+                    }
+                    if let summary = ai.aiSummary, !summary.isEmpty {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "sparkles")
+                                .font(.caption)
+                                .foregroundColor(.textSecondary)
+                            Text(summary)
+                                .font(.caption)
+                                .foregroundColor(.textSecondary)
+                                .lineLimit(3)
+                        }
+                    }
+                    if let tags = ai.aiTags, !tags.isEmpty {
+                        HStack(spacing: 6) {
+                            ForEach(tags, id: \.self) { tag in
+                                CapsuleTag(tag, color: .tagPurple, size: .small)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+
             // Separator
             Rectangle()
                 .fill(Color.borderSubtle)
@@ -372,6 +405,8 @@ struct TranscriptHeaderView: View {
     @Binding var isSearching: Bool
     @AppStorage("showTimestamps") private var showTimestamps = true
     @EnvironmentObject var viewModel: TranscriptionViewModel
+    @EnvironmentObject var localizationManager: LocalizationManager
+    @State private var aiAvailable = false
     @Environment(\.responsiveMetrics) private var metrics
     
     private var appLanguage: AppLanguage {
@@ -507,6 +542,32 @@ struct TranscriptHeaderView: View {
                         isDisabled: !hasText
                     ) {
                         viewModel.copyTranscription()
+                    }
+                    
+                    // AI Menu
+                    Menu {
+                        Button(localizationManager.text("ai.title", fallback: "Generar título")) {
+                            Task { await viewModel.generateAI(.title) }
+                        }
+                        Button(localizationManager.text("ai.shortSummary", fallback: "Resumen corto")) {
+                            Task { await viewModel.generateAI(.shortSummary) }
+                        }
+                        Button(localizationManager.text("ai.longSummary", fallback: "Resumen largo")) {
+                            Task { await viewModel.generateAI(.longSummary) }
+                        }
+                        Button(localizationManager.text("ai.tags", fallback: "Generar etiquetas")) {
+                            Task { await viewModel.generateAI(.tags) }
+                        }
+                    } label: {
+                        Image(systemName: "sparkles")
+                            .font(.bodyDefault)
+                            .foregroundColor(.textSecondary)
+                            .frame(width: 36, height: 36)
+                    }
+                    .disabled(AISummaryService.shared.isRunning || !aiAvailable)
+                    .help(localizationManager.text("ai.help", fallback: "Funciones de IA locales (Ollama / LM Studio)"))
+                    .onAppear {
+                        Task { aiAvailable = await AISummaryService.shared.resolveClient() != nil }
                     }
                     
                     // Export Menu

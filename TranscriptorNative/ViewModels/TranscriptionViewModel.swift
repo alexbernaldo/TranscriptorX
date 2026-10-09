@@ -1261,6 +1261,20 @@ class TranscriptionViewModel: ObservableObject {
             self?.toasts.removeAll { $0.id == toast.id }
         }
     }
+    
+    // MARK: - Local AI (summary/title/tags)
+    
+    func generateAI(_ kind: AISummaryService.Kind) async {
+        let text = transcriptionText
+        guard !text.isEmpty else {
+            showToast(localized("No hay contenido", "Nothing to summarize"), type: .warning); return
+        }
+        if let result = await AISummaryService.shared.run(kind, on: text, for: selectedTranscription?.id) {
+            showToast(result, type: .success)
+        } else if let err = AISummaryService.shared.lastError {
+            showToast(err, type: .error)
+        }
+    }
 }
 
 // MARK: - Toast Model
