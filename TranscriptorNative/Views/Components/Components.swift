@@ -228,6 +228,24 @@ struct LibraryDrawerView: View {
                 
                 Spacer()
                 
+                Menu {
+                    ForEach([ExportFormat.txt, .srt, .vtt, .md, .json, .csv], id: \.self) { format in
+                        Button(format.localizedDescription(localizationManager.appLanguage)) {
+                            let panel = NSOpenPanel()
+                            panel.canChooseDirectories = true
+                            panel.canChooseFiles = false
+                            if panel.runModal() == .OK, let dir = panel.url {
+                                viewModel.exportAll(format: format, to: dir)
+                            }
+                        }
+                    }
+                } label: {
+                    Label(localizationManager.text("library.exportAll", fallback: "Exportar todo"),
+                          systemImage: "square.and.arrow.up.on.square")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                
                 DrawerCloseButton {
                     withAnimation(.snappy(duration: 0.2)) {
                         isPresented = false

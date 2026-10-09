@@ -1072,6 +1072,44 @@ class TranscriptionViewModel: ObservableObject {
             showToast(localized("Error al guardar: ", "Error saving: ") + error.localizedDescription, type: .error)
         }
     }
+    /// Export every history transcription into `directory`, one file each.
+    func exportAll(format: ExportFormat, to directory: URL) {
+        var exported = 0
+        for transcription in transcriptions {
+            let doc = ExportDocument.from(
+                transcription: transcription,
+                result: nil,
+                settings: settings,
+                fileName: transcription.title
+            )
+            guard !doc.isEmpty else { continue }
+            let safe = transcription.title.replacingOccurrences(of: "/", with: "-")
+            let url = directory.appendingPathComponent("\(safe).\(format.rawValue)")
+            do {
+                let data: Data
+                switch format {
+                case .txt: data = Data(doc.plainText.utf8)
+                case .srt:
+                    let r = TranscriptionResult(segments: transcription.segments ?? [])
+                    data = Data(r.toSRT().utf8)
+                case .vtt:
+                    let r = TranscriptionResult(segments: transcription.segments ?? [])
+                    data = Data(r.toVTT().utf8)
+                case .md: data = Data(transcription.text.utf8)
+                case .json: data = try JSONExportGenerator().generate(from: doc)
+                case .csv: data = try CSVExportGenerator(includeTimestamps: true).generate(from: doc)
+                case .html: data = try HTMLExportGenerator().generate(from: doc)
+                default: continue // pdf/docx requieren panel/async: fuera del batch v1
+                }
+                try data.write(to: url, options: .atomic)
+                exported += 1
+            } catch {
+                AppLogger.shared.logError(error, context: "exportAll", category: .ui)
+            }
+        }
+        showToast(localized("Exportados \(exported) archivos", "Exported \(exported) files"), type: .success)
+    }
+
     
     /// Export CSV in simple text-only mode (no timestamps/speakers)
     func exportCSVSimple() {

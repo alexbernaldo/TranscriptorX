@@ -1452,6 +1452,23 @@
         }
       }
     },
+    "library.exportAll" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar todo"
+          }
+        }
+      }
+    },
     "menu.copyTranscription" : {
       "extractionState" : "manual",
       "localizations" : {
