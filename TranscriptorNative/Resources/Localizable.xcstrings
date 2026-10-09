@@ -1503,6 +1503,57 @@
         }
       }
     },
+    "menu.segment" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segmento"
+          }
+        }
+      }
+    },
+    "menu.segmentRestoreOriginal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Segment Original Text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurar texto original del segmento"
+          }
+        }
+      }
+    },
+    "menu.segmentUndoLastEdit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo Last Segment Edit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshacer última edición de segmento"
+          }
+        }
+      }
+    },
     "Método de transcripción" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1601,6 +1652,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Usar presets"
+          }
+        }
+      }
+    },
+    "newTranscription.keepAudio.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep audio"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conservar audio"
           }
         }
       }
