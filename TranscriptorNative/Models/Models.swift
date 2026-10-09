@@ -432,6 +432,7 @@ enum ExportFormat: String, CaseIterable {
     case html = "html"
     case pdf  = "pdf"
     case docx = "docx"
+    case json = "json"
     
     var description: String {
         switch self {
@@ -443,6 +444,7 @@ enum ExportFormat: String, CaseIterable {
         case .html: return "HTML (.html)"
         case .pdf:  return "PDF (.pdf)"
         case .docx: return "Word (.docx)"
+        case .json: return "Datos JSON (.json)"
         }
     }
     
@@ -456,6 +458,7 @@ enum ExportFormat: String, CaseIterable {
         case .html: return lang == .es ? "Página web (.html)"    : "Web Page (.html)"
         case .pdf:  return lang == .es ? "Documento PDF (.pdf)"  : "PDF Document (.pdf)"
         case .docx: return lang == .es ? "Documento Word (.docx)": "Word Document (.docx)"
+        case .json: return lang == .es ? "Datos JSON (.json)"    : "JSON Data (.json)"
         }
     }
     
@@ -469,6 +472,7 @@ enum ExportFormat: String, CaseIterable {
         case .html: return "globe"
         case .pdf:  return "doc.text.fill"
         case .docx: return "doc.fill"
+        case .json: return "curlybraces"
         }
     }
     

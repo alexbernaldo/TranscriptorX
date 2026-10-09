@@ -544,6 +544,9 @@ struct TranscriptHeaderView: View {
                                     systemImage: "tablecells.badge.ellipsis"
                                 )
                             }
+                            Button { viewModel.exportTranscription(format: .json) } label: {
+                                Label(ExportFormat.json.localizedDescription(appLanguage), systemImage: ExportFormat.json.icon)
+                            }
                         }
                         
                         Section(appLanguage == .es ? "Subtítulos" : "Subtitles") {

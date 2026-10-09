@@ -811,3 +811,47 @@ struct DOCXExportGenerator: ExportGenerator {
         }
     }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MARK: - JSON Generator
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+struct JSONExportGenerator: ExportGenerator {
+    func generate(from document: ExportDocument) throws -> Data {
+        guard !document.isEmpty else { throw ExportError.noContent }
+
+        struct JSONSegment: Codable {
+            let start: Double
+            let end: Double
+            let text: String
+            let speaker: Int?
+            let favorite: Bool
+        }
+        struct JSONPayload: Codable {
+            let title: String
+            let createdAt: Date
+            let duration: Double
+            let language: String
+            let model: String
+            let plainText: String
+            let segments: [JSONSegment]
+        }
+
+        let payload = JSONPayload(
+            title: document.title,
+            createdAt: document.createdAt,
+            duration: document.duration,
+            language: document.language,
+            model: document.modelName,
+            plainText: document.plainText,
+            segments: document.segments.map {
+                JSONSegment(start: $0.startTime, end: $0.endTime, text: $0.text,
+                            speaker: $0.speaker, favorite: $0.isFavorite)
+            }
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(payload)
+    }
+}

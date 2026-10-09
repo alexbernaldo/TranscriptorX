@@ -1056,6 +1056,10 @@ class TranscriptionViewModel: ObservableObject {
                 let data = try DOCXExportGenerator().generate(from: document)
                 try data.write(to: url)
                 
+            case .json:
+                let data = try JSONExportGenerator().generate(from: document)
+                try data.write(to: url)
+                
             case .pdf:
                 break // handled above
             }
