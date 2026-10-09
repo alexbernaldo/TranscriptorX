@@ -6,6 +6,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Recovery check state
     @Published var recoveredItems: [RecoveryManager.RecoveredItem] = []
     @Published var hasRecoveredItems = false
+    static var recoveredItemsForUI: [RecoveryManager.RecoveredItem] = []
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Respect system appearance (light/dark) — cinema views override locally
@@ -18,6 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let items = await RecoveryManager.shared.checkForRecoverableItems()
             await MainActor.run {
                 self.recoveredItems = items
+                AppDelegate.recoveredItemsForUI = items
                 self.hasRecoveredItems = !items.isEmpty
                 
                 if !items.isEmpty {

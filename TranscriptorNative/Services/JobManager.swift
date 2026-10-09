@@ -189,6 +189,14 @@ final class JobManager: ObservableObject {
         let job = jobs[index]
         AppLogger.shared.log("Processing job: \(job.fileName)", category: .transcription)
         
+        let walSessionId = try? await RecoveryManager.shared.beginTranscriptionSession(
+            audioURL: job.fileURL,
+            modelId: job.settings.selectedModelId
+        )
+        var walDidUpdate = false
+        var walSegmentCount = 0
+        var walPendingSegments: [RecoveryManager.TranscriptionManifest.PartialSegment] = []
+
         do {
             // Build preprocess options from job settings
             let preprocessOptions = AudioPreprocessor.Options(
@@ -210,6 +218,22 @@ final class JobManager: ObservableObject {
                     }
                 },
                 onSegment: { [weak self] segment in
+                    walSegmentCount += 1
+                    walPendingSegments.append(
+                        RecoveryManager.TranscriptionManifest.PartialSegment(
+                            startTime: segment.startTime,
+                            endTime: segment.endTime,
+                            text: segment.text,
+                            speaker: nil))
+                    if !walDidUpdate || walSegmentCount % 10 == 0 {
+                        walDidUpdate = true
+                        let batch = walPendingSegments
+                        walPendingSegments.removeAll(keepingCapacity: true)
+                        if let walSessionId {
+                            Task { try? await RecoveryManager.shared.updateTranscriptionProgress(
+                                sessionId: walSessionId, status: .processing, newSegments: batch) }
+                        }
+                    }
                     Task { @MainActor in
                         self?.appendJobStreamingText(id: id, text: segment.text + " ")
                     }
@@ -220,6 +244,7 @@ final class JobManager: ObservableObject {
             if cancellationRequested {
                 if let idx = jobs.firstIndex(where: { $0.id == id }) {
                     jobs[idx].markCancelled()
+                    if let walSessionId { try? await RecoveryManager.shared.completeTranscriptionSession(sessionId: walSessionId) }
                 }
             } else {
                 // Mark completed
@@ -228,6 +253,7 @@ final class JobManager: ObservableObject {
                     
                     // Save to history
                     await saveJobToHistory(job: jobs[idx])
+                    if let walSessionId { try? await RecoveryManager.shared.completeTranscriptionSession(sessionId: walSessionId) }
                 }
             }
             
@@ -236,8 +262,15 @@ final class JobManager: ObservableObject {
             if let idx = jobs.firstIndex(where: { $0.id == id }) {
                 if cancellationRequested {
                     jobs[idx].markCancelled()
+                    if let walSessionId { try? await RecoveryManager.shared.completeTranscriptionSession(sessionId: walSessionId) }
                 } else {
                     jobs[idx].markFailed(error: error.localizedDescription)
+                    if let walSessionId {
+                        let batch = walPendingSegments
+                        walPendingSegments.removeAll(keepingCapacity: true)
+                        try? await RecoveryManager.shared.updateTranscriptionProgress(
+                            sessionId: walSessionId, status: .interrupted, newSegments: batch)
+                    }
                     AppLogger.shared.logError(error, context: "Job failed: \(job.fileName)", category: .transcription)
                 }
             }

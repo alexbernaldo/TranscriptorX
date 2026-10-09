@@ -220,6 +220,15 @@ struct ContentView: View {
                     showingNewTranscription = true
                 }
             }
+            .task {
+                let items = AppDelegate.recoveredItemsForUI
+                if !items.isEmpty {
+                    recoveredItems = items
+                    withAnimation(.snappy.delay(0.5)) {
+                        showingRecoveryBanner = true
+                    }
+                }
+            }
             // Listen for recovered items notification
             .onReceive(NotificationCenter.default.publisher(for: .recoveredItemsFound)) { notification in
                 if let items = notification.userInfo?["items"] as? [RecoveryManager.RecoveredItem] {
