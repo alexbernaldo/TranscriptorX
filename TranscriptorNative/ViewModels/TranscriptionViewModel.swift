@@ -66,7 +66,19 @@ class TranscriptionViewModel: ObservableObject {
     
     // Library
     @Published var transcriptions: [Transcription] = []
-    @Published var selectedTranscription: Transcription?
+    @Published var selectedTranscription: Transcription? {
+        didSet {
+            if oldValue?.id != selectedTranscription?.id { viewingTranslationLang = nil }
+        }
+    }
+    /// Language of the full-text translation being viewed (nil = original text).
+    @Published var viewingTranslationLang: String?
+    var viewingTranslationText: String? {
+        guard let lang = viewingTranslationLang,
+              let t = selectedTranscription?.fullTextTranslations?[lang],
+              !t.isEmpty else { return nil }
+        return t
+    }
     
     // Settings
     @Published var settings = TranscriptionSettings.default
@@ -1273,6 +1285,24 @@ class TranscriptionViewModel: ObservableObject {
             showToast(result, type: .success)
         } else if let err = AISummaryService.shared.lastError {
             showToast(err, type: .error)
+        }
+    }
+
+    /// Translate the current transcript with the local LLM (fallback when the system Translation framework is unavailable).
+    func translateWithLLM(to lang: String) async {
+        let text = transcriptionText
+        guard !text.isEmpty else {
+            showToast(localized("No hay contenido", "Nothing to translate"), type: .warning); return
+        }
+        do {
+            TranslationService.shared.isTranslating = true
+            defer { TranslationService.shared.isTranslating = false }
+            let out = try await TranslationService.shared.translateWithLLM(text, to: lang)
+            TranslationService.shared.store(out, for: lang, in: selectedTranscription?.id)
+            viewingTranslationLang = lang
+            showToast(localized("Traducción lista", "Translation ready"), type: .success)
+        } catch {
+            showToast(error.localizedDescription, type: .error)
         }
     }
 }

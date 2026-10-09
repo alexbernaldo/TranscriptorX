@@ -499,6 +499,8 @@ struct Transcription: Identifiable, Codable {
     var aiTitle: String?
     var aiSummary: String?
     var aiTags: [String]?
+    /// Full-text translations keyed by language code (e.g. "en"). Local-only.
+    var fullTextTranslations: [String: String]?
     
     init(
         id: UUID = UUID(),
@@ -512,7 +514,8 @@ struct Transcription: Identifiable, Codable {
         segments: [TranscriptionSegment]? = nil,
         aiTitle: String? = nil,
         aiSummary: String? = nil,
-        aiTags: [String]? = nil
+        aiTags: [String]? = nil,
+        fullTextTranslations: [String: String]? = nil
     ) {
         self.id = id
         self.title = title
@@ -526,6 +529,7 @@ struct Transcription: Identifiable, Codable {
         self.aiTitle = aiTitle
         self.aiSummary = aiSummary
         self.aiTags = aiTags
+        self.fullTextTranslations = fullTextTranslations
     }
     
     var formattedDuration: String {

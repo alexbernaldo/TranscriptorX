@@ -1,4 +1,60 @@
 import SwiftUI
+import Translation
+
+// MARK: - Translation request driven by `.translationTask`
+struct TranslationRequest: Equatable {
+    let text: String
+    let targetLanguage: String   // BCP-47, p.ej. "en"
+    static func == (l: TranslationRequest, r: TranslationRequest) -> Bool {
+        l.targetLanguage == r.targetLanguage && l.text == r.text
+    }
+}
+
+// MARK: - Translate menu + system Translation driver (macOS 15+: TranslationSession is unavailable below)
+@available(macOS 15.0, *)
+struct SystemTranslateMenu: View {
+    @EnvironmentObject var viewModel: TranscriptionViewModel
+    @EnvironmentObject var localizationManager: LocalizationManager
+    @State private var request: TranslationRequest?
+    @State private var configuration: TranslationSession.Configuration?
+
+    var body: some View {
+        Menu {
+            ForEach(["en", "es", "fr", "de", "pt"], id: \.self) { code in
+                Button(langName(code)) {
+                    configuration = TranslationService.systemConfiguration(for: code)
+                    request = TranslationRequest(text: viewModel.transcriptionText, targetLanguage: code)
+                }
+            }
+        } label: {
+            Image(systemName: "languages")
+                .font(.bodyDefault)
+                .foregroundColor(.textSecondary)
+                .frame(width: 36, height: 36)
+        }
+        .disabled(TranslationService.shared.isTranslating || viewModel.transcriptionText.isEmpty)
+        .help(localizationManager.text("translate.menu", fallback: "Traducir la transcripción"))
+        .translationTask(configuration) { session in
+            if let req = request {
+                do {
+                    let result = try await session.translate(req.text)
+                    TranslationService.shared.store(result.targetText, for: req.targetLanguage,
+                                                    in: viewModel.selectedTranscription?.id)
+                    viewModel.viewingTranslationLang = req.targetLanguage
+                    viewModel.showToast(localizationManager.text("translate.done", fallback: "Traducción lista"), type: .success)
+                } catch {
+                    viewModel.showToast(error.localizedDescription, type: .error)
+                }
+                request = nil
+                configuration = nil
+            }
+        }
+    }
+
+    private func langName(_ code: String) -> String {
+        LocalizationHelpers.languageTag(code)
+    }
+}
 
 // MARK: - Transcript Viewer (Cinema Glassmorphism Style)
 struct TranscriptViewer: View {
@@ -450,6 +506,31 @@ struct TranscriptHeaderView: View {
                                 persistTitleIfPossible()
                             }
                         }
+
+                    // Translation toggle (visible once a full-text translation exists)
+                    if let translations = viewModel.selectedTranscription?.fullTextTranslations, !translations.isEmpty {
+                        Button {
+                            if viewModel.viewingTranslationLang != nil {
+                                viewModel.viewingTranslationLang = nil
+                            } else if let code = translations.keys.sorted().first(where: { !(translations[$0] ?? "").isEmpty }) {
+                                viewModel.viewingTranslationLang = code
+                            }
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "globe")
+                                    .font(.caption)
+                                Text(viewModel.viewingTranslationLang != nil
+                                     ? localizationManager.text("translate.showOriginal", fallback: "Mostrar original")
+                                     : localizationManager.text("translate.translatedTo", fallback: "Traducción disponible"))
+                                    .font(.labelDefault)
+                            }
+                            .foregroundColor(.textSecondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Capsule().fill(Color.bgSecondary))
+                        }
+                        .buttonStyle(.plain)
+                    }
                     
                     // Metadata Row - subtle gray
                     HStack(spacing: 12) {
@@ -568,6 +649,26 @@ struct TranscriptHeaderView: View {
                     .help(localizationManager.text("ai.help", fallback: "Funciones de IA locales (Ollama / LM Studio)"))
                     .onAppear {
                         Task { aiAvailable = await AISummaryService.shared.resolveClient() != nil }
+                    }
+                    
+                    // Translate Menu
+                    if #available(macOS 15.0, *) {
+                        SystemTranslateMenu()
+                    } else {
+                        Menu {
+                            ForEach(["en", "es", "fr", "de", "pt"], id: \.self) { code in
+                                Button(languageName(code)) {
+                                    Task { await viewModel.translateWithLLM(to: code) }
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "languages")
+                                .font(.bodyDefault)
+                                .foregroundColor(.textSecondary)
+                                .frame(width: 36, height: 36)
+                        }
+                        .disabled(TranslationService.shared.isTranslating || viewModel.transcriptionText.isEmpty)
+                        .help(localizationManager.text("translate.menu", fallback: "Traducir la transcripción"))
                     }
                     
                     // Export Menu
@@ -1068,6 +1169,7 @@ struct EnhancedWaveformBars: View {
 // MARK: - Transcript Content
 struct TranscriptContentView: View {
     @EnvironmentObject var viewModel: TranscriptionViewModel
+    @EnvironmentObject var localizationManager: LocalizationManager
     @Environment(\.responsiveMetrics) private var metrics
     let searchText: String
     let showTimestamps: Bool
@@ -1136,7 +1238,25 @@ struct TranscriptContentView: View {
                 ScrollView {
                     // Glass panel container
                     VStack(alignment: .leading, spacing: 0) {
-                        if let result = viewModel.transcriptionResult, !result.segments.isEmpty {
+                        // Full-text translation view (when toggled on)
+                        if let translated = viewModel.viewingTranslationText {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(localizationManager.text("translate.translatedTo", fallback: "Traducción")
+                                     + " (" + (viewModel.viewingTranslationLang ?? "") + ")")
+                                    .font(.labelDefault)
+                                    .foregroundColor(.textSecondary)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Capsule().fill(Color.tagBlue.opacity(0.15)))
+                                Text(translated)
+                                    .font(.transcriptBody)
+                                    .foregroundColor(.textPrimary)
+                                    .lineSpacing(8)
+                                    .textSelection(.enabled)
+                            }
+                            .padding(28)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        } else if let result = viewModel.transcriptionResult, !result.segments.isEmpty {
                             let visible = viewModel.visibleSegments
                             let segmentCount = visible.count
 
