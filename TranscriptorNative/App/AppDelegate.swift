@@ -30,9 +30,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+        
+        CLIServer.shared.start()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        CLIServer.shared.stop()
         AppLogger.shared.log("Application terminating", category: .app)
     }
     

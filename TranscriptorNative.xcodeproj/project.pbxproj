@@ -45,6 +45,8 @@
 		EA6384302F2AB40300FC5152 /* deep-filter in Resources */ = {isa = PBXBuildFile; fileRef = EA6384312F2AB40300FC5152 /* deep-filter */; };
 		EA6384342F2AB50000FC5152 /* demucs-bundled in Resources */ = {isa = PBXBuildFile; fileRef = EA6384352F2AB50000FC5152 /* demucs-bundled */; };
 		EA7000000000000001 /* FileInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000002 /* FileInputService.swift */; };
+		EA7100000000000001 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000003 /* CLIProtocol.swift */; };
+		EA7100000000000002 /* CLIServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7100000000000004 /* CLIServer.swift */; };
 		EA7000000000000003 /* LocalizationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7000000000000004 /* LocalizationHelpers.swift */; };
 		EA8000000000000001 /* ResponsiveMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8000000000000002 /* ResponsiveMetrics.swift */; };
 		EA9000000000000001 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA9000000000000002 /* AppLanguage.swift */; };
@@ -95,6 +97,8 @@
 		EA6384312F2AB40300FC5152 /* deep-filter */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "deep-filter"; sourceTree = "<group>"; };
 		EA6384352F2AB50000FC5152 /* demucs-bundled */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "demucs-bundled"; sourceTree = "<group>"; };
 		EA7000000000000002 /* FileInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileInputService.swift; sourceTree = "<group>"; };
+		EA7100000000000003 /* CLIProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIProtocol.swift; sourceTree = "<group>"; };
+		EA7100000000000004 /* CLIServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIServer.swift; sourceTree = "<group>"; };
 		EA7000000000000004 /* LocalizationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationHelpers.swift; sourceTree = "<group>"; };
 		EA8000000000000002 /* ResponsiveMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponsiveMetrics.swift; sourceTree = "<group>"; };
 		EA9000000000000002 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
@@ -223,6 +227,8 @@
 				100000000000002A /* TranscriptionStorage.swift */,
 				EA1000000000000F /* URLTranscriptionService.swift */,
 				EA7000000000000002 /* FileInputService.swift */,
+				EA7100000000000003 /* CLIProtocol.swift */,
+				EA7100000000000004 /* CLIServer.swift */,
 				EA7000000000000004 /* LocalizationHelpers.swift */,
 				EA9000000000000006 /* LocalizationManager.swift */,
 				EAB000000000000002 /* ExportDocument.swift */,
@@ -390,6 +396,8 @@
 				EA1000000000000E /* URLTranscriptionService.swift in Sources */,
 				EA10000000000010 /* URLInputSheet.swift in Sources */,
 				EA7000000000000001 /* FileInputService.swift in Sources */,
+				EA7100000000000001 /* CLIProtocol.swift in Sources */,
+				EA7100000000000002 /* CLIServer.swift in Sources */,
 				EA7000000000000003 /* LocalizationHelpers.swift in Sources */,
 				EA8000000000000001 /* ResponsiveMetrics.swift in Sources */,
 				EA9000000000000001 /* AppLanguage.swift in Sources */,
