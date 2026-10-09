@@ -98,12 +98,15 @@ class DependencyManager: ObservableObject {
                 id: "whisper-cpp",
                 name: "whisper.cpp",
                 description: "Motor de transcripción nativo con CoreML",
-                checkCommand: "test -f \"\(whisperCppDir.path)/build/bin/whisper-cli\"",
+                checkCommand: "test -f \"\(whisperCppDir.path)/build/bin/whisper-cli\" && grep -Eq \"WHISPER_COREML_ALLOW_FALLBACK:BOOL=(ON|1)\" \"\(whisperCppDir.path)/build/CMakeCache.txt\"",
                 installCommands: [
                     "rm -rf \"\(whisperCppDir.path)\"",
                     "git clone https://github.com/ggerganov/whisper.cpp.git \"\(whisperCppDir.path)\"",
-                    // Build with CoreML support for Neural Engine acceleration
-                    "cd \"\(whisperCppDir.path)\" && cmake -B build -DWHISPER_COREML=1",
+                    // Build with CoreML support for Neural Engine acceleration.
+                    // WHISPER_COREML_ALLOW_FALLBACK is required: without it whisper_init_state
+                    // returns nullptr when the CoreML encoder is missing (e.g. renamed to .off
+                    // when useCoreML is off), and every transcription exits with code 3.
+                    "cd \"\(whisperCppDir.path)\" && cmake -B build -DWHISPER_COREML=1 -DWHISPER_COREML_ALLOW_FALLBACK=1",
                     "cd \"\(whisperCppDir.path)\" && cmake --build build --config Release -j"
                 ]
             )
