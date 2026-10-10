@@ -1197,6 +1197,108 @@
         }
       }
     },
+    "urlInput.error.videoPrivate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This video is private. It can only be viewed by its owner."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este vídeo es privado. Solo su propietario puede verlo."
+          }
+        }
+      }
+    },
+    "urlInput.error.videoRegionBlocked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This video is not available in your region."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este vídeo no está disponible en tu región."
+          }
+        }
+      }
+    },
+    "urlInput.error.videoAgeRestricted" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This video is age-restricted and requires sign-in to watch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este vídeo tiene restricción de edad y requiere iniciar sesión."
+          }
+        }
+      }
+    },
+    "urlInput.error.videoUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The video does not exist or has been removed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El vídeo no existe o fue eliminado."
+          }
+        }
+      }
+    },
+    "urlInput.error.cookiesRequired" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube requires sign-in for this video. Export your cookies and retry."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YouTube requiere iniciar sesión para este vídeo. Exporta tus cookies y reintenta."
+          }
+        }
+      }
+    },
+    "urlInput.error.subtitlesDisabled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The video has no subtitles and the audio download failed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El vídeo no tiene subtítulos y la descarga de audio falló."
+          }
+        }
+      }
+    },
     "¡Todo en orden!" : {
       "extractionState" : "manual",
       "localizations" : {

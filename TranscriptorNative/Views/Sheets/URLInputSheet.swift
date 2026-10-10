@@ -656,6 +656,18 @@ struct URLInputSheet: View {
             return String(format: localizationManager.text("urlInput.error.dependencyMissing", fallback: "Missing dependency: %@"), dep)
         case .cancelled:
             return localizationManager.text("urlInput.error.cancelled", fallback: "The operation was cancelled.")
+        case .videoPrivate:
+            return localizationManager.text("urlInput.error.videoPrivate", fallback: "This video is private. It can only be viewed by its owner.")
+        case .videoRegionBlocked:
+            return localizationManager.text("urlInput.error.videoRegionBlocked", fallback: "This video is not available in your region.")
+        case .videoAgeRestricted:
+            return localizationManager.text("urlInput.error.videoAgeRestricted", fallback: "This video is age-restricted and requires sign-in to watch.")
+        case .videoUnavailable:
+            return localizationManager.text("urlInput.error.videoUnavailable", fallback: "The video does not exist or has been removed.")
+        case .cookiesRequired:
+            return localizationManager.text("urlInput.error.cookiesRequired", fallback: "YouTube requires sign-in for this video. Export your cookies and retry.")
+        case .subtitlesDisabled:
+            return localizationManager.text("urlInput.error.subtitlesDisabled", fallback: "The video has no subtitles and the audio download failed.")
         }
     }
     

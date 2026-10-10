@@ -34,6 +34,13 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
         case pythonNotFound
         case dependencyMissing(String)
         case cancelled
+        // Errores granulares de YouTube (#14)
+        case videoPrivate
+        case videoRegionBlocked
+        case videoAgeRestricted
+        case videoUnavailable
+        case cookiesRequired
+        case subtitlesDisabled
 
         private var isSpanishUI: Bool {
             UserDefaults.standard.string(forKey: "app_ui_language") == "es"
@@ -61,8 +68,63 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
                 return localized("Dependencia faltante: \(dep)", "Missing dependency: \(dep)")
             case .cancelled:
                 return localized("Operación cancelada", "Operation cancelled")
+            case .videoPrivate:
+                return localized("Este vídeo es privado", "This video is private")
+            case .videoRegionBlocked:
+                return localized("Este vídeo no está disponible en tu región", "This video is not available in your region")
+            case .videoAgeRestricted:
+                return localized("Este vídeo tiene restricción de edad", "This video is age-restricted")
+            case .videoUnavailable:
+                return localized("El vídeo no existe o fue eliminado", "The video does not exist or was removed")
+            case .cookiesRequired:
+                return localized("YouTube requiere iniciar sesión para este vídeo", "YouTube requires sign-in for this video")
+            case .subtitlesDisabled:
+                return localized("El vídeo no tiene subtítulos y no se pudo descargar el audio", "No subtitles available and audio download failed")
             }
         }
+    }
+    
+    // MARK: - #14 — Clasificación de errores de yt-dlp/Python
+    
+    /// Clasifica la salida de yt-dlp/Python en un error concreto.
+    /// Devuelve `nil` si no hay coincidencia (el llamador decide el fallback).
+    static func classifyYouTubeError(output: String) -> TranscriptionError? {
+        let o = output.lowercased()
+        if o.contains("private video") || o.contains("video is private") || o.contains("este vídeo es privado") {
+            return .videoPrivate
+        }
+        if o.contains("uploader has not made this video available")
+            || o.contains("not available in your country")
+            || o.contains("not available in your region") {
+            return .videoRegionBlocked
+        }
+        if (o.contains("age") && o.contains("restricted")) || o.contains("sign in to confirm your age") {
+            return .videoAgeRestricted
+        }
+        if o.contains("video unavailable") || o.contains("video is unavailable")
+            || o.contains("has been removed") || o.contains("does not exist")
+            || o.contains("no se encontró") || o.contains("404") {
+            return .videoUnavailable
+        }
+        if o.contains("sign in to confirm") || o.contains("use --cookies") || o.contains("confirm your identity")
+            || (o.contains("cookies") && o.contains("required")) {
+            return .cookiesRequired
+        }
+        if o.contains("no subtitles") || o.contains("no subtitle") || o.contains("subtitles are disabled")
+            || o.contains("subtitles disabled") {
+            return .subtitlesDisabled
+        }
+        return nil
+    }
+    
+    /// Como `classifyYouTubeError` pero con fallback genérico; el mensaje
+    /// conserva la salida de yt-dlp truncada a 200 chars para diagnóstico.
+    static func classifyYtDlpError(output: String, exitCode: Int32) -> TranscriptionError {
+        if let classified = classifyYouTubeError(output: output) {
+            return classified
+        }
+        let detail = output.prefix(200).trimmingCharacters(in: .whitespacesAndNewlines)
+        return .downloadFailed(detail.isEmpty ? "yt-dlp failed (exit \(exitCode))" : String(detail))
     }
     
     // MARK: - Python Script Response
@@ -186,13 +248,21 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
             }
         }
         
-        // All methods failed
+        // All methods failed — #14: si el mensaje de Python clasifica, usarlo
+        let pythonMessage = result.message ?? ""
         await MainActor.run {
-            self.error = .noTranscriptAvailable
-            self.statusMessage = self.localized(
-                "No hay transcripción disponible para este vídeo",
-                "No transcription is available for this video"
-            )
+            if let classified = URLTranscriptionService.classifyYouTubeError(output: pythonMessage) {
+                self.error = classified
+                self.statusMessage = classified.errorDescription
+                    ?? self.localized("No hay transcripción disponible para este vídeo",
+                                     "No transcription is available for this video")
+            } else {
+                self.error = .noTranscriptAvailable
+                self.statusMessage = self.localized(
+                    "No hay transcripción disponible para este vídeo",
+                    "No transcription is available for this video"
+                )
+            }
             self.currentPhase = .failed
             self.isProcessing = false
         }
@@ -314,9 +384,7 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
                     if exitCode != 0 && exitCode != 15 {
                         AppLogger.shared.log("❌ [URLService] yt-dlp failed: \(outputString)", level: .error, category: .transcription)
                         Task { @MainActor in
-                            self.error = .downloadFailed(
-                                self.localized("Error al descargar el audio", "Failed to download audio")
-                            )
+                            self.error = URLTranscriptionService.classifyYtDlpError(output: outputString, exitCode: exitCode)
                             self.currentPhase = .failed
                             self.isProcessing = false
                         }
@@ -350,9 +418,8 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
                         } else {
                             AppLogger.shared.log("❌ [URLService] Downloaded file not found", level: .error, category: .transcription)
                             Task { @MainActor in
-                                self.error = .downloadFailed(
-                                    self.localized("No se encontró el archivo descargado", "Downloaded file not found")
-                                )
+                                self.error = URLTranscriptionService.classifyYouTubeError(output: outputString)
+                                    ?? .downloadFailed(self.localized("No se encontró el archivo descargado", "Downloaded file not found"))
                                 self.currentPhase = .failed
                                 self.isProcessing = false
                             }
