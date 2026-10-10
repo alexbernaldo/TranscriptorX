@@ -11,8 +11,15 @@ struct TranscriptionSegment: Identifiable, Codable {
     var isDeleted: Bool
     var originalText: String?    // non-nil after first text edit (stores original)
     var editHistory: [String]    // previous versions (oldest -> newest)
+    var words: [WordTimestamp]?  // nil = sin datos (JSON antiguo o flag no usado)
     
-    init(id: UUID = UUID(), startTime: TimeInterval, endTime: TimeInterval, text: String, speaker: Int? = nil, isFavorite: Bool = false, isDeleted: Bool = false, originalText: String? = nil, editHistory: [String] = []) {
+    struct WordTimestamp: Codable, Equatable {
+        let start: TimeInterval   // segundos
+        let end: TimeInterval
+        let text: String          // incluye el espacio inicial si lo traía el token
+    }
+    
+    init(id: UUID = UUID(), startTime: TimeInterval, endTime: TimeInterval, text: String, speaker: Int? = nil, isFavorite: Bool = false, isDeleted: Bool = false, originalText: String? = nil, editHistory: [String] = [], words: [WordTimestamp]? = nil) {
         self.id = id
         self.startTime = startTime
         self.endTime = endTime
@@ -22,6 +29,7 @@ struct TranscriptionSegment: Identifiable, Codable {
         self.isDeleted = isDeleted
         self.originalText = originalText
         self.editHistory = editHistory
+        self.words = words
     }
     
     // Backward-compatible decoding: old JSON won't have new fields
@@ -36,6 +44,7 @@ struct TranscriptionSegment: Identifiable, Codable {
         isDeleted = try container.decodeIfPresent(Bool.self, forKey: .isDeleted) ?? false
         originalText = try container.decodeIfPresent(String.self, forKey: .originalText)
         editHistory = try container.decodeIfPresent([String].self, forKey: .editHistory) ?? []
+        words = try container.decodeIfPresent([WordTimestamp].self, forKey: .words)
     }
     
     /// Create a copy with updated text, preserving original and history.
@@ -49,7 +58,8 @@ struct TranscriptionSegment: Identifiable, Codable {
             isFavorite: self.isFavorite,
             isDeleted: self.isDeleted,
             originalText: self.originalText,
-            editHistory: self.editHistory
+            editHistory: self.editHistory,
+            words: self.words
         )
         guard newText != self.text else { return copy }
         if copy.originalText == nil {

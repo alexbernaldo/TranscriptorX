@@ -1269,6 +1269,68 @@ struct TranscriptContentView: View {
         return (1 - opacity) * 20  // Slide up as it fades in
     }
     
+    @ViewBuilder
+    private func segmentRowView(index: Int, segment: TranscriptionSegment, totalCount: Int) -> some View {
+        let activateCb: () -> Void = {
+            viewModel.setActiveSegmentForActions(segment.id)
+        }
+        let tapCb: () -> Void = {
+            viewModel.seek(to: segment.startTime)
+            if !viewModel.isPlaying { viewModel.togglePlayback() }
+        }
+        let textEditCb: (String) -> Void = { newText in
+            viewModel.updateSegmentText(segmentId: segment.id, newText: newText)
+        }
+        let copyCb: (TranscriptionViewModel.SegmentCopyMode) -> Void = { mode in
+            viewModel.copySegment(id: segment.id, mode: mode)
+        }
+        let favCb: () -> Void = {
+            viewModel.toggleSegmentFavorite(id: segment.id)
+        }
+        let restoreCb: () -> Void = {
+            viewModel.restoreOriginalSegmentText(id: segment.id)
+        }
+        let undoCb: () -> Void = {
+            viewModel.undoLastSegmentEdit(id: segment.id)
+        }
+        let deleteCb: () -> Void = {
+            viewModel.deleteSegment(id: segment.id)
+        }
+        let onSplitCb: () -> Void = {
+            viewModel.splitSegment(segmentId: segment.id, at: viewModel.currentTime)
+        }
+        let onMergeNextCb: () -> Void = {
+            viewModel.mergeWithNext(segmentId: segment.id)
+        }
+        let onAdjustStartCb: () -> Void = {
+            viewModel.adjustSegmentStart(segmentId: segment.id, to: viewModel.currentTime)
+        }
+        CinemaSegmentRow(
+            segment: segment,
+            isFirst: index == 0,
+            searchText: searchText,
+            showTimestamps: displayTimestamps,
+            isActive: segment.id == activeSegmentId,
+            isSearchMatch: searchMatches.contains(segment.id),
+            isEditMode: viewModel.isEditMode,
+            onActivate: activateCb,
+            onTap: tapCb,
+            onTextEdit: textEditCb,
+            onCopy: copyCb,
+            onToggleFavorite: favCb,
+            onRestoreOriginal: restoreCb,
+            onUndoLastEdit: undoCb,
+            onDelete: deleteCb,
+            onSplit: onSplitCb,
+            onMergeNext: onMergeNextCb,
+            onAdjustStart: onAdjustStartCb,
+            playbackTime: viewModel.currentTime
+        )
+        .id(segment.id)
+        .opacity(cascadeOpacity(for: index, totalCount: totalCount))
+        .offset(y: cascadeOffset(for: index, totalCount: totalCount))
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
@@ -1277,9 +1339,10 @@ struct TranscriptContentView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         // Full-text translation view (when toggled on)
                         if let translated = viewModel.viewingTranslationText {
+                            let caption = localizationManager.text("translate.translatedTo", fallback: "Traducción")
+                                + " (" + (viewModel.viewingTranslationLang ?? "") + ")"
                             VStack(alignment: .leading, spacing: 12) {
-                                Text(localizationManager.text("translate.translatedTo", fallback: "Traducción")
-                                     + " (" + (viewModel.viewingTranslationLang ?? "") + ")")
+                                Text(caption)
                                     .font(.labelDefault)
                                     .foregroundColor(.textSecondary)
                                     .padding(.horizontal, 10)
@@ -1303,52 +1366,7 @@ struct TranscriptContentView: View {
                                 if displayTimestamps || viewModel.isEditMode {
                                     VStack(alignment: .leading, spacing: 0) {
                                         ForEach(Array(visible.enumerated()), id: \.element.id) { index, segment in
-                                            CinemaSegmentRow(
-                                                segment: segment,
-                                                isFirst: index == 0,
-                                                searchText: searchText,
-                                                showTimestamps: displayTimestamps,
-                                                isActive: segment.id == activeSegmentId,
-                                                isSearchMatch: searchMatches.contains(segment.id),
-                                                isEditMode: viewModel.isEditMode,
-                                                onActivate: {
-                                                    viewModel.setActiveSegmentForActions(segment.id)
-                                                },
-                                                onTap: {
-                                                    viewModel.seek(to: segment.startTime)
-                                                    if !viewModel.isPlaying { viewModel.togglePlayback() }
-                                                },
-                                                onTextEdit: { newText in
-                                                    viewModel.updateSegmentText(segmentId: segment.id, newText: newText)
-                                                },
-                                                onCopy: { mode in
-                                                    viewModel.copySegment(id: segment.id, mode: mode)
-                                                },
-                                                onToggleFavorite: {
-                                                    viewModel.toggleSegmentFavorite(id: segment.id)
-                                                },
-                                                onRestoreOriginal: {
-                                                    viewModel.restoreOriginalSegmentText(id: segment.id)
-                                                },
-                                                onUndoLastEdit: {
-                                                    viewModel.undoLastSegmentEdit(id: segment.id)
-                                                },
-                                                onDelete: {
-                                                    viewModel.deleteSegment(id: segment.id)
-                                                },
-                                                onSplit: {
-                                                    viewModel.splitSegment(segmentId: segment.id, at: viewModel.currentTime)
-                                                },
-                                                onMergeNext: {
-                                                    viewModel.mergeWithNext(segmentId: segment.id)
-                                                },
-                                                onAdjustStart: {
-                                                    viewModel.adjustSegmentStart(segmentId: segment.id, to: viewModel.currentTime)
-                                                }
-                                            )
-                                            .id(segment.id)
-                                            .opacity(cascadeOpacity(for: index, totalCount: segmentCount))
-                                            .offset(y: cascadeOffset(for: index, totalCount: segmentCount))
+                                            segmentRowView(index: index, segment: segment, totalCount: segmentCount)
                                         }
                                     }
                                     .transition(.identity) // ZStack handles it
@@ -1727,6 +1745,7 @@ struct CinemaSegmentRow: View {
     let onSplit: (() -> Void)?          // nil → "Dividir aquí" oculto
     let onMergeNext: (() -> Void)?      // nil → "Fusionar con el siguiente" oculto
     let onAdjustStart: (() -> Void)?    // nil → "Ajustar inicio al playhead" oculto
+    var playbackTime: TimeInterval = 0   // solo la fila activa re-renderiza con cambios
     
     @State private var isHovered = false
     @State private var isEditing = false
@@ -1739,6 +1758,19 @@ struct CinemaSegmentRow: View {
 
     private var isSpanishUI: Bool {
         localizationManager.appLanguage == .es
+    }
+    
+    /// Read-mode text with the currently-playing word highlighted (needs `segment.words` + active row).
+    private var highlightedReadText: Text {
+        guard let words = segment.words, isActive,
+              let w = words.first(where: { playbackTime >= $0.start && playbackTime < $0.end })
+        else { return Text(segment.text) }
+        var attr = AttributedString(segment.text)
+        if let range = attr.range(of: w.text) {
+            attr[range].foregroundColor = Color.accentPrimary
+            attr[range].font = Font.bodyXLarge.weight(.semibold)
+        }
+        return Text(attr)
     }
 
     private func localized(_ spanish: String, _ english: String) -> String {
@@ -1824,8 +1856,9 @@ struct CinemaSegmentRow: View {
                         isTextFocused = true
                     }
             } else {
-                // Read mode: row click should play this segment
-                Text(segment.text)
+                // Read mode: row click should play this segment;
+                // active row + word-level data → highlight the word at playbackTime
+                highlightedReadText
                     .font(.bodyXLarge)
                     .foregroundColor(textColor)
                     .lineSpacing(8)

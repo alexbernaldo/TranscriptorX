@@ -827,7 +827,7 @@ class TranscriptionService: NSObject, ObservableObject {
                     "-f", file.path,
                     "-l", effectiveLanguage,
                     "-pp",   // Print progress
-                    "-oj",   // Output JSON for structured parsing with timestamps
+                    "-ojf",  // Output JSON with token-level timestamps
                 ]
                 
                 // Timestamps - always enabled for interactive viewer
@@ -1077,11 +1077,50 @@ class TranscriptionService: NSObject, ObservableObject {
         struct WhisperSegment: Codable {
             let timestamps: WhisperTimestamps
             let text: String
+            let tokens: [WhisperToken]?     // solo presente con -ojf
+        }
+        
+        struct WhisperToken: Codable {
+            let text: String
+            let offsets: WhisperOffsets?
+            struct WhisperOffsets: Codable {
+                let from: Int   // ms
+                let to: Int
+            }
         }
         
         struct WhisperTimestamps: Codable {
             let from: String
             let to: String
+        }
+        
+        // Tokens de whisper.cpp incluyen el espacio inicial (" hola") — un token
+        // que empieza por espacio abre palabra nueva. Filtra tokens especiales [X].
+        func words(from tokens: [WhisperToken]) -> [TranscriptionSegment.WordTimestamp] {
+            var result: [TranscriptionSegment.WordTimestamp] = []
+            var current = ""
+            var startMS = 0
+            var lastEndMS = 0
+            for t in tokens {
+                guard let off = t.offsets,
+                      !(t.text.hasPrefix("[") && t.text.hasSuffix("]")) else { continue }
+                let beginsWord = t.text.hasPrefix(" ") || (result.isEmpty && current.isEmpty)
+                if beginsWord && !current.isEmpty {
+                    result.append(TranscriptionSegment.WordTimestamp(
+                        start: Double(startMS) / 1000.0,
+                        end: Double(lastEndMS) / 1000.0, text: current))
+                    current = ""
+                }
+                if current.isEmpty { startMS = off.from }
+                current += t.text
+                lastEndMS = off.to
+            }
+            if !current.isEmpty {
+                result.append(TranscriptionSegment.WordTimestamp(
+                    start: Double(startMS) / 1000.0,
+                    end: Double(lastEndMS) / 1000.0, text: current))
+            }
+            return result
         }
         
         let decoder = JSONDecoder()
@@ -1111,7 +1150,8 @@ class TranscriptionService: NSObject, ObservableObject {
                     startTime: startTime,
                     endTime: endTime,
                     text: text,
-                    speaker: speaker
+                    speaker: speaker,
+                    words: segment.tokens.map { words(from: $0) }
                 ))
             }
         }
