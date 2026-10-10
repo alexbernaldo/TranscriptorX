@@ -8,6 +8,10 @@ struct TranscriptorApp: App {
     @StateObject private var modelManager = ModelManager.shared
     @StateObject private var localizationManager = LocalizationManager()
     
+    // Menú de barra (#10)
+    @AppStorage("showMenuBarExtra") var showMenuBarExtra = true
+    @AppStorage("keepRunningInBackground") var keepRunningInBackground = true
+    
     // Dependency check state - passed to MasterView via ContentView
     @State private var dependencyCheckComplete = false
     
@@ -121,6 +125,17 @@ struct TranscriptorApp: App {
                 }
             }
         }
+        
+        // Menú de barra (#10): DESPUÉS de WindowGroup (con estrategia `automatic`
+        // solo la primera escena se presenta sola al no haber estado guardado).
+        MenuBarExtra(isInserted: $showMenuBarExtra) {
+            MenuBarContentView()
+                .environmentObject(transcriptionVM)
+                .environmentObject(localizationManager)
+        } label: {
+            Image(systemName: "waveform")
+        }
+        .menuBarExtraStyle(.window)
         
         Settings {
             PreferencesSheet()

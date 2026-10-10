@@ -230,6 +230,8 @@ private struct GeneralPreferencesView: View {
     @ObservedObject private var watchedFolders = WatchedFoldersManager.shared
     @Environment(\.responsiveMetrics) private var metrics
     @State private var retentionDays = UserDefaults.standard.object(forKey: "trashRetentionDays") as? Int ?? 30
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
+    @AppStorage("keepRunningInBackground") private var keepRunningInBackground = true
     
     private var appLanguageBinding: Binding<AppLanguage> {
         Binding(
@@ -504,6 +506,27 @@ private struct GeneralPreferencesView: View {
                 .onChange(of: viewModel.settings.autoDetectMeetings) { enabled in
                     MeetingWatcherService.shared.start(enabled: enabled)   // #7
                 }
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                // Menú de barra (#10)
+                NativeToggleRow(
+                    title: localizationManager.text("settings.menubar.show.title", fallback: "Mostrar en la barra de menú"),
+                    subtitle: localizationManager.text("settings.menubar.show.subtitle", fallback: "Acceso rápido a grabación y cola"),
+                    icon: "menubar.rectangle",
+                    iconColor: .blue,
+                    isOn: $showMenuBarExtra
+                )
+                
+                NativeToggleRow(
+                    title: localizationManager.text("settings.menubar.background.title", fallback: "Mantener activo al cerrar la ventana"),
+                    subtitle: localizationManager.text("settings.menubar.background.subtitle", fallback: "La app sigue en segundo plano con el ícono del menú"),
+                    icon: "power",
+                    iconColor: .green,
+                    isOn: $keepRunningInBackground,
+                    disabled: !showMenuBarExtra
+                )
             }
             
             // Watched Folders Section

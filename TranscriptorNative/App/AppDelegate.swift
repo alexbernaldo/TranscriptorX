@@ -11,6 +11,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Respect system appearance (light/dark) — cinema views override locally
         
+        // Claves de la app con defaults (#10): menú de barra + segundo plano
+        UserDefaults.standard.register(defaults: [
+            "showMenuBarExtra": true,
+            "keepRunningInBackground": true
+        ])
+        
         // Initialize logging
         AppLogger.shared.log("Application launched", category: .app)
         
@@ -65,7 +71,47 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return true
+        // #10: con menú de barra + segundo plano activos, cerrar la ventana
+        // no termina la app (registro de defaults en applicationDidFinishLaunching).
+        let menubar = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
+        let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground")
+        return !(menubar && keepRunning)
+    }
+    
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // #10 (macOS 27): cerrar la ventana principal o alternar el panel del menú
+        // postea un kAEQuit (vía _handleAEQuit) que llega aquí. Con el menú de barra
+        // activo y sin ventana principal visible, ese quit automático se cancela;
+        // los quits explícitos (Salir con ratón, Cmd+Q con teclado) traen evento de
+        // teclado/ratón y pasan. Finder/menú Apple con ventana abierta también pasa
+        // (visibleWindow = true).
+        let menubar = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
+        let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground")
+        let explicitUserAction: Bool
+        if let ev = NSApp.currentEvent {
+            switch ev.type {
+            case .keyDown, .leftMouseDown, .rightMouseDown, .leftMouseUp, .rightMouseUp:
+                explicitUserAction = true
+            default:
+                explicitUserAction = false
+            }
+        } else {
+            explicitUserAction = false
+        }
+        let visibleNormalWindow = NSApp.windows.contains {
+            $0.isVisible && $0.level != .statusBar
+        }
+        AppLogger.shared.log("applicationShouldTerminate consulted", category: .app, metadata: [
+            "menubar": "\(menubar)",
+            "keepRunning": "\(keepRunning)",
+            "eventType": "\(NSApp.currentEvent.map { String(describing: $0.type) } ?? "nil")",
+            "explicit": "\(explicitUserAction)",
+            "visibleWindow": "\(visibleNormalWindow)"
+        ])
+        if menubar && keepRunning && !explicitUserAction && !visibleNormalWindow {
+            return .terminateCancel
+        }
+        return .terminateNow
     }
     
     // MARK: - Recovery Notification

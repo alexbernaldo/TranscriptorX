@@ -266,6 +266,13 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .showRecorder)) { _ in
                 showingRecorder = true
             }
+            // Menú de barra (#10): abrir historial / ajustes
+            .onReceive(NotificationCenter.default.publisher(for: .showLibrary)) { _ in
+                showLibraryDrawer = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .showSettings)) { _ in
+                showSettingsSheet = true
+            }
         }
         // Meeting detected (#7): banner arriba-centro, auto-hide a los 15 s
         .onReceive(NotificationCenter.default.publisher(for: .meetingDetected)) { notification in
@@ -376,6 +383,8 @@ extension Notification.Name {
     static let showNewTranscription = Notification.Name("showNewTranscription")
     static let showRecorder = Notification.Name("showRecorder")
     static let meetingDetected = Notification.Name("meetingDetected")   // #7
+    static let showLibrary = Notification.Name("showLibrary")           // #10
+    static let showSettings = Notification.Name("showSettings")         // #10
 }
 
 #if DEBUG

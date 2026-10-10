@@ -30,6 +30,7 @@
 		110000000000001F /* ModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000001F /* ModelManager.swift */; };
 		1100000000000020 /* AppStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000020 /* AppStates.swift */; };
 		1100000000000021 /* RecoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000021 /* RecoveryViews.swift */; };
+		1100000000000042 /* MenuBarContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000042 /* MenuBarContentView.swift */; };
 		1100000000000024 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000025 /* TopBarView.swift */; };
 		1100000000000025 /* BottomDockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000026 /* BottomDockView.swift */; };
 		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
@@ -95,6 +96,7 @@
 		100000000000001F /* ModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManager.swift; sourceTree = "<group>"; };
 		1000000000000020 /* AppStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStates.swift; sourceTree = "<group>"; };
 		1000000000000021 /* RecoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryViews.swift; sourceTree = "<group>"; };
+		1000000000000042 /* MenuBarContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContentView.swift; sourceTree = "<group>"; };
 		1000000000000025 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
 		1000000000000026 /* BottomDockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomDockView.swift; sourceTree = "<group>"; };
 		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
@@ -218,6 +220,7 @@
 				EA04EB272F32B46E0093692F /* JobQueuePanel.swift */,
 				100000000000000E /* Components.swift */,
 				1000000000000021 /* RecoveryViews.swift */,
+				1000000000000042 /* MenuBarContentView.swift */,
 				1000000000000025 /* TopBarView.swift */,
 				1000000000000026 /* BottomDockView.swift */,
 			);
@@ -515,6 +518,7 @@
 				1100000000000020 /* AppStates.swift in Sources */,
 				EA04EB282F32B46E0093692F /* JobQueuePanel.swift in Sources */,
 				1100000000000021 /* RecoveryViews.swift in Sources */,
+				1100000000000042 /* MenuBarContentView.swift in Sources */,
 				1100000000000024 /* TopBarView.swift in Sources */,
 				1100000000000025 /* BottomDockView.swift in Sources */,
 				EA1000000000000C /* MasterView.swift in Sources */,
