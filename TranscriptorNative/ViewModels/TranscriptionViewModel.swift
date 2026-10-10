@@ -67,6 +67,7 @@ class TranscriptionViewModel: ObservableObject {
     // Library
     @Published var transcriptions: [Transcription] = []
     @Published var historySearchResults: [Transcription]?   // nil = sin búsqueda activa
+    @Published var trashTranscriptions: [Transcription] = []
     @Published var selectedTranscription: Transcription? {
         didSet {
             if oldValue?.id != selectedTranscription?.id { viewingTranslationLang = nil }
@@ -198,8 +199,8 @@ class TranscriptionViewModel: ObservableObject {
     
     func deleteTranscription(_ transcription: Transcription) {
         transcriptions.removeAll { $0.id == transcription.id }
-        storage.deleteTranscription(id: transcription.id)
-        storage.deleteAudioFile(for: transcription.id)
+        storage.deleteTranscription(id: transcription.id)   // SOFT delete → papelera (#18, audio intacto)
+        showToast(localized("Movida a la papelera", "Moved to trash"), type: .info)
         
         // Clear selection if deleted
         if selectedTranscription?.id == transcription.id {
@@ -207,6 +208,24 @@ class TranscriptionViewModel: ObservableObject {
             transcriptionResult = nil
             transcriptionText = ""
         }
+    }
+    
+    // MARK: - Trash (#18)
+    
+    func loadTrash() {
+        trashTranscriptions = storage.loadTrash()
+    }
+    
+    func restoreFromTrash(_ transcription: Transcription) {
+        storage.restoreTranscription(id: transcription.id)
+        loadTranscriptions()
+        showToast(localized("Restaurada", "Restored"), type: .success)
+    }
+    
+    func deleteForever(_ transcription: Transcription) {
+        storage.deleteForever(id: transcription.id)
+        loadTrash()
+        showToast(localized("Eliminada definitivamente", "Deleted forever"), type: .info)
     }
     
     /// Clear current transcription and return to home state

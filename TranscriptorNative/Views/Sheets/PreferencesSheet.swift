@@ -229,6 +229,7 @@ private struct GeneralPreferencesView: View {
     @EnvironmentObject var localizationManager: LocalizationManager
     @ObservedObject private var watchedFolders = WatchedFoldersManager.shared
     @Environment(\.responsiveMetrics) private var metrics
+    @State private var retentionDays = UserDefaults.standard.object(forKey: "trashRetentionDays") as? Int ?? 30
     
     private var appLanguageBinding: Binding<AppLanguage> {
         Binding(
@@ -456,6 +457,39 @@ private struct GeneralPreferencesView: View {
                     range: 0...0.5,
                     step: 0.05
                 )
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(localizationManager.text("preferences.trash.retention",
+                                                      fallback: "Vaciar papelera automáticamente"))
+                            .font(.bodyMedium)
+                            .foregroundColor(.textPrimary)
+                        Text(localizationManager.text("preferences.trash.retention.subtitle",
+                                                      fallback: "Las transcripciones de la papelera se eliminan tras"))
+                            .font(.caption)
+                            .foregroundColor(.textTertiary)
+                    }
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { [7, 14, 30, 90].contains(retentionDays) ? retentionDays : 30 },
+                        set: {
+                            retentionDays = $0
+                            UserDefaults.standard.set($0, forKey: "trashRetentionDays")
+                        }
+                    )) {
+                        Text(localizationManager.text("preferences.trash.days7", fallback: "7 días")).tag(7)
+                        Text(localizationManager.text("preferences.trash.days14", fallback: "14 días")).tag(14)
+                        Text(localizationManager.text("preferences.trash.days30", fallback: "30 días")).tag(30)
+                        Text(localizationManager.text("preferences.trash.days90", fallback: "90 días")).tag(90)
+                    }
+                    .labelsHidden()
+                    .frame(width: 110)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
             
             // Watched Folders Section

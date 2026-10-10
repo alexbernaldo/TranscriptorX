@@ -180,6 +180,7 @@ struct LibraryDrawerView: View {
     
     @State private var searchText = ""
     @State private var hoveredId: UUID?
+    @State private var trashMode = false
     
     var filteredTranscriptions: [Transcription] {
         viewModel.historySearchResults ?? viewModel.transcriptions
@@ -194,10 +195,21 @@ struct LibraryDrawerView: View {
                 .background(Color.borderSubtle)
             
             // Content
-            if viewModel.transcriptions.isEmpty {
+            if trashMode {
+                if viewModel.trashTranscriptions.isEmpty {
+                    emptyState
+                } else {
+                    transcriptionList
+                }
+            } else if viewModel.transcriptions.isEmpty {
                 emptyState
             } else {
                 transcriptionList
+            }
+        }
+        .onChange(of: trashMode) { _ in
+            withAnimation(.snappy(duration: 0.2)) {
+                viewModel.loadTrash()
             }
         }
         .frame(width: metrics.drawerWidth)
@@ -274,6 +286,17 @@ struct LibraryDrawerView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                
+                Button {
+                    trashMode.toggle()
+                } label: {
+                    Image(systemName: trashMode ? "tray.fill" : "trash")
+                        .font(.bodyMedium)
+                        .foregroundColor(trashMode ? .accentPrimary : .textMuted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(localizationManager.text("library.trash.toggle", fallback: "Papelera"))
+                .help(localizationManager.text("library.trash.toggle", fallback: "Papelera"))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -289,19 +312,30 @@ struct LibraryDrawerView: View {
         VStack(spacing: 16) {
             Spacer()
             
-            Image(systemName: "doc.text")
+            Image(systemName: trashMode ? "trash.slash" : "doc.text")
                 .font(.system(size: 40))
                 .foregroundColor(.textMuted)
             
             VStack(spacing: 4) {
-                Text("Sin transcripciones")
-                    .font(.titleMedium)
-                    .foregroundColor(.textSecondary)
-                
-                Text("Las transcripciones aparecerán aquí")
-                    .font(.bodyMedium)
-                    .foregroundColor(.textMuted)
-                    .multilineTextAlignment(.center)
+                if trashMode {
+                    Text(localizationManager.text("trash.empty.title", fallback: "La papelera está vacía"))
+                        .font(.titleMedium)
+                        .foregroundColor(.textSecondary)
+                    
+                    Text(localizationManager.text("trash.empty.body", fallback: "Las transcripciones eliminadas aparecen aquí"))
+                        .font(.bodyMedium)
+                        .foregroundColor(.textMuted)
+                        .multilineTextAlignment(.center)
+                } else {
+                    Text("Sin transcripciones")
+                        .font(.titleMedium)
+                        .foregroundColor(.textSecondary)
+                    
+                    Text("Las transcripciones aparecerán aquí")
+                        .font(.bodyMedium)
+                        .foregroundColor(.textMuted)
+                        .multilineTextAlignment(.center)
+                }
             }
             
             Spacer()
@@ -313,7 +347,7 @@ struct LibraryDrawerView: View {
     private var transcriptionList: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(filteredTranscriptions) { transcription in
+                ForEach(trashMode ? viewModel.trashTranscriptions : filteredTranscriptions) { transcription in
                     transcriptionRow(transcription)
                 }
             }
@@ -323,6 +357,8 @@ struct LibraryDrawerView: View {
     
     private func transcriptionRow(_ transcription: Transcription) -> some View {
         Button {
+            // En modo papelera el tap no abre la transcripción (#18)
+            guard !trashMode else { return }
             viewModel.selectTranscription(transcription)
             withAnimation(.snappy(duration: 0.2)) {
                 isPresented = false
@@ -356,10 +392,36 @@ struct LibraryDrawerView: View {
                 
                 Spacer()
                 
-                Image(systemName: "chevron.right")
-                    .font(.labelBody)
-                    .foregroundColor(.textMuted)
-                    .opacity(hoveredId == transcription.id ? 1 : 0.5)
+                if trashMode {
+                    HStack(spacing: 12) {
+                        Button {
+                            viewModel.restoreFromTrash(transcription)
+                        } label: {
+                            Image(systemName: "arrow.uturn.backward")
+                                .font(.labelBody)
+                                .foregroundColor(.accentPrimary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(localizationManager.text("trash.restore", fallback: "Restaurar"))
+                        .help(localizationManager.text("trash.restore", fallback: "Restaurar"))
+                        
+                        Button {
+                            viewModel.deleteForever(transcription)
+                        } label: {
+                            Image(systemName: "trash.fill")
+                                .font(.labelBody)
+                                .foregroundColor(.red)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(localizationManager.text("trash.deleteForever", fallback: "Eliminar definitivamente"))
+                        .help(localizationManager.text("trash.deleteForever", fallback: "Eliminar definitivamente"))
+                    }
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.labelBody)
+                        .foregroundColor(.textMuted)
+                        .opacity(hoveredId == transcription.id ? 1 : 0.5)
+                }
             }
             .padding(12)
             .background(
@@ -369,28 +431,44 @@ struct LibraryDrawerView: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button {
-                viewModel.toggleFavorite(transcription)
-            } label: {
-                if transcription.isFavorite {
-                    Label(
-                        localizationManager.appLanguage == .es ? "Quitar de favoritos" : "Remove favorite",
-                        systemImage: "star.slash"
-                    )
-                } else {
-                    Label(
-                        localizationManager.appLanguage == .es ? "Añadir a favoritos" : "Add favorite",
-                        systemImage: "star"
-                    )
+            if trashMode {
+                Button {
+                    viewModel.restoreFromTrash(transcription)
+                } label: {
+                    Label(localizationManager.text("trash.restore", fallback: "Restaurar"),
+                          systemImage: "arrow.uturn.backward")
                 }
-            }
-            
-            Divider()
-            
-            Button(role: .destructive) {
-                viewModel.deleteTranscription(transcription)
-            } label: {
-                Label("Eliminar", systemImage: "trash")
+                
+                Button(role: .destructive) {
+                    viewModel.deleteForever(transcription)
+                } label: {
+                    Label(localizationManager.text("trash.deleteForever", fallback: "Eliminar definitivamente"),
+                          systemImage: "trash.fill")
+                }
+            } else {
+                Button {
+                    viewModel.toggleFavorite(transcription)
+                } label: {
+                    if transcription.isFavorite {
+                        Label(
+                            localizationManager.appLanguage == .es ? "Quitar de favoritos" : "Remove favorite",
+                            systemImage: "star.slash"
+                        )
+                    } else {
+                        Label(
+                            localizationManager.appLanguage == .es ? "Añadir a favoritos" : "Add favorite",
+                            systemImage: "star"
+                        )
+                    }
+                }
+                
+                Divider()
+                
+                Button(role: .destructive) {
+                    viewModel.deleteTranscription(transcription)
+                } label: {
+                    Label("Eliminar", systemImage: "trash")
+                }
             }
         }
         .onHover { isHovered in
