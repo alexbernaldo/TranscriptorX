@@ -18,9 +18,9 @@ enum AutoExporter {
             case .html: data = try HTMLExportGenerator().generate(from: doc)
             case .md: data = Data(transcription.text.utf8)
             case .srt:
-                data = Data(TranscriptionResult(segments: transcription.segments ?? []).toSRT().utf8)
+                data = Data(TranscriptionResult(segments: transcription.segments ?? []).toSRT(speakerNames: transcription.speakerNames).utf8)
             case .vtt:
-                data = Data(TranscriptionResult(segments: transcription.segments ?? []).toVTT().utf8)
+                data = Data(TranscriptionResult(segments: transcription.segments ?? []).toVTT(speakerNames: transcription.speakerNames).utf8)
             default:
                 AppLogger.shared.log("AutoExporter: format not supported: \(format.rawValue)", category: .transcription)
                 return

@@ -6,7 +6,7 @@ struct TranscriptionSegment: Identifiable, Codable {
     var startTime: TimeInterval  // segundos
     var endTime: TimeInterval
     var text: String
-    let speaker: Int?            // nil si no hay diarización, 0,1,2... si hay
+    var speaker: Int?            // nil si no hay diarización, 0,1,2... si hay (var: merge #8)
     var isFavorite: Bool
     var isDeleted: Bool
     var originalText: String?    // non-nil after first text edit (stores original)
@@ -108,7 +108,7 @@ struct TranscriptionResult {
     }
     
     /// Generate SRT subtitle format
-    func toSRT() -> String {
+    func toSRT(speakerNames: [String: String]? = nil) -> String {
         var srt = ""
         let activeSegments = segments.filter { !$0.isDeleted }
         for (index, segment) in activeSegments.enumerated() {
@@ -117,7 +117,8 @@ struct TranscriptionResult {
             
             // Add speaker prefix if diarization is enabled
             if let speaker = segment.speaker {
-                srt += "[Hablante \(speaker + 1)] "
+                let name = speakerNames?["\(speaker)"] ?? "Hablante \(speaker + 1)"
+                srt += "[\(name)] "
             }
             srt += "\(segment.text)\n\n"
         }
@@ -125,14 +126,15 @@ struct TranscriptionResult {
     }
     
     /// Generate VTT subtitle format
-    func toVTT() -> String {
+    func toVTT(speakerNames: [String: String]? = nil) -> String {
         var vtt = "WEBVTT\n\n"
         let activeSegments = segments.filter { !$0.isDeleted }
         for segment in activeSegments {
             vtt += "\(formatVTTTime(segment.startTime)) --> \(formatVTTTime(segment.endTime))\n"
             
             if let speaker = segment.speaker {
-                vtt += "<v Hablante \(speaker + 1)>"
+                let name = speakerNames?["\(speaker)"] ?? "Hablante \(speaker + 1)"
+                vtt += "<v \(name)>"
             }
             vtt += "\(segment.text)\n\n"
         }
@@ -140,7 +142,7 @@ struct TranscriptionResult {
     }
     
     /// Generate Markdown format with timestamps and speaker labels
-    func toMarkdown() -> String {
+    func toMarkdown(speakerNames: [String: String]? = nil) -> String {
         var md = "# Transcripción\n\n"
         
         // If we don't have segments (e.g., URL transcript / legacy imports), fall back to plain text.
@@ -159,7 +161,9 @@ struct TranscriptionResult {
             for segment in activeSegments {
                 if segment.speaker != currentSpeaker {
                     currentSpeaker = segment.speaker
-                    md += "\n## Hablante \((currentSpeaker ?? 0) + 1)\n\n"
+                    let idx = currentSpeaker ?? 0
+                    let name = speakerNames?["\(idx)"] ?? "Hablante \(idx + 1)"
+                    md += "\n## \(name)\n\n"
                 }
                 
                 if showTimestamps {
@@ -535,6 +539,8 @@ struct Transcription: Identifiable, Codable {
     var aiTags: [String]?
     /// Full-text translations keyed by language code (e.g. "en"). Local-only.
     var fullTextTranslations: [String: String]?
+    /// Nombres de hablantes por índice (claves String "0","1",…). #8
+    var speakerNames: [String: String]?
     
     init(
         id: UUID = UUID(),
@@ -549,7 +555,8 @@ struct Transcription: Identifiable, Codable {
         aiTitle: String? = nil,
         aiSummary: String? = nil,
         aiTags: [String]? = nil,
-        fullTextTranslations: [String: String]? = nil
+        fullTextTranslations: [String: String]? = nil,
+        speakerNames: [String: String]? = nil
     ) {
         self.id = id
         self.title = title
@@ -564,6 +571,7 @@ struct Transcription: Identifiable, Codable {
         self.aiSummary = aiSummary
         self.aiTags = aiTags
         self.fullTextTranslations = fullTextTranslations
+        self.speakerNames = speakerNames
     }
     
     var formattedDuration: String {

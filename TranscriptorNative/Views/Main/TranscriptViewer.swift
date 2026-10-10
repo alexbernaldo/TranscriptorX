@@ -1559,10 +1559,7 @@ struct ParagraphView: View {
                         .fill(Color.speakerColor(speaker))
                         .frame(width: 6, height: 6)
                     
-                    Text(String(
-                        format: localizationManager.text("transcript.speakerLabel", fallback: "Speaker %d"),
-                        speaker + 1
-                    ))
+                    SpeakerLabelView(speakerIndex: speaker)
                         .font(.labelMedium)
                         .foregroundColor(Color.speakerColor(speaker).opacity(0.8))
                 }
@@ -1682,10 +1679,7 @@ struct CinemaParagraphView: View {
                         .fill(Color.speakerColor(speaker))
                         .frame(width: 6, height: 6)
                     
-                    Text(String(
-                        format: localizationManager.text("transcript.speakerLabel", fallback: "Speaker %d"),
-                        speaker + 1
-                    ))
+                    SpeakerLabelView(speakerIndex: speaker)
                         .font(.labelMedium)
                         .foregroundColor(Color.speakerColor(speaker).opacity(0.9))
                 }
@@ -3097,5 +3091,82 @@ struct CinemaWaveView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Speaker Label (#8): nombre de hablante con renombrar/fusionar
+struct SpeakerLabelView: View {
+    @EnvironmentObject var viewModel: TranscriptionViewModel
+    @EnvironmentObject var localizationManager: LocalizationManager
+    let speakerIndex: Int
+    @State private var isEditing = false
+    @State private var draft = ""
+    @FocusState private var focused: Bool
+
+    private var displayName: String {
+        viewModel.speakerDisplayName(speakerIndex)
+    }
+
+    /// Otros índices de hablante presentes (para "Fusionar con…").
+    private var mergeTargets: [Int] {
+        var seen = Set<Int>()
+        var out: [Int] = []
+        for segment in viewModel.transcriptionResult?.segments.filter { !$0.isDeleted } ?? [] {
+            if let sp = segment.speaker, sp != speakerIndex, seen.insert(sp).inserted {
+                out.append(sp)
+            }
+        }
+        return out.sorted()
+    }
+
+    var body: some View {
+        Group {
+            if isEditing {
+                TextField("", text: $draft)
+                    .textFieldStyle(.plain)
+                    .focused($focused)
+                    .frame(minWidth: 50, maxWidth: 200)
+                    .onSubmit { commit() }
+                    .onChange(of: focused) { isFocused in
+                        if !isFocused { commit() }
+                    }
+            } else {
+                Text(displayName)
+                    .contextMenu {
+                        Button(localizationManager.text("speaker.rename", fallback: "Renombrar…")) {
+                            beginEditing()
+                        }
+                        if !mergeTargets.isEmpty {
+                            Menu(localizationManager.text("speaker.merge", fallback: "Fusionar con…")) {
+                                ForEach(mergeTargets, id: \.self) { target in
+                                    Button(viewModel.speakerDisplayName(target)) {
+                                        viewModel.mergeSpeaker(speakerIndex, into: target)
+                                    }
+                                }
+                            }
+                        }
+                        Button(localizationManager.text("speaker.restoreName", fallback: "Restaurar nombre")) {
+                            viewModel.renameSpeaker(speakerIndex, to: "")
+                        }
+                    }
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            beginEditing()
+        }
+    }
+
+    private func beginEditing() {
+        draft = displayName
+        isEditing = true
+        DispatchQueue.main.async { focused = true }
+    }
+
+    private func commit() {
+        guard isEditing else { return }
+        isEditing = false
+        focused = false
+        viewModel.renameSpeaker(speakerIndex, to: draft)
     }
 }

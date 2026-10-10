@@ -14,6 +14,8 @@ struct ExportDocument {
     let hasTimestamps: Bool
     let segments: [ExportSegment]
     let plainText: String
+    /// Nombres personalizados de hablantes: clave = índice como String (#8).
+    var speakerNames: [String: String]? = nil
 
     struct ExportSegment {
         let startTime: TimeInterval
@@ -102,8 +104,14 @@ struct ExportDocument {
             hasSpeakers: hasSpeakers,
             hasTimestamps: hasTimestamps,
             segments: segments,
-            plainText: plainText
+            plainText: plainText,
+            speakerNames: transcription?.speakerNames
         )
+    }
+
+    /// Etiqueta del hablante para export: nombre personalizado o "Speaker N".
+    func speakerLabel(_ index: Int) -> String {
+        speakerNames?["\(index)"] ?? "Speaker \(index + 1)"
     }
 }
 
@@ -227,7 +235,7 @@ extension ExportDocument {
             }
         }
         if options.showSpeakerNames, let sp = seg.speaker {
-            parts.append("[Speaker \(sp + 1)]")
+            parts.append("[\(speakerLabel(sp))]")
         }
         parts.append(seg.text)
         return wrap(parts.joined(separator: " "), every: options.maxCharactersPerLine)

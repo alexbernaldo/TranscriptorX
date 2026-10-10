@@ -186,6 +186,86 @@ class TranscriptionViewModel: ObservableObject {
         historySearchResults = trimmed.isEmpty ? nil : storage.searchTranscriptions(matching: trimmed)
     }
     
+    // MARK: - Speaker names (#8)
+    
+    /// Nombre visible del hablante: nombre personalizado o etiqueta localizada.
+    /// (La VM no tiene localizationManager → mismo valor que la clave
+    /// `transcript.speakerLabel` vía el helper `localized`.)
+    func speakerDisplayName(_ index: Int) -> String {
+        if let name = selectedTranscription?.speakerNames?["\(index)"], !name.isEmpty {
+            return name
+        }
+        return String(format: localized("Hablante %d", "Speaker %d"), index + 1)
+    }
+    
+    /// Renombra un hablante. Nombre vacío → restaura la etiqueta por defecto.
+    func renameSpeaker(_ index: Int, to name: String) {
+        guard var t = selectedTranscription else { return }
+        var names = t.speakerNames ?? [:]
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            names.removeValue(forKey: "\(index)")
+        } else {
+            names["\(index)"] = trimmed
+        }
+        t.speakerNames = names
+        applyHeaderUpdate(t)
+    }
+    
+    func clearSpeakerName(_ index: Int) {
+        renameSpeaker(index, to: "")
+    }
+    
+    /// Fusiona el hablante `from` en `target` y renumera los índices
+    /// restantes a 0..n-1 (segmentos activos + persistentes + nombres).
+    func mergeSpeaker(_ from: Int, into target: Int) {
+        guard from != target, var t = selectedTranscription else { return }
+        guard var segs = t.segments, segs.contains(where: { $0.speaker == from }) else { return }
+        
+        for i in segs.indices where segs[i].speaker == from {
+            segs[i].speaker = target
+        }
+        var order: [Int] = []
+        for s in segs {
+            if let sp = s.speaker, !order.contains(sp) { order.append(sp) }
+        }
+        let remap = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        for i in segs.indices {
+            if let sp = segs[i].speaker, let new = remap[sp] { segs[i].speaker = new }
+        }
+        var newNames: [String: String] = [:]
+        for (key, value) in t.speakerNames ?? [:] {
+            if let old = Int(key), let new = remap[old] {
+                newNames["\(new)"] = value
+            }
+        }
+        
+        if var result = transcriptionResult {
+            var rsegs = result.segments
+            for i in rsegs.indices where rsegs[i].speaker == from {
+                rsegs[i].speaker = target
+            }
+            for i in rsegs.indices {
+                if let sp = rsegs[i].speaker, let new = remap[sp] { rsegs[i].speaker = new }
+            }
+            result.segments = rsegs
+            transcriptionResult = result
+        }
+        
+        t.segments = segs
+        t.speakerNames = newNames
+        applyHeaderUpdate(t)
+    }
+    
+    /// Cabecera de la transcripción: seleccionada + array + storage (un solo guardado).
+    private func applyHeaderUpdate(_ transcription: Transcription) {
+        selectedTranscription = transcription
+        if let idx = transcriptions.firstIndex(where: { $0.id == transcription.id }) {
+            transcriptions[idx] = transcription
+        }
+        storage.saveTranscription(transcription)
+    }
+    
     func saveTranscription(_ transcription: Transcription) {
         // Update in-memory array
         if let index = transcriptions.firstIndex(where: { $0.id == transcription.id }) {
@@ -1219,13 +1299,13 @@ class TranscriptionViewModel: ObservableObject {
                 
             case .srt:
                 let content = options.style == .subtitles
-                    ? (transcriptionResult?.toSRT() ?? "")
+                    ? (transcriptionResult?.toSRT(speakerNames: selectedTranscription?.speakerNames) ?? "")
                     : document.styledText(options: options)
                 try content.write(to: url, atomically: true, encoding: .utf8)
                 
             case .vtt:
                 let content = options.style == .subtitles
-                    ? (transcriptionResult?.toVTT() ?? "")
+                    ? (transcriptionResult?.toVTT(speakerNames: selectedTranscription?.speakerNames) ?? "")
                     : document.styledText(options: options)
                 try content.write(to: url, atomically: true, encoding: .utf8)
                 
@@ -1285,10 +1365,10 @@ class TranscriptionViewModel: ObservableObject {
                 case .txt: data = Data(doc.plainText.utf8)
                 case .srt:
                     let r = TranscriptionResult(segments: transcription.segments ?? [])
-                    data = Data(r.toSRT().utf8)
+                    data = Data(r.toSRT(speakerNames: transcription.speakerNames).utf8)
                 case .vtt:
                     let r = TranscriptionResult(segments: transcription.segments ?? [])
-                    data = Data(r.toVTT().utf8)
+                    data = Data(r.toVTT(speakerNames: transcription.speakerNames).utf8)
                 case .md: data = Data(transcription.text.utf8)
                 case .json: data = try JSONExportGenerator().generate(from: doc)
                 case .csv: data = try CSVExportGenerator(includeTimestamps: true).generate(from: doc)

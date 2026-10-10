@@ -72,7 +72,7 @@ struct CSVExportGenerator: ExportGenerator {
                 fields.append(csvEscape(segment.formattedEndTime))
                 fields.append(csvEscape(segment.formattedDuration))
                 if document.hasSpeakers {
-                    let speaker = segment.speaker.map { "Speaker \($0 + 1)" } ?? ""
+                    let speaker = segment.speaker.map { document.speakerLabel($0) } ?? ""
                     fields.append(csvEscape(speaker))
                 }
                 fields.append(csvEscape(segment.text))
@@ -419,7 +419,7 @@ struct HTMLExportGenerator: ExportGenerator {
 
                 html += """
                         <div class="speaker-block">
-                            <span class="speaker-label \(colorClass)">Speaker \(speakerIndex)</span>
+                            <span class="speaker-label \(colorClass)">\(document.speakerLabel(speakerIndex))</span>
                 """
                 _ = borderClass // used below per segment
             }
@@ -722,7 +722,7 @@ struct DOCXExportGenerator: ExportGenerator {
             for segment in document.segments {
                 if segment.speaker != currentSpeaker {
                     currentSpeaker = segment.speaker
-                    body += paragraph(text: "Speaker \(currentSpeaker ?? 0)", style: "SpeakerLabel")
+                    body += paragraph(text: document.speakerLabel(currentSpeaker ?? 0), style: "SpeakerLabel")
                 }
                 // Timestamp + text in a single paragraph with mixed runs
                 body += timestampTextParagraph(
