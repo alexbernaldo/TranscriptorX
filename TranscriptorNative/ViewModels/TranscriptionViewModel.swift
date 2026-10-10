@@ -66,6 +66,7 @@ class TranscriptionViewModel: ObservableObject {
     
     // Library
     @Published var transcriptions: [Transcription] = []
+    @Published var historySearchResults: [Transcription]?   // nil = sin búsqueda activa
     @Published var selectedTranscription: Transcription? {
         didSet {
             if oldValue?.id != selectedTranscription?.id { viewingTranslationLang = nil }
@@ -175,6 +176,12 @@ class TranscriptionViewModel: ObservableObject {
     
     func loadTranscriptions() {
         transcriptions = storage.loadTranscriptions()
+    }
+    
+    /// Búsqueda FTS5 en el historial activo (#6). Vacío → nil (lista completa).
+    func searchHistory(_ query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        historySearchResults = trimmed.isEmpty ? nil : storage.searchTranscriptions(matching: trimmed)
     }
     
     func saveTranscription(_ transcription: Transcription) {

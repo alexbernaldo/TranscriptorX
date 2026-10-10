@@ -182,13 +182,7 @@ struct LibraryDrawerView: View {
     @State private var hoveredId: UUID?
     
     var filteredTranscriptions: [Transcription] {
-        if searchText.isEmpty {
-            return viewModel.transcriptions
-        }
-        return viewModel.transcriptions.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText) ||
-            $0.text.localizedCaseInsensitiveContains(searchText)
-        }
+        viewModel.historySearchResults ?? viewModel.transcriptions
     }
     
     var body: some View {
@@ -263,6 +257,12 @@ struct LibraryDrawerView: View {
                     .textFieldStyle(.plain)
                     .font(.bodyMedium)
                     .foregroundColor(.textPrimary)
+                    .task(id: searchText) {                       // debounce por cancelación de tarea (FTS5)
+                        try? await Task.sleep(nanoseconds: 300_000_000)
+                        guard !Task.isCancelled else { return }
+                        viewModel.searchHistory(searchText)
+                    }
+                    .onDisappear { viewModel.searchHistory("") }
                 
                 if !searchText.isEmpty {
                     Button {
