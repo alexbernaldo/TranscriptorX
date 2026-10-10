@@ -31,6 +31,8 @@
 		1100000000000020 /* AppStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000020 /* AppStates.swift */; };
 		1100000000000021 /* RecoveryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000021 /* RecoveryViews.swift */; };
 		1100000000000042 /* MenuBarContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000042 /* MenuBarContentView.swift */; };
+		1100000000000043 /* LiveCaptionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000043 /* LiveCaptionOverlay.swift */; };
+		1100000000000044 /* LiveCaptionOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000044 /* LiveCaptionOverlayController.swift */; };
 		1100000000000024 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000025 /* TopBarView.swift */; };
 		1100000000000025 /* BottomDockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000026 /* BottomDockView.swift */; };
 		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
@@ -97,6 +99,8 @@
 		1000000000000020 /* AppStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStates.swift; sourceTree = "<group>"; };
 		1000000000000021 /* RecoveryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryViews.swift; sourceTree = "<group>"; };
 		1000000000000042 /* MenuBarContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContentView.swift; sourceTree = "<group>"; };
+		1000000000000043 /* LiveCaptionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCaptionOverlay.swift; sourceTree = "<group>"; };
+		1000000000000044 /* LiveCaptionOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCaptionOverlayController.swift; sourceTree = "<group>"; };
 		1000000000000025 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
 		1000000000000026 /* BottomDockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomDockView.swift; sourceTree = "<group>"; };
 		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
@@ -221,6 +225,7 @@
 				100000000000000E /* Components.swift */,
 				1000000000000021 /* RecoveryViews.swift */,
 				1000000000000042 /* MenuBarContentView.swift */,
+				1000000000000043 /* LiveCaptionOverlay.swift */,
 				1000000000000025 /* TopBarView.swift */,
 				1000000000000026 /* BottomDockView.swift */,
 			);
@@ -272,6 +277,7 @@
 				1000000000000041 /* MeetingWatcherService.swift */,
 				1000000000000040 /* TranscriptionDatabase.swift */,
 				EA1000000000000F /* URLTranscriptionService.swift */,
+				1000000000000044 /* LiveCaptionOverlayController.swift */,
 				EA7000000000000002 /* FileInputService.swift */,
 				EA7100000000000003 /* CLIProtocol.swift */,
 				EA7100000000000004 /* CLIServer.swift */,
@@ -519,6 +525,8 @@
 				EA04EB282F32B46E0093692F /* JobQueuePanel.swift in Sources */,
 				1100000000000021 /* RecoveryViews.swift in Sources */,
 				1100000000000042 /* MenuBarContentView.swift in Sources */,
+				1100000000000043 /* LiveCaptionOverlay.swift in Sources */,
+				1100000000000044 /* LiveCaptionOverlayController.swift in Sources */,
 				1100000000000024 /* TopBarView.swift in Sources */,
 				1100000000000025 /* BottomDockView.swift in Sources */,
 				EA1000000000000C /* MasterView.swift in Sources */,

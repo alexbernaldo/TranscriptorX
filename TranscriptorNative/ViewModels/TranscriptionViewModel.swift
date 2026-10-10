@@ -58,6 +58,17 @@ class TranscriptionViewModel: ObservableObject {
     }
     @Published var recentTextTimestamp: Date = Date()
     
+    // Live captions overlay (#11)
+    @Published var liveCaptionEnabled: Bool = UserDefaults.standard.bool(forKey: "liveCaptionEnabled") {
+        didSet {
+            UserDefaults.standard.set(liveCaptionEnabled, forKey: "liveCaptionEnabled")
+            if !liveCaptionEnabled { clearLiveCaption() }
+        }
+    }
+    @Published var liveCaptionText: String = ""
+    @Published var liveCaptionVisible: Bool = false
+    @Published var captionHideTask: Task<Void, Never>?
+    
     // Transcription metrics
     @Published var transcriptionStartTime: Date?
     @Published var processedAudioDuration: TimeInterval = 0
@@ -309,6 +320,15 @@ class TranscriptionViewModel: ObservableObject {
         showToast(localized("Eliminada definitivamente", "Deleted forever"), type: .info)
     }
     
+    /// #11 — Oculta el overlay de subtítulos y cancela el temporizador de auto-ocultado
+    private func clearLiveCaption() {
+        captionHideTask?.cancel()
+        captionHideTask = nil
+        liveCaptionText = ""
+        liveCaptionVisible = false
+        LiveCaptionOverlayController.shared.hide()
+    }
+    
     /// Clear current transcription and return to home state
     func clearTranscription() {
         // Stop audio if playing
@@ -323,6 +343,7 @@ class TranscriptionViewModel: ObservableObject {
         transcriptionResult = nil
         transcriptionText = ""
         streamingText = ""
+        clearLiveCaption()
         selectedTranscription = nil
         progress = 0
         statusMessage = ""
@@ -653,6 +674,7 @@ class TranscriptionViewModel: ObservableObject {
         transcriptionResult = nil
         transcriptionText = ""
         streamingText = ""
+        clearLiveCaption()
         recentTextTimestamp = Date()
         transcriptionStartTime = Date()
         processedAudioDuration = 0
@@ -722,6 +744,21 @@ class TranscriptionViewModel: ObservableObject {
                             }
                             self.recentTextTimestamp = Date()
                             
+                            // #11 — Live captions: refresca el overlay y programa su ocultado
+                            if self.liveCaptionEnabled {
+                                self.liveCaptionText = self.streamingText
+                                self.liveCaptionVisible = true
+                                LiveCaptionOverlayController.shared.show(viewModel: self)
+                                self.captionHideTask?.cancel()
+                                self.captionHideTask = Task { @MainActor in
+                                    try? await Task.sleep(nanoseconds: 4_000_000_000)
+                                    if !Task.isCancelled {
+                                        self.liveCaptionVisible = false
+                                        LiveCaptionOverlayController.shared.hide()
+                                    }
+                                }
+                            }
+                            
                             // Update processed duration based on segment end time
                             self.processedAudioDuration = segment.endTime
                         }
@@ -735,6 +772,7 @@ class TranscriptionViewModel: ObservableObject {
                 transcriptionResult = result
                 transcriptionText = result.plainText
                 streamingText = result.plainText
+                clearLiveCaption()
                 isTranscribing = false
                 activeTranscriptionSessionId = nil
                 transcriptionTask = nil
@@ -749,6 +787,7 @@ class TranscriptionViewModel: ObservableObject {
                 activeTranscriptionSessionId = nil
                 transcriptionTask = nil
                 isTranscribing = false
+                clearLiveCaption()
                 if isCancellationError(error) {
                     statusMessage = localized("Transcripción cancelada", "Transcription cancelled")
                     return
@@ -841,6 +880,7 @@ class TranscriptionViewModel: ObservableObject {
         service.cancel()
         isTranscribing = false
         currentTaskId = nil
+        clearLiveCaption()
         statusMessage = localized("Transcripción cancelada", "Transcription cancelled")
         
         // Clear active transcription cards

@@ -1163,6 +1163,40 @@
         }
       }
     },
+    "settings.liveCaptions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live captions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtítulos en pantalla"
+          }
+        }
+      }
+    },
+    "settings.liveCaptions.subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Floating overlay during transcription (1–4 s delay)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overlay flotante durante la transcripción (retardo de 1–4 s)"
+          }
+        }
+      }
+    },
     "¡Todo en orden!" : {
       "extractionState" : "manual",
       "localizations" : {

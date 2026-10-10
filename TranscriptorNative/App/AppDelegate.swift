@@ -14,7 +14,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Claves de la app con defaults (#10): menú de barra + segundo plano
         UserDefaults.standard.register(defaults: [
             "showMenuBarExtra": true,
-            "keepRunningInBackground": true
+            "keepRunningInBackground": true,
+            "liveCaptionEnabled": false   // #11 — subtítulos en pantalla, off por defecto
         ])
         
         // Initialize logging

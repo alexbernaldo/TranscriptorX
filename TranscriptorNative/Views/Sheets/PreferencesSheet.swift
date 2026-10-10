@@ -527,6 +527,18 @@ private struct GeneralPreferencesView: View {
                     isOn: $keepRunningInBackground,
                     disabled: !showMenuBarExtra
                 )
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                // Subtítulos en pantalla (#11)
+                NativeToggleRow(
+                    title: localizationManager.text("settings.liveCaptions", fallback: "Subtítulos en pantalla"),
+                    subtitle: localizationManager.text("settings.liveCaptions.subtitle", fallback: "Overlay flotante durante la transcripción (retardo de 1–4 s)"),
+                    icon: "captions.bubble",
+                    iconColor: .cyan,
+                    isOn: $viewModel.liveCaptionEnabled
+                )
             }
             
             // Watched Folders Section
