@@ -40,6 +40,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         CLIServer.shared.start()
         
+        // #13 — Dictado: registrar atajo global si estaba activo
+        if UserDefaults.standard.bool(forKey: "dictationEnabled") {
+            DictationManager.shared.registerHotKey()
+        }
+        
         // Start persistent folder watchers without requiring Preferences to be opened
         _ = WatchedFoldersManager.shared
     }
@@ -86,6 +91,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        DictationManager.shared.unregisterHotKey()   // #13
         CLIServer.shared.stop()
         AppLogger.shared.log("Application terminating", category: .app)
     }

@@ -232,6 +232,7 @@ private struct GeneralPreferencesView: View {
     @State private var retentionDays = UserDefaults.standard.object(forKey: "trashRetentionDays") as? Int ?? 30
     @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
     @AppStorage("keepRunningInBackground") private var keepRunningInBackground = true
+    @ObservedObject private var dictation = DictationManager.shared   // #13
     
     private var appLanguageBinding: Binding<AppLanguage> {
         Binding(
@@ -539,6 +540,49 @@ private struct GeneralPreferencesView: View {
                     iconColor: .cyan,
                     isOn: $viewModel.liveCaptionEnabled
                 )
+            }
+            
+            // Dictado (#13)
+            NativeSettingsSection(title: localizationManager.text("preferences.section.dictation", fallback: "DICTADO")) {
+                NativeToggleRow(
+                    title: localizationManager.text("settings.dictationEnabled", fallback: "Dictado con atajo global"),
+                    subtitle: localizationManager.text("settings.dictationEnabled.subtitle", fallback: "Pulsa el atajo, habla y suelta para pegar el texto en la app activa"),
+                    icon: "keyboard",
+                    iconColor: .purple,
+                    isOn: Binding(
+                        get: { dictation.isEnabled },
+                        set: { newValue in
+                            dictation.isEnabled = newValue
+                            if newValue { dictation.promptAccessibilityIfNeeded() }
+                        }
+                    )
+                )
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                HStack {
+                    Text(localizationManager.text("settings.dictationShortcut", fallback: "Atajo"))
+                        .font(.bodyMedium)
+                        .foregroundColor(.textPrimary)
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { UserDefaults.standard.string(forKey: "dictationShortcut") ?? "ctrl+opt+space" },
+                        set: { newValue in
+                            UserDefaults.standard.set(newValue, forKey: "dictationShortcut")
+                            if dictation.isEnabled { dictation.registerHotKey() }
+                        }
+                    )) {
+                        Text("⌃⌥ espacio").tag("ctrl+opt+space")
+                        Text("⌃⌥ D").tag("ctrl+opt+d")
+                        Text("⌃⌥ R").tag("ctrl+opt+r")
+                    }
+                    .labelsHidden()
+                    .frame(width: 150)
+                    .disabled(!dictation.isEnabled)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
             
             // Watched Folders Section

@@ -34,6 +34,9 @@
 		1100000000000042 /* MenuBarContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000042 /* MenuBarContentView.swift */; };
 		1100000000000043 /* LiveCaptionOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000043 /* LiveCaptionOverlay.swift */; };
 		1100000000000044 /* LiveCaptionOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000044 /* LiveCaptionOverlayController.swift */; };
+		1100000000000045 /* DictationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000045 /* DictationManager.swift */; };
+		1100000000000046 /* DictationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000046 /* DictationOverlay.swift */; };
+		1100000000000047 /* DictationOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000047 /* DictationOverlayController.swift */; };
 		1100000000000024 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000025 /* TopBarView.swift */; };
 		1100000000000025 /* BottomDockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000026 /* BottomDockView.swift */; };
 		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
@@ -121,6 +124,9 @@
 		1000000000000042 /* MenuBarContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContentView.swift; sourceTree = "<group>"; };
 		1000000000000043 /* LiveCaptionOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCaptionOverlay.swift; sourceTree = "<group>"; };
 		1000000000000044 /* LiveCaptionOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCaptionOverlayController.swift; sourceTree = "<group>"; };
+		1000000000000045 /* DictationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationManager.swift; sourceTree = "<group>"; };
+		1000000000000046 /* DictationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlay.swift; sourceTree = "<group>"; };
+		1000000000000047 /* DictationOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlayController.swift; sourceTree = "<group>"; };
 		1000000000000025 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
 		1000000000000026 /* BottomDockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomDockView.swift; sourceTree = "<group>"; };
 		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
@@ -247,6 +253,7 @@
 				1000000000000021 /* RecoveryViews.swift */,
 				1000000000000042 /* MenuBarContentView.swift */,
 				1000000000000043 /* LiveCaptionOverlay.swift */,
+				1000000000000046 /* DictationOverlay.swift */,
 				1000000000000025 /* TopBarView.swift */,
 				1000000000000026 /* BottomDockView.swift */,
 			);
@@ -299,6 +306,8 @@
 				1000000000000040 /* TranscriptionDatabase.swift */,
 				EA1000000000000F /* URLTranscriptionService.swift */,
 				1000000000000044 /* LiveCaptionOverlayController.swift */,
+				1000000000000045 /* DictationManager.swift */,
+				1000000000000047 /* DictationOverlayController.swift */,
 				EA7000000000000002 /* FileInputService.swift */,
 				EA7100000000000003 /* CLIProtocol.swift */,
 				EA7100000000000004 /* CLIServer.swift */,
@@ -554,6 +563,9 @@
 				1100000000000042 /* MenuBarContentView.swift in Sources */,
 				1100000000000043 /* LiveCaptionOverlay.swift in Sources */,
 				1100000000000044 /* LiveCaptionOverlayController.swift in Sources */,
+				1100000000000045 /* DictationManager.swift in Sources */,
+				1100000000000046 /* DictationOverlay.swift in Sources */,
+				1100000000000047 /* DictationOverlayController.swift in Sources */,
 				1100000000000024 /* TopBarView.swift in Sources */,
 				1100000000000025 /* BottomDockView.swift in Sources */,
 				EA1000000000000C /* MasterView.swift in Sources */,
