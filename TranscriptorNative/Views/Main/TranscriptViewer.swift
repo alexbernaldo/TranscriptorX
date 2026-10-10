@@ -722,6 +722,13 @@ struct TranscriptHeaderView: View {
                             }
                             .disabled(!hasSegments)
                         }
+                        
+                        Section(appLanguage == .es ? "Vídeo" : "Video") {
+                            Button { viewModel.exportTranscription(format: .avid) } label: {
+                                Label(ExportFormat.avid.localizedDescription(appLanguage), systemImage: ExportFormat.avid.icon)
+                            }
+                            .disabled(!hasSegments)
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.bodyDefault)

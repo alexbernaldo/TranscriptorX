@@ -855,3 +855,32 @@ struct JSONExportGenerator: ExportGenerator {
         return try encoder.encode(payload)
     }
 }
+
+// MARK: - Avid CMX3600
+
+/// CMX3600 EDL for video post-production (Avid/Premiere/Resolve).
+struct AvidExportGenerator: ExportGenerator {
+    var fps: Int = 25
+
+    func generate(from document: ExportDocument) throws -> Data {
+        guard !document.isEmpty, !document.segments.isEmpty else { throw ExportError.noSegments }
+
+        func tc(_ t: TimeInterval) -> String {
+            let clamped = max(0, t)
+            let frames = Int((clamped.truncatingRemainder(dividingBy: 1)) * Double(fps))
+            let total = Int(clamped)
+            return String(format: "%02d:%02d:%02d:%02d",
+                          total / 3600, (total % 3600) / 60, total % 60, frames)
+        }
+
+        var lines: [String] = []
+        for (i, seg) in document.segments.enumerated() {
+            lines.append(String(
+                format: "%03d  AX       V     C        %@ %@ %@ %@",
+                i + 1, tc(seg.startTime), tc(seg.endTime),
+                tc(seg.startTime), tc(seg.endTime)))
+            lines.append("* FROM CLIP NAME: \(document.title)")
+        }
+        return Data(lines.joined(separator: "\n").appending("\n").utf8)
+    }
+}

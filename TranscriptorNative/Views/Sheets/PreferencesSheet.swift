@@ -330,6 +330,114 @@ private struct GeneralPreferencesView: View {
                     iconColor: .blue,
                     isOn: $viewModel.settings.translate
                 )
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                HStack {
+                    Image(systemName: "paintpalette")
+                        .font(.labelBody)
+                        .foregroundColor(.white)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.pink)
+                        )
+                    
+                    Text(localizationManager.text("export.style", fallback: "Estilo de exportación"))
+                        .font(.labelLarge)
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer()
+                    
+                    Picker("", selection: $viewModel.settings.exportStyle) {
+                        ForEach(ExportStyle.allCases) { style in
+                            Text(styleLabel(style)).tag(style)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: metrics.pickerWidth)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                HStack {
+                    Image(systemName: "square.stack.3d.up")
+                        .font(.labelBody)
+                        .foregroundColor(.white)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.teal)
+                        )
+                    
+                    Text(localizationManager.text("export.grouping", fallback: "Agrupación"))
+                        .font(.labelLarge)
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer()
+                    
+                    Picker("", selection: $viewModel.settings.exportGrouping) {
+                        ForEach(ExportGroupingPreference.allCases) { grouping in
+                            Text(groupingLabel(grouping)).tag(grouping)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: metrics.pickerWidth)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                NativeToggleRow(
+                    title: localizationManager.text("export.favoritesOnly", fallback: "Solo favoritos"),
+                    subtitle: localizationManager.text("export.favoritesOnly", fallback: "Solo favoritos"),
+                    icon: "star",
+                    iconColor: .yellow,
+                    isOn: $viewModel.settings.exportFavoritesOnly
+                )
+                
+                NativeToggleRow(
+                    title: localizationManager.text("export.milliseconds", fallback: "Milisegundos"),
+                    subtitle: localizationManager.text("export.milliseconds", fallback: "Milisegundos"),
+                    icon: "timer",
+                    iconColor: .orange,
+                    isOn: $viewModel.settings.exportUseMilliseconds
+                )
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                HStack {
+                    Image(systemName: "speedometer")
+                        .font(.labelBody)
+                        .foregroundColor(.white)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.gray)
+                        )
+                    
+                    Text(localizationManager.text("export.fps", fallback: "FPS (Avid)"))
+                        .font(.labelLarge)
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer()
+                    
+                    Picker("", selection: $viewModel.settings.exportFPS) {
+                        Text(verbatim: "25").tag(25)
+                        Text(verbatim: "30").tag(30)
+                    }
+                    .labelsHidden()
+                    .frame(width: metrics.pickerWidth)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
             
             // Behavior Section
@@ -385,6 +493,24 @@ private struct GeneralPreferencesView: View {
                                                   fallback: "Exportar automáticamente al terminar"))
                 }
             }
+        }
+    }
+    
+    private func styleLabel(_ style: ExportStyle) -> String {
+        switch style {
+        case .fullTranscript: return localizationManager.text("export.style.fullTranscript", fallback: "Texto completo")
+        case .segments: return localizationManager.text("export.style.segments", fallback: "Segmentos")
+        case .subtitles: return localizationManager.text("export.style.subtitles", fallback: "Subtítulos")
+        case .whisper: return localizationManager.text("export.style.whisper", fallback: "JSON estilo Whisper")
+        }
+    }
+    
+    private func groupingLabel(_ grouping: ExportGroupingPreference) -> String {
+        switch grouping {
+        case .none: return localizationManager.text("export.grouping.none", fallback: "Sin agrupar")
+        case .words: return localizationManager.text("export.grouping.words", fallback: "Por palabras")
+        case .sentences: return localizationManager.text("export.grouping.sentences", fallback: "Por frases")
+        case .people: return localizationManager.text("export.grouping.people", fallback: "Por persona")
         }
     }
 }

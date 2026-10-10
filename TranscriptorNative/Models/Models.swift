@@ -395,6 +395,13 @@ struct TranscriptionSettings: Codable, Equatable {
     // Context prompt for better accuracy
     var initialPrompt: String = ""             // Initial context prompt
     
+    // Export options
+    var exportStyle: ExportStyle = .segments
+    var exportGrouping: ExportGroupingPreference = .none
+    var exportUseMilliseconds: Bool = false
+    var exportFavoritesOnly: Bool = false
+    var exportFPS: Int = 25                    // solo avid (25 / 30)
+    
     static let `default` = TranscriptionSettings()
     
     // Presets for different scenarios
@@ -433,6 +440,16 @@ struct TranscriptionSettings: Codable, Equatable {
 }
 
 // MARK: - Export Format
+enum ExportStyle: String, Codable, CaseIterable, Identifiable {
+    case fullTranscript, segments, subtitles, whisper
+    var id: String { rawValue }
+}
+
+enum ExportGroupingPreference: String, Codable, CaseIterable, Identifiable {
+    case none, words, sentences, people
+    var id: String { rawValue }
+}
+
 enum ExportFormat: String, CaseIterable {
     case txt  = "txt"
     case srt  = "srt"
@@ -443,6 +460,7 @@ enum ExportFormat: String, CaseIterable {
     case pdf  = "pdf"
     case docx = "docx"
     case json = "json"
+    case avid = "avid"
     
     var description: String {
         switch self {
@@ -455,6 +473,7 @@ enum ExportFormat: String, CaseIterable {
         case .pdf:  return "PDF (.pdf)"
         case .docx: return "Word (.docx)"
         case .json: return "Datos JSON (.json)"
+        case .avid: return "Avid CMX3600 (.avid)"
         }
     }
     
@@ -469,6 +488,7 @@ enum ExportFormat: String, CaseIterable {
         case .pdf:  return lang == .es ? "Documento PDF (.pdf)"  : "PDF Document (.pdf)"
         case .docx: return lang == .es ? "Documento Word (.docx)": "Word Document (.docx)"
         case .json: return lang == .es ? "Datos JSON (.json)"    : "JSON Data (.json)"
+        case .avid: return lang == .es ? "Avid CMX3600 (.avid)"  : "Avid CMX3600 (.avid)"
         }
     }
     
@@ -483,13 +503,14 @@ enum ExportFormat: String, CaseIterable {
         case .pdf:  return "doc.text.fill"
         case .docx: return "doc.fill"
         case .json: return "curlybraces"
+        case .avid: return "film"
         }
     }
     
     /// Formats that require timed segments to produce meaningful output
     var requiresSegments: Bool {
         switch self {
-        case .srt, .vtt: return true
+        case .srt, .vtt, .avid: return true
         default: return false
         }
     }

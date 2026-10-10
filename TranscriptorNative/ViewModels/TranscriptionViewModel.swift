@@ -1110,18 +1110,35 @@ class TranscriptionViewModel: ObservableObject {
     }
     
     func exportTranscription(format: ExportFormat) {
+        let options = ExportDocument.ExportOptions(
+            style: settings.exportStyle,
+            grouping: settings.exportGrouping,
+            useMilliseconds: settings.exportUseMilliseconds,
+            favoritesOnly: settings.exportFavoritesOnly,
+            fps: settings.exportFPS
+        )
         // Build the intermediate document
         let document = ExportDocument.from(
             transcription: selectedTranscription,
             result: transcriptionResult,
             settings: settings,
-            fileName: selectedFile?.name
+            fileName: selectedFile?.name,
+            options: options
         )
         
         // Validate: no empty exports
         guard !document.isEmpty else {
             showToast(localized("No hay contenido para exportar", "No content to export"), type: .warning)
             return
+        }
+        
+        // Agrupación por palabras sin datos word-level (JSON antiguo) → degradar con aviso
+        if settings.exportGrouping == .words,
+           document.segments.allSatisfy({ $0.allWords.isEmpty }) {
+            showToast(
+                localized("Sin datos por palabra: exportando por segmentos",
+                          "No word-level data: exporting by segments"),
+                type: .warning)
         }
         
         // Validate: segment-dependent formats
@@ -1158,20 +1175,23 @@ class TranscriptionViewModel: ObservableObject {
             switch format {
             // Legacy string-based formats
             case .txt:
-                // transcriptionText is always up-to-date (recalculated on every edit/delete)
-                let content = transcriptionText
+                let content = document.styledText(options: options)
                 try content.write(to: url, atomically: true, encoding: .utf8)
                 
             case .srt:
-                let content = transcriptionResult?.toSRT() ?? ""
+                let content = options.style == .subtitles
+                    ? (transcriptionResult?.toSRT() ?? "")
+                    : document.styledText(options: options)
                 try content.write(to: url, atomically: true, encoding: .utf8)
                 
             case .vtt:
-                let content = transcriptionResult?.toVTT() ?? ""
+                let content = options.style == .subtitles
+                    ? (transcriptionResult?.toVTT() ?? "")
+                    : document.styledText(options: options)
                 try content.write(to: url, atomically: true, encoding: .utf8)
                 
             case .md:
-                let content = transcriptionResult?.toMarkdown() ?? transcriptionText
+                let content = document.styledText(options: options)
                 try content.write(to: url, atomically: true, encoding: .utf8)
                 
             // New data-based formats
@@ -1189,6 +1209,10 @@ class TranscriptionViewModel: ObservableObject {
                 
             case .json:
                 let data = try JSONExportGenerator().generate(from: document)
+                try data.write(to: url)
+                
+            case .avid:
+                let data = try AvidExportGenerator(fps: settings.exportFPS).generate(from: document)
                 try data.write(to: url)
                 
             case .pdf:
@@ -1311,6 +1335,21 @@ class TranscriptionViewModel: ObservableObject {
 
         if raw["keepAudioFileInHistory"] == nil {
             raw["keepAudioFileInHistory"] = TranscriptionSettings.default.keepAudioFileInHistory
+        }
+        if raw["exportStyle"] == nil {
+            raw["exportStyle"] = ExportStyle.segments.rawValue
+        }
+        if raw["exportGrouping"] == nil {
+            raw["exportGrouping"] = ExportGroupingPreference.none.rawValue
+        }
+        if raw["exportUseMilliseconds"] == nil {
+            raw["exportUseMilliseconds"] = false
+        }
+        if raw["exportFavoritesOnly"] == nil {
+            raw["exportFavoritesOnly"] = false
+        }
+        if raw["exportFPS"] == nil {
+            raw["exportFPS"] = 25
         }
 
         guard let migratedData = try? JSONSerialization.data(withJSONObject: raw),
