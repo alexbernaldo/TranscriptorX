@@ -62,6 +62,7 @@
 		EA9000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA9000000000000008 /* Localizable.xcstrings */; };
 		EAB000000000000001 /* ExportDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000002 /* ExportDocument.swift */; };
 		EAB000000000000003 /* ExportGenerators.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000004 /* ExportGenerators.swift */; };
+		EAB000000000000011 /* ProjectPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000010 /* ProjectPackage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -123,6 +124,7 @@
 		EA9000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EAB000000000000002 /* ExportDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportDocument.swift; sourceTree = "<group>"; };
 		EAB000000000000004 /* ExportGenerators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportGenerators.swift; sourceTree = "<group>"; };
+		EAB000000000000010 /* ProjectPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPackage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +272,7 @@
 				EA9000000000000006 /* LocalizationManager.swift */,
 				EAB000000000000002 /* ExportDocument.swift */,
 				EAB000000000000004 /* ExportGenerators.swift */,
+				EAB000000000000010 /* ProjectPackage.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -369,6 +372,7 @@
 				0400000000000000 /* Sources */,
 				0500000000000000 /* Frameworks */,
 				0600000000000000 /* Resources */,
+				EAB000000000000012 /* Register .transcriptor type */,
 			);
 			buildRules = (
 			);
@@ -447,6 +451,28 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		EAB000000000000012 /* Register .transcriptor type */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Register .transcriptor type";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "PLIST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/../Info.plist\"\nPB=/usr/libexec/PlistBuddy\n[ -f \"$PLIST\" ] || exit 0\n\n# CFBundleDocumentTypes[0]\n$PB -c \"Add :CFBundleDocumentTypes array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0 dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeName string 'Transcriptor X Project'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeExtensions array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeExtensions:0 string transcriptor\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeRole string Editor\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSHandlerRank string Owner\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSItemContentTypes array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSItemContentTypes:0 string io.github.alexbernaldo.transcriptorx.project\" \"$PLIST\" 2>/dev/null || true\n\n# UTExportedTypeDeclarations[0]\n$PB -c \"Add :UTExportedTypeDeclarations array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0 dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeIdentifier string io.github.alexbernaldo.transcriptorx.project\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeDescription string 'Transcriptor X Project'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:0 string public.data\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:1 string public.archive\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension:0 string transcriptor\" \"$PLIST\" 2>/dev/null || true";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		0400000000000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -501,6 +527,7 @@
 				EA9000000000000005 /* LocalizationManager.swift in Sources */,
 				EAB000000000000001 /* ExportDocument.swift in Sources */,
 				EAB000000000000003 /* ExportGenerators.swift in Sources */,
+				EAB000000000000011 /* ProjectPackage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

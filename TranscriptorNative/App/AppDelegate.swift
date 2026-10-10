@@ -37,6 +37,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         _ = WatchedFoldersManager.shared
     }
     
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls where url.pathExtension == ProjectPackage.fileExtension {
+            do {
+                let (transcription, _) = try ProjectPackage.open(from: url)
+                TranscriptionStorage.shared.saveTranscription(transcription)
+                // saveTranscription → saveTranscriptions ya postea .transcriptionsDidChange (Storage:66)
+                AppLogger.shared.log("Opened project package \(url.lastPathComponent)",
+                                     category: .app)
+            } catch {
+                AppLogger.shared.logError(error, context: "openProject", category: .app)
+            }
+        }
+    }
+    
     func applicationWillTerminate(_ notification: Notification) {
         CLIServer.shared.stop()
         AppLogger.shared.log("Application terminating", category: .app)

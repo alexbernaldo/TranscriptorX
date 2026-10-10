@@ -1,5 +1,7 @@
 import SwiftUI
 import Translation
+import UniformTypeIdentifiers
+import AppKit
 
 // MARK: - Translation request driven by `.translationTask`
 struct TranslationRequest: Equatable {
@@ -691,6 +693,22 @@ struct TranscriptHeaderView: View {
                             Button { viewModel.exportTranscription(format: .docx) } label: {
                                 Label(ExportFormat.docx.localizedDescription(appLanguage), systemImage: ExportFormat.docx.icon)
                             }
+                            Button(localizationManager.text("export.saveProject", fallback: "Guardar como proyecto…")) {
+                                guard let t = viewModel.selectedTranscription else { return }
+                                let panel = NSSavePanel()
+                                panel.nameFieldStringValue = "\(t.title).\(ProjectPackage.fileExtension)"
+                                if panel.runModal() == .OK, let url = panel.url {
+                                    do {
+                                        try ProjectPackage.save(transcription: t, to: url)
+                                        viewModel.showToast(
+                                            localizationManager.text("export.projectSaved", fallback: "Proyecto guardado"),
+                                            type: .success)
+                                    } catch {
+                                        viewModel.showToast(error.localizedDescription, type: .error)
+                                    }
+                                }
+                            }
+                            .disabled(viewModel.selectedTranscription == nil)
                         }
                         
                         Section(appLanguage == .es ? "Datos" : "Data") {
