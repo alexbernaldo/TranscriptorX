@@ -490,6 +490,20 @@ private struct GeneralPreferencesView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
+                
+                Divider()
+                    .padding(.leading, 48)
+                
+                NativeToggleRow(
+                    title: localizationManager.text("settings.meetings.auto.title", fallback: "Detectar reuniones automáticamente"),
+                    subtitle: localizationManager.text("settings.meetings.auto.subtitle", fallback: "Aviso cuando Zoom/Teams esté activo"),
+                    icon: "video",
+                    iconColor: .orange,
+                    isOn: $viewModel.settings.autoDetectMeetings
+                )
+                .onChange(of: viewModel.settings.autoDetectMeetings) { enabled in
+                    MeetingWatcherService.shared.start(enabled: enabled)   // #7
+                }
             }
             
             // Watched Folders Section

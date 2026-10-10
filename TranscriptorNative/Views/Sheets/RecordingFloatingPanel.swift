@@ -5,7 +5,7 @@ struct RecordingFloatingPanel: View {
     @EnvironmentObject var viewModel: TranscriptionViewModel
     @EnvironmentObject var localizationManager: LocalizationManager
     @Binding var isPresented: Bool
-    @StateObject private var recorder = SystemAudioRecorder()
+    @ObservedObject private var recorder = SystemAudioRecorder.shared
     @Environment(\.responsiveMetrics) private var metrics
     var body: some View {
         VStack(spacing: 20) {

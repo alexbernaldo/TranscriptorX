@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var showingRecoveryBanner = false
     @State private var showingRecoverySheet = false
     @State private var recoveredItems: [RecoveryManager.RecoveredItem] = []
+    @State private var meetingBannerTitle: String? = nil   // #7
     @State private var selectedTab: TopBarView.AppTab = .home
     @State private var showingSettings = false
     @State private var showLibraryDrawer = false
@@ -154,6 +155,26 @@ struct ContentView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
+            // Meeting banner (#7)
+            .overlay(alignment: .top) {
+                if let bannerTitle = meetingBannerTitle {
+                    MeetingBannerView(
+                        title: bannerTitle,
+                        onRecord: {
+                            Task {
+                                SystemAudioRecorder.shared.selectedSource = .system
+                                await SystemAudioRecorder.shared.startRecording()
+                            }
+                            withAnimation(.snappy) { meetingBannerTitle = nil }
+                        },
+                        onDismiss: {
+                            withAnimation(.snappy) { meetingBannerTitle = nil }
+                        }
+                    )
+                    .padding(.top, metrics.sectionPadding)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
             // Toast overlay (bottom)
             .overlay(alignment: .bottom) {
                 ToastOverlay()
@@ -246,6 +267,81 @@ struct ContentView: View {
                 showingRecorder = true
             }
         }
+        // Meeting detected (#7): banner arriba-centro, auto-hide a los 15 s
+        .onReceive(NotificationCenter.default.publisher(for: .meetingDetected)) { notification in
+            guard transcriptionVM.settings.autoDetectMeetings else { return }
+            let suggested = notification.userInfo?["suggestedTitle"] as? String
+            withAnimation(.snappy(duration: 0.3)) {
+                meetingBannerTitle = suggested ?? "Reunión"
+            }
+        }
+        .task(id: meetingBannerTitle) {
+            guard meetingBannerTitle != nil else { return }
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.snappy) { meetingBannerTitle = nil }
+        }
+    }
+}
+
+
+// MARK: - Meeting Banner (#7)
+struct MeetingBannerView: View {
+    @EnvironmentObject var localizationManager: LocalizationManager
+    let title: String
+    let onRecord: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "video.fill")
+                .font(.bodyXLarge)
+                .foregroundColor(.orange)
+
+            Text(String(
+                format: localizationManager.text("meeting.banner.title", fallback: "Reunión detectada: %@"),
+                title
+            ))
+            .font(.labelLarge)
+            .foregroundColor(.white)
+            .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Button(action: onRecord) {
+                Text(localizationManager.text("meeting.banner.record", fallback: "Grabar"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.orange)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.orange.opacity(0.2))
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(localizationManager.text("meeting.banner.record", fallback: "Grabar"))
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(localizationManager.text("meeting.banner.dismiss", fallback: "Descartar"))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(red: 0.15, green: 0.12, blue: 0.1).opacity(0.95))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.3), radius: 10)
+        .padding(.horizontal, 40)
     }
 }
 
@@ -279,6 +375,7 @@ extension Notification.Name {
     static let openNewTranscriptionWithFile = Notification.Name("openNewTranscriptionWithFile")
     static let showNewTranscription = Notification.Name("showNewTranscription")
     static let showRecorder = Notification.Name("showRecorder")
+    static let meetingDetected = Notification.Name("meetingDetected")   // #7
 }
 
 #if DEBUG

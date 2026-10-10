@@ -33,6 +33,7 @@
 		1100000000000024 /* TopBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000025 /* TopBarView.swift */; };
 		1100000000000025 /* BottomDockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000026 /* BottomDockView.swift */; };
 		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
+		1100000000000041 /* MeetingWatcherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000041 /* MeetingWatcherService.swift */; };
 		1100000000000040 /* TranscriptionDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000040 /* TranscriptionDatabase.swift */; };
 		EA04EB242F32B4550093692F /* TranscriptionJob.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA04EB232F32B4550093692F /* TranscriptionJob.swift */; };
 		EA04EB262F32B4600093692F /* JobManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA04EB252F32B4600093692F /* JobManager.swift */; };
@@ -97,6 +98,7 @@
 		1000000000000025 /* TopBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBarView.swift; sourceTree = "<group>"; };
 		1000000000000026 /* BottomDockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomDockView.swift; sourceTree = "<group>"; };
 		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
+		1000000000000041 /* MeetingWatcherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingWatcherService.swift; sourceTree = "<group>"; };
 		1000000000000040 /* TranscriptionDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionDatabase.swift; sourceTree = "<group>"; };
 		EA04EB232F32B4550093692F /* TranscriptionJob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionJob.swift; sourceTree = "<group>"; };
 		EA04EB252F32B4600093692F /* JobManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobManager.swift; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				100000000000001E /* AppLogger.swift */,
 				100000000000001F /* ModelManager.swift */,
 				100000000000002A /* TranscriptionStorage.swift */,
+				1000000000000041 /* MeetingWatcherService.swift */,
 				1000000000000040 /* TranscriptionDatabase.swift */,
 				EA1000000000000F /* URLTranscriptionService.swift */,
 				EA7000000000000002 /* FileInputService.swift */,
@@ -506,6 +509,7 @@
 				110000000000001D /* RecoveryManager.swift in Sources */,
 				110000000000001E /* AppLogger.swift in Sources */,
 				110000000000002A /* TranscriptionStorage.swift in Sources */,
+				1100000000000041 /* MeetingWatcherService.swift in Sources */,
 				1100000000000040 /* TranscriptionDatabase.swift in Sources */,
 				110000000000001F /* ModelManager.swift in Sources */,
 				1100000000000020 /* AppStates.swift in Sources */,

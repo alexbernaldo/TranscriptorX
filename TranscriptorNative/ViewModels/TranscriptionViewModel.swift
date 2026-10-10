@@ -150,6 +150,7 @@ class TranscriptionViewModel: ObservableObject {
     
     init() {
         loadSettings()
+        MeetingWatcherService.shared.start(enabled: settings.autoDetectMeetings)  // #7
         loadTranscriptions()
         storage.purgeTrash()   // #18: retención de papelera, no bloquea el arranque
         observeTranscriptionStorage()
@@ -694,9 +695,20 @@ class TranscriptionViewModel: ObservableObject {
     
     /// Save completed transcription to history
     private func saveToHistory(result: TranscriptionResult) {
-        // Generate title from filename or first words
+        // Generate title from meeting event, filename, or first words
         let title: String
-        if let fileName = selectedFile?.name {
+        let meetingTitle = MeetingWatcherService.shared.meetingState.currentSuggestedTitle
+        if let meetingTitle, !meetingTitle.isEmpty {
+            // Misma limpieza que con filenames: separadores peligrosos + longitud
+            let cleanedMeeting = meetingTitle
+                .replacingOccurrences(of: "/", with: "-")
+                .replacingOccurrences(of: ":", with: " -")
+                .prefix(60)
+                .trimmingCharacters(in: .whitespaces)
+            title = cleanedMeeting.isEmpty
+                ? localized("Transcripción", "Transcription")
+                : String(cleanedMeeting)
+        } else if let fileName = selectedFile?.name {
             // Remove extension and clean up
             let cleanedTitle = fileName
                 .replacingOccurrences(of: "\\.[^.]+$", with: "", options: .regularExpression)
@@ -1377,6 +1389,9 @@ class TranscriptionViewModel: ObservableObject {
         }
         if raw["exportFPS"] == nil {
             raw["exportFPS"] = 25
+        }
+        if raw["autoDetectMeetings"] == nil {
+            raw["autoDetectMeetings"] = true
         }
 
         guard let migratedData = try? JSONSerialization.data(withJSONObject: raw),

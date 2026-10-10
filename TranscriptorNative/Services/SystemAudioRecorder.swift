@@ -11,6 +11,10 @@ import CoreAudio
 @MainActor
 class SystemAudioRecorder: NSObject, ObservableObject {
     
+    /// Instancia compartida: el panel flotante, el banner de reunión (#7)
+    /// y el menú de barra (#10) deben ver el mismo estado de grabación.
+    static let shared = SystemAudioRecorder()
+    
     // MARK: - Published State
     
     @Published var isRecording = false

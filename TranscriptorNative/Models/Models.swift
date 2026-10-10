@@ -402,6 +402,9 @@ struct TranscriptionSettings: Codable, Equatable {
     var exportFavoritesOnly: Bool = false
     var exportFPS: Int = 25                    // solo avid (25 / 30)
     
+    // Meeting detection (#7)
+    var autoDetectMeetings: Bool = true
+    
     static let `default` = TranscriptionSettings()
     
     // Presets for different scenarios
