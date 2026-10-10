@@ -149,6 +149,7 @@ class TranscriptionViewModel: ObservableObject {
     init() {
         loadSettings()
         loadTranscriptions()
+        storage.purgeTrash()   // #18: retención de papelera, no bloquea el arranque
         observeTranscriptionStorage()
     }
 
