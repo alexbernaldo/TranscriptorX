@@ -1,4 +1,21 @@
 import SwiftUI
+import Sparkle
+
+// MARK: - #19 — Sparkle: actualizaciones propias (appcast autoalojado, sin telemetría)
+@MainActor
+final class UpdaterModel: ObservableObject {
+    static let shared = UpdaterModel()
+    // Comprobación automática semanal silenciosa (decisión registrada en el plan);
+    // el menú Ayuda fuerza una comprobación manual.
+    let controller = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
+    func checkForUpdates() {
+        controller.checkForUpdates(nil)
+    }
+}
 
 @main
 struct TranscriptorApp: App {
@@ -95,6 +112,13 @@ struct TranscriptorApp: App {
             
             // Help menu with diagnostics
             CommandGroup(replacing: .help) {
+                Button(localizationManager.text("menu.checkForUpdates", fallback: "Buscar actualizaciones…")) {
+                    UpdaterModel.shared.checkForUpdates()
+                }
+                .keyboardShortcut("u", modifiers: [.command])
+                
+                Divider()
+                
                 Button(localizationManager.text("menu.exportDiagnostics", fallback: "Exportar diagnósticos...")) {
                     exportDiagnostics()
                 }

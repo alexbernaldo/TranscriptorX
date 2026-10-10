@@ -10,6 +10,7 @@
 		1100000000000001 /* TranscriptorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000001 /* TranscriptorApp.swift */; };
 		EA7400000000000001 /* TranscribeFileIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA7400000000000002 /* TranscribeFileIntent.swift */; };
 		1100000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000002 /* AppDelegate.swift */; };
+		E5F00000000000A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = E5F00000000000A2 /* Sparkle */; };
 		1100000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000003 /* ContentView.swift */; };
 		1100000000000004 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000004 /* Theme.swift */; };
 		1100000000000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000005 /* Models.swift */; };
@@ -69,6 +70,25 @@
 		EAB000000000000003 /* ExportGenerators.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000004 /* ExportGenerators.swift */; };
 		EAB000000000000011 /* ProjectPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB000000000000010 /* ProjectPackage.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E5F00000000000A1 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E5F00000000000A2 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E5F00000000000A1 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin PBXFileReference section */
 		0800000000000000 /* TranscriptorNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TranscriptorNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -142,6 +162,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5F00000000000A3 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -394,6 +415,9 @@
 			dependencies = (
 			);
 			name = TranscriptorNative;
+			packageProductDependencies = (
+				E5F00000000000A2 /* Sparkle */,
+			);
 			productName = TranscriptorNative;
 			productReference = 0800000000000000 /* TranscriptorNative.app */;
 			productType = "com.apple.product-type.application";
@@ -442,6 +466,9 @@
 				Base,
 			);
 			mainGroup = 0000000000000000;
+			packageReferences = (
+				E5F00000000000A1 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = 0900000000000000 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -484,7 +511,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "PLIST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/../Info.plist\"\nPB=/usr/libexec/PlistBuddy\n[ -f \"$PLIST\" ] || exit 0\n\n# CFBundleDocumentTypes[0]\n$PB -c \"Add :CFBundleDocumentTypes array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0 dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeName string 'Transcriptor X Project'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeExtensions array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeExtensions:0 string transcriptor\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeRole string Editor\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSHandlerRank string Owner\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSItemContentTypes array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSItemContentTypes:0 string io.github.alexbernaldo.transcriptorx.project\" \"$PLIST\" 2>/dev/null || true\n\n# UTExportedTypeDeclarations[0]\n$PB -c \"Add :UTExportedTypeDeclarations array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0 dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeIdentifier string io.github.alexbernaldo.transcriptorx.project\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeDescription string 'Transcriptor X Project'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:0 string public.data\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:1 string public.archive\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension:0 string transcriptor\" \"$PLIST\" 2>/dev/null || true";
+			shellScript = "PLIST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/../Info.plist\"\nPB=/usr/libexec/PlistBuddy\n[ -f \"$PLIST\" ] || exit 0\n\n# CFBundleDocumentTypes[0]\n$PB -c \"Add :CFBundleDocumentTypes array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0 dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeName string 'Transcriptor X Project'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeExtensions array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeExtensions:0 string transcriptor\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:CFBundleTypeRole string Editor\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSHandlerRank string Owner\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSItemContentTypes array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :CFBundleDocumentTypes:0:LSItemContentTypes:0 string io.github.alexbernaldo.transcriptorx.project\" \"$PLIST\" 2>/dev/null || true\n\n# UTExportedTypeDeclarations[0]\n$PB -c \"Add :UTExportedTypeDeclarations array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0 dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeIdentifier string io.github.alexbernaldo.transcriptorx.project\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeDescription string 'Transcriptor X Project'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:0 string public.data\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeConformsTo:1 string public.archive\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification dict\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension array\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension:0 string transcriptor\" \"$PLIST\" 2>/dev/null || true\n\n# Sparkle (#19): feed de actualizaciones (appcast autoalojado en GitHub Releases)\n$PB -c \"Add :SUFeedURL string 'https://github.com/alexbernaldo/TranscriptorX/releases/latest/download/appcast.xml'\" \"$PLIST\" 2>/dev/null || true\n$PB -c \"Add :SUPublicEDKey string 'UubJcBbmkKBEAirlTn4haDEYgG7Lt80r+FE4i+s6bxA='\" \"$PLIST\" 2>/dev/null || true";
 		};
 /* End PBXShellScriptBuildPhase section */
 
