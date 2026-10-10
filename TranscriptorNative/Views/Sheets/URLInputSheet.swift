@@ -18,6 +18,8 @@ struct URLInputSheet: View {
     
     @State private var urlText: String = ""
     @State private var isValidURL: Bool = false
+    // Deep link #22: URL precargada desde transcriptorx://transcribe?url=…
+    var initialURL: String? = nil
     @State private var showingResult: Bool = false
     @State private var selectedMethod: YouTubeTranscriptionMethod = .fast
     @FocusState private var isTextFieldFocused: Bool
@@ -59,8 +61,11 @@ struct URLInputSheet: View {
                 .strokeBorder(Color.borderSubtle, lineWidth: 1)
         )
         .onAppear {
-            // Check clipboard for URL
-            if let clipboardString = NSPasteboard.general.string(forType: .string),
+            // Deep link (#22): la URL del enlace tiene prioridad sobre el portapapeles
+            if let deep = initialURL, !deep.isEmpty {
+                urlText = deep
+                isValidURL = isValidURLString(deep)
+            } else if let clipboardString = NSPasteboard.general.string(forType: .string),
                isValidURLString(clipboardString) {
                 urlText = clipboardString
                 isValidURL = true

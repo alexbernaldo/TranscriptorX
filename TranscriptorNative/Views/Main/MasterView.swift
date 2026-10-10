@@ -31,6 +31,8 @@ struct MasterView: View {
     
     // URL Input Sheet
     @State private var showingURLInput = false
+    // Deep link #22: URL precargada al abrir la sheet
+    @State private var pendingURLInput: String? = nil
     
     // Matched geometry for logo morph
     @Namespace private var animation
@@ -96,8 +98,13 @@ struct MasterView: View {
         }
         // URL Input Sheet - must be at root level
         .sheet(isPresented: $showingURLInput) {
-            URLInputSheet()
+            URLInputSheet(initialURL: pendingURLInput)
                 .environmentObject(viewModel)
+        }
+        // Deep link transcriptorx://transcribe?url=… (#22)
+        .onReceive(NotificationCenter.default.publisher(for: .transcribeURL)) { notification in
+            pendingURLInput = notification.userInfo?["url"] as? String
+            showingURLInput = true
         }
     }
     

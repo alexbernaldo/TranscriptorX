@@ -45,16 +45,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls where url.pathExtension == ProjectPackage.fileExtension {
-            do {
-                let (transcription, _) = try ProjectPackage.open(from: url)
-                TranscriptionStorage.shared.saveTranscription(transcription)
-                // saveTranscription → saveTranscriptions ya postea .transcriptionsDidChange (Storage:66)
-                AppLogger.shared.log("Opened project package \(url.lastPathComponent)",
-                                     category: .app)
-            } catch {
-                AppLogger.shared.logError(error, context: "openProject", category: .app)
+        for url in urls {
+            if url.pathExtension == ProjectPackage.fileExtension {
+                do {
+                    let (transcription, _) = try ProjectPackage.open(from: url)
+                    TranscriptionStorage.shared.saveTranscription(transcription)
+                    // saveTranscription → saveTranscriptions ya postea .transcriptionsDidChange (Storage:66)
+                    AppLogger.shared.log("Opened project package \(url.lastPathComponent)",
+                                         category: .app)
+                } catch {
+                    AppLogger.shared.logError(error, context: "openProject", category: .app)
+                }
+            } else if url.scheme == "transcriptorx" {
+                // Deep links (#22)
+                handleDeepLink(url)
             }
+        }
+    }
+    
+    private func handleDeepLink(_ url: URL) {
+        guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            AppLogger.shared.log("Invalid deep link: \(url.absoluteString)", category: .app)
+            return
+        }
+        switch comps.host {
+        case "transcribe":
+            let target = comps.queryItems?.first(where: { $0.name == "url" })?.value
+            AppLogger.shared.log("Deep link transcribe", category: .app, metadata: ["url": target ?? "(none)"])
+            NotificationCenter.default.post(name: .transcribeURL, object: nil, userInfo: ["url": target as Any])
+        case "open":
+            // Sin activate(ignoringOtherApps:) (restricción de foco del proyecto):
+            // solo se ordena la ventana al frente de sus pares.
+            AppLogger.shared.log("Deep link open", category: .app)
+            if let window = NSApp.windows.first(where: { $0.isVisible }) ?? NSApp.windows.first {
+                window.makeKeyAndOrderFront(nil)
+            }
+        default:
+            AppLogger.shared.log("Unknown deep link host: \(comps.host ?? "")", category: .app)
         }
     }
     
@@ -131,4 +158,5 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension Notification.Name {
     static let recoveredItemsFound = Notification.Name("recoveredItemsFound")
+    static let transcribeURL = Notification.Name("transcribeURL")   // #22 — deep link transcriptorx://transcribe
 }
