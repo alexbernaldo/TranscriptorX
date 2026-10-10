@@ -119,16 +119,17 @@ final class TranscriptionDatabase {
             guard let db else { return }
 
             // 1. Espejo FTS: retirar la entrada antigua (INSERT OR REPLACE cambia rowid)
-            var oldRow: Int64?
-            if let stmt = prepare("SELECT rowid FROM transcriptions WHERE id = ?;") {
+            var oldEntry: (row: Int64, title: String, text: String)?
+            if let stmt = prepare("SELECT rowid, payload FROM transcriptions WHERE id = ?;") {
                 bind(stmt, 1, t.id.uuidString)
-                if sqlite3_step(stmt) == SQLITE_ROW {
-                    oldRow = sqlite3_column_int64(stmt, 0)
+                if sqlite3_step(stmt) == SQLITE_ROW,
+                   let old = decodePayload(at: stmt, column: 1) {
+                    oldEntry = (sqlite3_column_int64(stmt, 0), old.title, old.text)
                 }
                 sqlite3_finalize(stmt)
             }
-            if let oldRow {
-                exec("DELETE FROM transcriptions_fts WHERE rowid = \(oldRow);")
+            if let oldEntry {
+                ftsDelete(rowid: oldEntry.row, title: oldEntry.title, text: oldEntry.text)
             }
 
             // 2. Upsert de la fila
@@ -181,6 +182,47 @@ final class TranscriptionDatabase {
         bind(stmt, 1, id.uuidString)
         guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
         return sqlite3_column_int64(stmt, 0)
+    }
+
+    // MARK: - FTS5 contentless deletes
+    // Con `content=''` el DELETE FROM directo falla ("cannot DELETE from contentless
+    // fts5 table"); hay que usar el comando especial 'delete' con los valores originales.
+
+    private func ftsDelete(rowid: Int64, title: String, text: String) {
+        guard let db,
+              let stmt = prepare("""
+                  INSERT INTO transcriptions_fts(transcriptions_fts, rowid, title, text)
+                  VALUES('delete', ?, ?, ?);
+              """) else { return }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, rowid)
+        bind(stmt, 2, title)
+        bind(stmt, 3, text)
+        if sqlite3_step(stmt) != SQLITE_DONE {
+            AppLogger.shared.log("SQLite FTS delete error: \(String(cString: sqlite3_errmsg(db)))",
+                                 level: .error, category: .app)
+        }
+    }
+
+    private func ftsDeleteAll() {
+        exec("INSERT INTO transcriptions_fts(transcriptions_fts) VALUES('delete-all');")
+    }
+
+    /// Quita del espejo FTS la entrada de `id` (payload → mismos valores indexados).
+    private func ftsDeleteEntry(of id: UUID) {
+        guard let stmt = prepare("SELECT rowid, payload FROM transcriptions WHERE id = ?;") else { return }
+        bind(stmt, 1, id.uuidString)
+        guard sqlite3_step(stmt) == SQLITE_ROW else {
+            sqlite3_finalize(stmt)
+            return
+        }
+        let row = sqlite3_column_int64(stmt, 0)
+        guard let old = decodePayload(at: stmt, column: 1) else {
+            sqlite3_finalize(stmt)
+            return
+        }
+        sqlite3_finalize(stmt)
+        ftsDelete(rowid: row, title: old.title, text: old.text)
     }
 
     /// Transcripciones activas (no papelera), ordenadas por fecha descendente.
@@ -238,8 +280,7 @@ final class TranscriptionDatabase {
     /// Borrado definitivo (fila + espejo FTS).
     func removeForever(id: UUID) {
         queue.sync {
-            guard let row = rowid(of: id) else { return }
-            exec("DELETE FROM transcriptions_fts WHERE rowid = \(row);")
+            ftsDeleteEntry(of: id)
             guard let stmt = prepare("DELETE FROM transcriptions WHERE id = ?;") else { return }
             defer { sqlite3_finalize(stmt) }
             bind(stmt, 1, id.uuidString)
@@ -250,7 +291,7 @@ final class TranscriptionDatabase {
     /// Borra todo el historial (activos + papelera) y su espejo FTS.
     func clearAll() {
         queue.sync {
-            exec("DELETE FROM transcriptions_fts;")
+            ftsDeleteAll()
             exec("DELETE FROM transcriptions;")
         }
     }
@@ -332,9 +373,7 @@ final class TranscriptionDatabase {
                 ids.append(id)
             }
             for id in ids {
-                if let row = rowid(of: id) {
-                    exec("DELETE FROM transcriptions_fts WHERE rowid = \(row);")
-                }
+                ftsDeleteEntry(of: id)
                 guard let del = prepare("DELETE FROM transcriptions WHERE id = ?;") else { continue }
                 bind(del, 1, id.uuidString)
                 sqlite3_step(del)
