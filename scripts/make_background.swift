@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 
-// Genera el fondo de la ventana del DMG de TranscriptorX.
+// Genera el fondo de la ventana del DMG de Transcriptor X.
 //
 // Dibuja un degradado suave, la flecha nativa de macOS (SF Symbols) y el texto
 // de instalación. Se renderiza a 2x para que se vea nítido en pantallas Retina.
@@ -51,8 +51,8 @@ guard !options.output.isEmpty else {
 if options.language.isEmpty { options.language = positional.first ?? "en" }
 
 let texts: [String: [String]] = [
-    "en": ["Drag TranscriptorX to your Applications folder", "to install it."],
-    "es": ["Arrastra TranscriptorX a la carpeta Aplicaciones", "para instalarlo."],
+    "en": ["Drag Transcriptor X to your Applications folder", "to install it."],
+    "es": ["Arrastra Transcriptor X a la carpeta Aplicaciones", "para instalarlo."],
 ]
 let lines = texts[options.language] ?? texts["en"]!
 
@@ -79,9 +79,10 @@ context.scaleBy(x: scale, y: scale)
 context.setAllowsAntialiasing(true)
 context.interpolationQuality = CGInterpolationQuality.high
 
-// AppKit trabaja con el eje Y hacia arriba; CoreGraphics, hacia abajo.
-let flip = CGAffineTransform(scaleX: 1, y: -1)
-context.concatenate(flip)
+// Origen arriba a la izquierda, como las posiciones de Finder. Sin la traslación,
+// la inversión del eje Y dejaba todo el dibujo fuera del lienzo (fondo vacío).
+context.translateBy(x: 0, y: height)
+context.scaleBy(x: 1, y: -1)
 
 // Degradado vertical muy suave, de blanco a gris de sistema.
 let gradient = CGGradient(
@@ -99,18 +100,22 @@ context.drawLinearGradient(
     options: []
 )
 
-// Geometría: la flecha va centrada entre los dos iconos.
-let centerY = CGFloat(options.appY) + CGFloat(options.iconSize) / 2
-let gapStart = CGFloat(options.appX) + CGFloat(options.iconSize) + 24
-let gapEnd = CGFloat(options.appsX) - 24
+// Geometría: Finder coloca cada icono por su centro, así que la flecha va
+// centrada entre los dos centros y a su misma altura.
+let centerY = CGFloat(options.appY)
+let gapStart = CGFloat(options.appX) + CGFloat(options.iconSize) / 2 + 24
+let gapEnd = CGFloat(options.appsX) - CGFloat(options.iconSize) / 2 - 24
 let arrowCenterX = (gapStart + gapEnd) / 2
 
-// Flecha nativa de macOS, teñida de gris de sistema.
+// Flecha nativa de macOS en gris de sistema. Se tiñe con la paleta del símbolo:
+// rellenar un rectángulo y recortarlo con el símbolo dejaba una línea en el borde.
+let arrowColor = NSColor(calibratedRed: 0.42, green: 0.45, blue: 0.51, alpha: 1)
 if let symbol = NSImage(
     systemSymbolName: "arrow.right",
     accessibilityDescription: nil
 )?.withSymbolConfiguration(
-    .init(pointSize: 56, weight: .medium)
+    NSImage.SymbolConfiguration(pointSize: 56, weight: .medium)
+        .applying(NSImage.SymbolConfiguration(paletteColors: [arrowColor]))
 ) {
     let targetWidth: CGFloat = 74
     let size = CGSize(
@@ -123,21 +128,9 @@ if let symbol = NSImage(
         width: size.width,
         height: size.height
     )
-    // Se tiñe el símbolo de gris de sistema para que parezca un icono nativo.
-    let tinted = NSImage(size: size, flipped: false) { _ in
-        NSColor(calibratedRed: 0.42, green: 0.45, blue: 0.51, alpha: 1).set()
-        NSBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
-        symbol.draw(
-            in: CGRect(origin: .zero, size: size),
-            from: .zero,
-            operation: .destinationIn,
-            fraction: 1.0
-        )
-        return true
-    }
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
-    tinted.draw(in: arrowRect)
+    symbol.draw(in: arrowRect, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
     NSGraphicsContext.restoreGraphicsState()
 }
 
@@ -152,12 +145,13 @@ let attributes: [NSAttributedString.Key: Any] = [
     }(),
 ]
 
-var textY = centerY + 54
+// Debajo de los nombres de los iconos.
+var textY = centerY + CGFloat(options.iconSize) / 2 + 52
 for line in lines {
     let attributed = NSAttributedString(string: line, attributes: attributes)
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
-    attributed.draw(at: NSPoint(x: 0, y: textY))
+    attributed.draw(in: CGRect(x: 0, y: textY, width: width, height: 20))
     NSGraphicsContext.restoreGraphicsState()
     textY += 21
 }
@@ -167,6 +161,9 @@ guard let image = context.makeImage() else {
     exit(1)
 }
 let rep = NSBitmapImageRep(cgImage: image)
+// Tamaño en puntos = ventana: el PNG queda a 144 ppp y Finder lo dibuja a 2x en
+// lugar de a tamaño doble (que dejaba flecha y texto fuera de la ventana).
+rep.size = NSSize(width: width, height: height)
 guard let data = rep.representation(
     using: NSBitmapImageRep.FileType.png,
     properties: [:]

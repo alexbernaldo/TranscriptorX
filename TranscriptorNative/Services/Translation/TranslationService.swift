@@ -9,7 +9,7 @@ final class TranslationService: ObservableObject {
     @Published var isTranslating = false
     @Published var lastError: String?
 
-    static var isSystemTranslationAvailable: Bool {
+    nonisolated static var isSystemTranslationAvailable: Bool {
         if #available(macOS 15.0, *) { return true }
         return false
     }

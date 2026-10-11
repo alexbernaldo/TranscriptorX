@@ -1,73 +1,193 @@
 import SwiftUI
 import AppKit
+import Combine
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    
-    // Recovery check state
-    @Published var recoveredItems: [RecoveryManager.RecoveredItem] = []
-    @Published var hasRecoveredItems = false
-    static var recoveredItemsForUI: [RecoveryManager.RecoveredItem] = []
-    
+
+    private var cancellables = Set<AnyCancellable>()
+    private var memorySource: DispatchSourceMemoryPressure?
+    private var lastMemoryLevel: DispatchSource.MemoryPressureEvent = []
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Respect system appearance (light/dark) — cinema views override locally
-        
         // Claves de la app con defaults (#10): menú de barra + segundo plano
         UserDefaults.standard.register(defaults: [
             "showMenuBarExtra": true,
             "keepRunningInBackground": true,
-            "liveCaptionEnabled": false   // #11 — subtítulos en pantalla, off por defecto
+            "liveCaptionEnabled": false,   // #11 — subtítulos en pantalla, off por defecto
+            "liveCaptionDelay": 2.0,
+            "announceLiveSegments": true,
+            "appearanceMode": AppearanceMode.dark.rawValue
         ])
-        
-        // Initialize logging
+        DictationPreferences.registerDefaults()
+        Self.migrateToAutomaticLanguage()
+        // Dark is the default appearance (spec 3.5); «Sistema» follows macOS.
+        MainActor.assumeIsolated {
+            AppearanceMode.apply(AppearanceMode.current)
+            DockVisibility.apply()
+        }
+
         AppLogger.shared.log("Application launched", category: .app)
-        
-        // Check for recoverable items from previous crash
+
+        MainActor.assumeIsolated {
+            _ = LibraryStore.shared
+            _ = LiveCaptionCenter.shared
+            _ = FloatingRecordingPanelController.shared
+            observeApp()
+        }
+
+        // Crash recovery (spec 6.26): interrupted jobs come back as «Recuperable» rows + banner.
         Task {
             let items = await RecoveryManager.shared.checkForRecoverableItems()
+            let pending = RecoveryManager.shared.pendingRecordings()
             await MainActor.run {
-                self.recoveredItems = items
-                AppDelegate.recoveredItemsForUI = items
-                self.hasRecoveredItems = !items.isEmpty
-                
-                if !items.isEmpty {
-                    AppLogger.shared.log("Found recovered items", category: .recovery, metadata: [
-                        "count": "\(items.count)"
-                    ])
-                    self.showRecoveryNotification(count: items.count)
+                let all = items + pending
+                if !all.isEmpty {
+                    AppLogger.shared.log("Found recovered items", category: .recovery, metadata: ["count": "\(all.count)"])
+                }
+                JobManager.shared.restoreRecoverable(all, defaults: QuickSettingsModel.defaultSettings())
+                RecoveryActions.postBannerIfNeeded()
+            }
+        }
+
+        CLIServer.shared.start()
+
+        // #13 — Dictado: registrar atajo global si estaba activo
+        if UserDefaults.standard.bool(forKey: "dictationEnabled") {
+            MainActor.assumeIsolated { DictationManager.shared.registerHotKey() }
+        }
+
+        // Start persistent folder watchers without requiring Preferences to be opened
+        _ = WatchedFoldersManager.shared
+        // Recently Deleted retention: purge on launch, silently (spec 6.14).
+        DispatchQueue.global(qos: .utility).async { TranscriptionStorage.shared.purgeTrash() }
+
+        let autoMeetings = QuickSettingsModel.defaultSettings().autoDetectMeetings
+        MeetingWatcherService.shared.start(enabled: autoMeetings)
+        startMemoryPressureMonitor()
+    }
+
+    @MainActor private func observeApp() {
+        let workspace = WorkspaceState.shared
+        // History known: onboarding decision, migration notice.
+        LibraryStore.shared.$state
+            .filter { $0 == .ready }
+            .first()
+            .sink { _ in
+                Task { @MainActor in
+                    let library = LibraryStore.shared
+                    if !library.items.isEmpty { UserDefaults.standard.set(true, forKey: "onboarding.hasHistory") }
+                    // Restoration (spec 4.5): the last document, paused; Inicio if it was deleted.
+                    if workspace.route == .home, let raw = UserDefaults.standard.string(forKey: "restore.documentId"),
+                       let id = UUID(uuidString: raw), library.document(id) != nil {
+                        workspace.open(document: id)
+                    }
+                    OnboardingState.shared.historyLoaded(count: library.items.count)
+                    switch library.migrationOutcome {
+                    case .migrated(let backup):
+                        workspace.showToast(ToastItem(icon: .success,
+                            text: TXL.t("migration.done", "Historial actualizado. Copia de seguridad guardada como transcriptions.json.bak"),
+                            actionTitle: TXL.t("common.showInFinder", "Mostrar en Finder"),
+                            action: { NSWorkspace.shared.activateFileViewerSelecting([backup]) }, duration: 8))
+                    case .failed(let details):
+                        workspace.post(BannerItem(key: "migration", kind: .error,
+                            title: TXL.t("migration.failed", "No se pudo actualizar el historial"),
+                            message: TXL.t("migration.failed.text", "Tus transcripciones siguen en transcriptions.json y no se han modificado."),
+                            details: details,
+                            actions: [BannerAction(title: TXL.t("common.retry", "Reintentar"), isPrimary: true) { library.retryMigration() }]))
+                    case .none:
+                        break
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
+        // Meeting detected (#7) → banner; the menu bar shows it when the window is closed.
+        NotificationCenter.default.publisher(for: .meetingDetected)
+            .receive(on: RunLoop.main)
+            .sink { note in
+                Task { @MainActor in
+                    guard QuickSettingsModel.defaultSettings().autoDetectMeetings else { return }
+                    MeetingActions.postBanner(title: note.userInfo?["suggestedTitle"] as? String,
+                                              app: note.userInfo?["app"] as? String ?? "")
+                }
+            }
+            .store(in: &cancellables)
+        MeetingWatcherService.shared.$meetingState
+            .receive(on: RunLoop.main)
+            .sink { state in
+                if case .none = state { Task { @MainActor in WorkspaceState.shared.dismissBanner(key: "meeting") } }
+            }
+            .store(in: &cancellables)
+
+        // VoiceOver: queue phase changes (never every percentage).
+        JobManager.shared.phaseAnnouncements
+            .throttle(for: .seconds(1), scheduler: RunLoop.main, latest: true)
+            .sink { AccessibilityAnnouncer.announce($0) }
+            .store(in: &cancellables)
+
+        // Grouped VoiceOver announcement of streamed segments: at most every 4 s (spec 10.2).
+        var buffer: [String] = []
+        let previous = JobManager.shared.onStreamSegment
+        JobManager.shared.onStreamSegment = { id, segment in
+            previous?(id, segment)
+            if UserDefaults.standard.bool(forKey: "announceLiveSegments") { buffer.append(segment.text) }
+        }
+        Timer.publish(every: 4, on: .main, in: .common).autoconnect()
+            .sink { _ in
+                guard !buffer.isEmpty, NSWorkspace.shared.isVoiceOverEnabled else { buffer.removeAll(); return }
+                AccessibilityAnnouncer.announce(buffer.joined(separator: " "))
+                buffer.removeAll()
+            }
+            .store(in: &cancellables)
+
+        // Pending recordings handed over on quit become regular recovered files once handled.
+        JobManager.shared.onJobFinished = { id in
+            Task { @MainActor in
+                if let job = JobManager.shared.job(id), job.source == .recovered, job.status == .completed {
+                    RecoveryManager.shared.resolvePendingRecording(job.fileURL)
                 }
             }
         }
-        
-        CLIServer.shared.start()
-        
-        // #13 — Dictado: registrar atajo global si estaba activo
-        if UserDefaults.standard.bool(forKey: "dictationEnabled") {
-            DictationManager.shared.registerHotKey()
-        }
-        
-        // Start persistent folder watchers without requiring Preferences to be opened
-        _ = WatchedFoldersManager.shared
     }
-    
+
+    /// «Hay poca memoria disponible en el Mac» (spec 8.6): shown again only if pressure increases.
+    private func startMemoryPressureMonitor() {
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: .main)
+        source.setEventHandler { [weak self] in
+            guard let self else { return }
+            let level = source.data
+            let increased = level.contains(.critical) && !self.lastMemoryLevel.contains(.critical)
+            guard self.lastMemoryLevel.isEmpty || increased else { return }
+            self.lastMemoryLevel = level
+            MainActor.assumeIsolated {
+                WorkspaceState.shared.post(BannerItem(key: "memory", kind: .warning,
+                    title: TXL.t("memory.title", "Hay poca memoria disponible en el Mac"),
+                    message: TXL.t("memory.text", "La transcripción puede ir más lenta. Cerrar otras apps ayuda.")))
+            }
+        }
+        source.resume()
+        memorySource = source
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             if url.pathExtension == ProjectPackage.fileExtension {
-                do {
-                    let (transcription, _) = try ProjectPackage.open(from: url)
-                    TranscriptionStorage.shared.saveTranscription(transcription)
-                    // saveTranscription → saveTranscriptions ya postea .transcriptionsDidChange (Storage:66)
-                    AppLogger.shared.log("Opened project package \(url.lastPathComponent)",
-                                         category: .app)
-                } catch {
-                    AppLogger.shared.logError(error, context: "openProject", category: .app)
+                MainActor.assumeIsolated {
+                    WindowCoordinator.showMainWindow()
+                    WorkspaceState.shared.openProject(url)
                 }
             } else if url.scheme == "transcriptorx" {
-                // Deep links (#22)
                 handleDeepLink(url)
+            } else if url.isFileURL, FileInputService.isSupported(url) {
+                // Files dropped on the Dock icon or opened with «Abrir con».
+                MainActor.assumeIsolated {
+                    WindowCoordinator.showMainWindow()
+                    WorkspaceState.shared.addImports([url])
+                }
             }
         }
     }
-    
+
     private func handleDeepLink(_ url: URL) {
         guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             AppLogger.shared.log("Invalid deep link: \(url.absoluteString)", category: .app)
@@ -75,88 +195,107 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         switch comps.host {
         case "transcribe":
+            // Never downloads without confirmation: the sheet opens with the link filled in (spec 6.4).
             let target = comps.queryItems?.first(where: { $0.name == "url" })?.value
             AppLogger.shared.log("Deep link transcribe", category: .app, metadata: ["url": target ?? "(none)"])
             NotificationCenter.default.post(name: .transcribeURL, object: nil, userInfo: ["url": target as Any])
         case "open":
-            // Sin activate(ignoringOtherApps:) (restricción de foco del proyecto):
-            // solo se ordena la ventana al frente de sus pares.
             AppLogger.shared.log("Deep link open", category: .app)
-            if let window = NSApp.windows.first(where: { $0.isVisible }) ?? NSApp.windows.first {
-                window.makeKeyAndOrderFront(nil)
-            }
+            MainActor.assumeIsolated { WindowCoordinator.showMainWindow() }
         default:
             AppLogger.shared.log("Unknown deep link host: \(comps.host ?? "")", category: .app)
         }
     }
-    
+
+    /// Language detection became the default (Oct 2026). Saved defaults that predate it
+    /// fixed Spanish because that was the old default, so they switch once.
+    private static func migrateToAutomaticLanguage() {
+        let d = UserDefaults.standard
+        guard !d.bool(forKey: "migration.autoLanguage") else { return }
+        d.set(true, forKey: "migration.autoLanguage")
+        guard let data = d.data(forKey: "transcription_settings"),
+              var saved = try? JSONDecoder().decode(TranscriptionSettings.self, from: data),
+              saved.language != "auto",
+              !ModelCapabilities.isEnglishOnly(saved.selectedModelId) else { return }
+        saved.language = "auto"
+        if let encoded = try? JSONEncoder().encode(saved) { d.set(encoded, forKey: "transcription_settings") }
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
-        DictationManager.shared.unregisterHotKey()   // #13
+        MainActor.assumeIsolated { DictationManager.shared.unregisterHotKey() }   // #13
         CLIServer.shared.stop()
         AppLogger.shared.log("Application terminating", category: .app)
     }
-    
-    func applicationDidResignActive(_ notification: Notification) {
-        AppLogger.shared.log("Application went to background", category: .app)
-    }
-    
-    func applicationDidBecomeActive(_ notification: Notification) {
-        AppLogger.shared.log("Application became active", category: .app)
-    }
-    
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        // #10: con menú de barra + segundo plano activos, cerrar la ventana
-        // no termina la app (registro de defaults en applicationDidFinishLaunching).
+        // Closing the window keeps the app in the Dock and the menu bar (spec 4.6).
         let menubar = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
-        let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground")
+        let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground") || UserDefaults.standard.bool(forKey: "hideDockIcon")
         return !(menubar && keepRunning)
     }
-    
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { MainActor.assumeIsolated { WindowCoordinator.showMainWindow() } }
+        return true
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // #10 (macOS 27): cerrar la ventana principal o alternar el panel del menú
-        // postea un kAEQuit (vía _handleAEQuit) que llega aquí. Con el menú de barra
-        // activo y sin ventana principal visible, ese quit automático se cancela;
-        // los quits explícitos (Salir con ratón, Cmd+Q con teclado) traen evento de
-        // teclado/ratón y pasan. Finder/menú Apple con ventana abierta también pasa
-        // (visibleWindow = true).
+        // #10 (macOS 27): closing the main window can post a kAEQuit; explicit quits carry a key or mouse event.
         let menubar = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
-        let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground")
+        let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground") || UserDefaults.standard.bool(forKey: "hideDockIcon")
         let explicitUserAction: Bool
         if let ev = NSApp.currentEvent {
             switch ev.type {
-            case .keyDown, .leftMouseDown, .rightMouseDown, .leftMouseUp, .rightMouseUp:
-                explicitUserAction = true
-            default:
-                explicitUserAction = false
+            case .keyDown, .leftMouseDown, .rightMouseDown, .leftMouseUp, .rightMouseUp: explicitUserAction = true
+            default: explicitUserAction = false
             }
         } else {
             explicitUserAction = false
         }
-        let visibleNormalWindow = NSApp.windows.contains {
-            $0.isVisible && $0.level != .statusBar
-        }
-        AppLogger.shared.log("applicationShouldTerminate consulted", category: .app, metadata: [
-            "menubar": "\(menubar)",
-            "keepRunning": "\(keepRunning)",
-            "eventType": "\(NSApp.currentEvent.map { String(describing: $0.type) } ?? "nil")",
-            "explicit": "\(explicitUserAction)",
-            "visibleWindow": "\(visibleNormalWindow)"
-        ])
+        let visibleNormalWindow = NSApp.windows.contains { $0.isVisible && $0.level == .normal && $0.canBecomeMain }
         if menubar && keepRunning && !explicitUserAction && !visibleNormalWindow {
             return .terminateCancel
         }
-        return .terminateNow
+        return MainActor.assumeIsolated { confirmQuitIfBusy() }
     }
-    
-    // MARK: - Recovery Notification
-    
-    private func showRecoveryNotification(count: Int) {
-        // Post notification to show recovery alert in UI
-        NotificationCenter.default.post(
-            name: .recoveredItemsFound,
-            object: nil,
-            userInfo: ["count": count, "items": recoveredItems]
-        )
+
+    /// «¿Salir de Transcriptor X?» only with a recording or active jobs (spec 6.25).
+    @MainActor private func confirmQuitIfBusy() -> NSApplication.TerminateReply {
+        let recording = RecordingController.shared.isRecording
+        let jobs = JobManager.shared
+        let processing = jobs.currentJob != nil
+        let waiting = jobs.jobs.filter { $0.status == .queued || $0.status == .waitingModel }.count
+        guard recording || processing || waiting > 0 else { return .terminateNow }
+
+        var lines: [String] = []
+        if recording { lines.append(TXL.t("quit.recording", "Se detendrá la grabación y se guardará lo grabado para transcribirlo la próxima vez.")) }
+        if processing { lines.append(TXL.t("quit.processing", "El trabajo en curso se podrá reanudar la próxima vez.")) }
+        if waiting > 0 { lines.append(TXL.n("quit.waiting", "%d trabajo en espera no se conserva.", "%d trabajos en espera no se conservan.", waiting)) }
+
+        let alert = NSAlert()
+        alert.messageText = TXL.t("quit.title", "¿Salir de Transcriptor X?")
+        alert.informativeText = lines.joined(separator: " ")
+        alert.addButton(withTitle: TXL.t("quit.quit", "Salir"))
+        alert.addButton(withTitle: TXL.t("quit.closeWindow", "Cerrar solo la ventana"))
+        alert.addButton(withTitle: TXL.t("common.cancel", "Cancelar")).keyEquivalent = "\u{1b}"
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            if recording {
+                Task { @MainActor in
+                    if let url = await RecordingController.shared.recorder.stopRecording() {
+                        _ = RecoveryManager.shared.storeRecordingForNextLaunch(url)
+                    }
+                    NSApp.reply(toApplicationShouldTerminate: true)
+                }
+                return .terminateLater
+            }
+            return .terminateNow
+        case .alertSecondButtonReturn:
+            WindowCoordinator.mainWindow?.close()
+            return .terminateCancel
+        default:
+            return .terminateCancel
+        }
     }
 }
 

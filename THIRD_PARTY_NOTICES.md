@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-TranscriptorX distribuye o enlaza componentes de terceros. Este documento
+Transcriptor X distribuye o enlaza componentes de terceros. Este documento
 recoge su atribución. Los textos de licencia completos están junto a este
 fichero, en la carpeta indicada para cada componente cuando aplica.
 
@@ -57,3 +57,22 @@ Este aviso se ofrece de buena fe para cumplir con las condiciones de
 atribución. No constituye asesoramiento legal. Si eres autor de alguno de
 estos proyectos y crees que la atribución es incorrecta o incompleta, abre un
 issue en el repositorio.
+
+## FluidAudio (identificación de hablantes)
+
+- Paquete Swift `FluidInference/FluidAudio` 0.17.x, enlazado en la aplicación.
+  Licencia **Apache 2.0** (Copyright FluidInference). Incluye código de
+  fastcluster (BSD) y VBx (Apache 2.0); sus licencias están en
+  `ThirdPartyLicenses/` dentro del paquete.
+- Modelos Core ML de `FluidInference/speaker-diarization-coreml` (revisión
+  fijada por FluidAudio), **no incluidos en la app**: se descargan de Hugging Face
+  la primera vez que se identifican hablantes. Licencia **CC-BY-4.0**, derivados de
+  pyannote `speaker-diarization-community-1`. Atribución: Plaquet y Bredin (2023,
+  segmentación powerset), Wang et al. (2023, WeSpeaker), Landini et al. (2022, VBx).
+
+## Handy (inspiración del dictado)
+
+- El comportamiento del dictado (modos del atajo, cápsula de grabación, pegado
+  que restaura el portapapeles y lista de muletillas) se inspira en
+  [Handy](https://github.com/cjpais/Handy), de CJ Pais, licencia **MIT**. No se
+  incluye código de Handy; la implementación en Swift es propia.

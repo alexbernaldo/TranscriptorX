@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>TranscriptorX necesita capturar el audio de las aplicaciones para transcribirlo.</string>
+	<string>Transcriptor X necesita capturar el audio de las aplicaciones para transcribirlo.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>TranscriptorX usa tu calendario para nombrar tus grabaciones de reunión con el evento en curso.</string>
+	<string>Transcriptor X usa tu calendario para nombrar tus grabaciones de reunión con el evento en curso.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>TranscriptorX usa tu calendario para nombrar tus grabaciones de reunión con el evento en curso.</string>
+	<string>Transcriptor X usa tu calendario para nombrar tus grabaciones de reunión con el evento en curso.</string>
 </dict>
 </plist>

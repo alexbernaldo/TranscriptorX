@@ -1,0 +1,10 @@
+[package]
+name = "speakrs-bench"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# External comparison only: not linked into the app.
+[dependencies]
+speakrs = { git = "https://github.com/avencera/speakrs", rev = "5fdcc5db710a0c0bcae03d64cdaa6607253947f1", features = ["coreml"] }
+hound = "3.5"

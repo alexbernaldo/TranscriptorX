@@ -94,6 +94,8 @@ struct TranscriptionResult {
     var segments: [TranscriptionSegment]
     var plainText: String
     var showTimestamps: Bool
+    /// Speakers were requested but could not be identified (the text is still saved).
+    var speakerDetectionError: String?
     
     init(segments: [TranscriptionSegment] = [], showTimestamps: Bool = true) {
         self.segments = segments
@@ -362,7 +364,7 @@ struct ModelInfo: Identifiable, Hashable {
 
 // MARK: - Settings
 struct TranscriptionSettings: Codable, Equatable {
-    var language: String = "es"
+    var language: String = "auto"             // detect the language by default
     var selectedModelId: String = "base"
     
     // Preprocessing options
@@ -413,7 +415,7 @@ struct TranscriptionSettings: Codable, Equatable {
     
     // Presets for different scenarios
     static let lecture = TranscriptionSettings(
-        language: "en",
+        language: "auto",
         selectedModelId: "large-v3",
         useVAD: true,
         vadThreshold: 0.6,
@@ -425,7 +427,7 @@ struct TranscriptionSettings: Codable, Equatable {
     )
     
     static let podcast = TranscriptionSettings(
-        language: "es",
+        language: "auto",
         selectedModelId: "medium",
         useVAD: true,
         vadThreshold: 0.5,
@@ -436,7 +438,7 @@ struct TranscriptionSettings: Codable, Equatable {
     )
     
     static let interview = TranscriptionSettings(
-        language: "es",
+        language: "auto",
         selectedModelId: "large-v3-turbo",
         useVAD: true,
         vadThreshold: 0.5,

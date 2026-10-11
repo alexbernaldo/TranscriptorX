@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Localization audit for TranscriptorX UI.
+Localization audit for Transcriptor X UI.
 
 Checks:
-1) Every `localizationManager.text("key", ...)` key exists in Localizable.xcstrings with en/es.
+1) Every `localizationManager.text("key", ...)` and `TXL.t/f("key", ...)` key exists in
+   Localizable.xcstrings with en/es; `TXL.n("key", ...)` needs `key.one` and `key.other`.
 2) Every hardcoded UI literal used in SwiftUI constructors exists in Localizable.xcstrings with en/es.
 
 Usage:
@@ -19,11 +20,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOTS = [ROOT / "TranscriptorNative" / "Views", ROOT / "TranscriptorNative" / "App"]
+SRC_ROOTS = [ROOT / "TranscriptorNative"]
 CATALOG = ROOT / "TranscriptorNative" / "Resources" / "Localizable.xcstrings"
 IGNORE_PATH_FRAGMENTS = ("demucs_env", "site-packages")
 
-LOCALIZATION_KEY_PATTERN = re.compile(r'localizationManager\.text\("([^"]+)"')
+LOCALIZATION_KEY_PATTERN = re.compile(r'(?:localizationManager\.text|TXL\.t|TXL\.f)\(\s*"([^"]+)"')
+PLURAL_KEY_PATTERN = re.compile(r'TXL\.n\(\s*"([^"]+)"')
 UI_LITERAL_PATTERNS = [
     re.compile(r'Text\("([^"\\]*(?:\\.[^"\\]*)*)"\)'),
     re.compile(r'Button\("([^"\\]*(?:\\.[^"\\]*)*)"\)'),
@@ -69,6 +71,9 @@ def main() -> int:
 
         for match in LOCALIZATION_KEY_PATTERN.finditer(text):
             manager_keys.add(match.group(1))
+        for match in PLURAL_KEY_PATTERN.finditer(text):
+            manager_keys.add(match.group(1) + ".one")
+            manager_keys.add(match.group(1) + ".other")
 
         for pattern in UI_LITERAL_PATTERNS:
             for match in pattern.finditer(text):
@@ -93,7 +98,7 @@ def main() -> int:
 
     print("Localization audit failed.")
     if missing_manager_keys:
-        print(f"\nMissing localizationManager keys ({len(missing_manager_keys)}):")
+        print(f"\nMissing localization keys ({len(missing_manager_keys)}):")
         for key in missing_manager_keys:
             print(f"  - {key}")
 

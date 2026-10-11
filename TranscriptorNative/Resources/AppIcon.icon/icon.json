@@ -1,0 +1,31 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "srgb:0.11765,0.10588,0.15294,1.00000",
+      "srgb:0.07059,0.06667,0.08627,1.00000"
+    ],
+    "orientation" : {
+      "start" : { "x" : 0.5, "y" : 0 },
+      "stop" : { "x" : 0.5, "y" : 1 }
+    }
+  },
+  "groups" : [
+    {
+      "layers" : [
+        { "image-name" : "StrokeB.svg", "name" : "StrokeB" }
+      ],
+      "name" : "Stroke B",
+      "specular" : false
+    },
+    {
+      "layers" : [
+        { "image-name" : "StrokeA.svg", "name" : "StrokeA" }
+      ],
+      "name" : "Stroke A",
+      "specular" : false
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [ "macOS" ]
+  }
+}

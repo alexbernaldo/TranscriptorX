@@ -29,3 +29,6 @@ TranscriptorNative/AudioEngine/lib/deep-filter
 
 # Imagen de disco generada localmente (se distribuye vía Release)
 /dist/
+
+# Coverage artifacts
+*.profraw

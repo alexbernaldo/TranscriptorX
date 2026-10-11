@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Genera la imagen de disco de instalación (DMG) de TranscriptorX.
+"""Genera la imagen de disco de instalación (DMG) de Transcriptor X.
 
 Produce un DMG con el aspecto habitual de una app de macOS: la aplicación a la
 izquierda, el acceso a /Applications a la derecha, una flecha entre ambos y el
 texto "arrástrala a Aplicaciones" en el idioma del sistema.
 
 Uso:
-    python3 scripts/build_dmg.py --app RUTA/TranscriptorNative.app
-    python3 scripts/build_dmg.py --app RUTA/TranscriptorNative.app \
-        --output dist/TranscriptorX-2.0.dmg --volname "Transcriptor X"
+    python3 scripts/build_dmg.py --app "RUTA/Transcriptor X.app"
+    python3 scripts/build_dmg.py --app "RUTA/Transcriptor X.app" \
+        --output dist/TranscriptorX-3.0.dmg --volname "Transcriptor X"
 
 Solo necesita las herramientas de Xcode (swift) y hdiutil, ambas vienen de serie.
 
@@ -30,8 +30,9 @@ import tempfile
 import time
 from pathlib import Path
 
-APP_NAME = "TranscriptorX"
-VOLUME_NAME = "TranscriptorX"
+# Nombre del archivo .dmg (sin espacios, para URLs de descarga) y del volumen.
+FILE_STEM = "TranscriptorX"
+VOLUME_NAME = "Transcriptor X"
 WINDOW_ORIGIN = (200, 160)
 WINDOW_W, WINDOW_H = 640, 400
 ICON_SIZE = 128
@@ -154,7 +155,7 @@ def detach(mount: Path, device: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", required=True, help="Ruta del .app ya compilado")
-    parser.add_argument("--output", default=f"dist/{APP_NAME}-2.0.dmg")
+    parser.add_argument("--output", help="Por defecto dist/TranscriptorX-<versión de la app>.dmg")
     parser.add_argument("--volname", default=VOLUME_NAME)
     args = parser.parse_args()
 
@@ -162,6 +163,10 @@ def main() -> None:
     if not app.is_dir():
         raise SystemExit(f"No existe la aplicación: {app}")
 
+    if args.output is None:
+        with open(app / "Contents" / "Info.plist", "rb") as handle:
+            version = plistlib.load(handle).get("CFBundleShortVersionString", "0")
+        args.output = f"dist/{FILE_STEM}-{version}.dmg"
     output = Path(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -179,6 +184,11 @@ def main() -> None:
         stage = workdir / "stage"
         stage.mkdir()
         shutil.copytree(app, stage / app.name, symlinks=True)
+        # Finder muestra «Transcriptor X» sin «.app», como en las apps instaladas.
+        hidden = subprocess.run(["SetFile", "-a", "E", str(stage / app.name)],
+                                capture_output=True, text=True)
+        if hidden.returncode != 0:
+            print("AVISO: no se pudo ocultar la extensión .app:", hidden.stderr.strip(), file=sys.stderr)
         (stage / "Applications").symlink_to("/Applications")
         build_background(stage)
 

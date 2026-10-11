@@ -1,544 +1,322 @@
-# 🎙️ Transcriptor X
+# Transcriptor X
 
-### *Transcription engine nativo de macOS con IA local, aislamiento de voz y diseño de ingeniería de robustez industrial.*
-
-> **Transcriptor X** es una aplicación macOS nativa (SwiftUI) que convierte audio y video en texto con precisión de nivel profesional, ejecutando **el 100% del procesamiento en tu Mac**. Sin nubes, sin APIs de terceros, sin subir un solo byte de tu voz. Bajo el capó orquesta un pipeline completo: limpieza neuronal del audio (DeepFilterNet + Demucs), motor de reconocimiento `whisper.cpp` acelerado por CoreML, diarización de hablantes, cola de trabajos serial con recuperación ante fallos y exportación a 8 formatos.
+### Private, studio-grade transcription for the Mac. Every word, every speaker, and not a single byte leaves your computer.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-13.0+-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS 13.0+"/>
-  <img src="https://img.shields.io/badge/Swift-5.0-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift 5"/>
-  <img src="https://img.shields.io/badge/Engine-whisper.cpp-111111?style=for-the-badge&logo=openai&logoColor=white" alt="whisper.cpp"/>
-  <img src="https://img.shields.io/badge/UI-SwiftUI-0D4F8B?style=for-the-badge&logo=swift&logoColor=white" alt="SwiftUI"/>
-  <img src="https://img.shields.io/badge/ASR-CoreML_%2B_NE-4FC3F7?style=for-the-badge" alt="CoreML"/>
-  <img src="https://img.shields.io/badge/Procesado-100%25_local-2E7D32?style=for-the-badge" alt="100% local"/>
-  <img src="https://img.shields.io/badge/Release-v2.0-00C853?style=for-the-badge&logo=github&logoColor=white" alt="Release v2.0"/>
-  <img src="https://img.shields.io/badge/Licencia-PolyForm_Noncommercial-E91E63?style=for-the-badge" alt="Licencia"/>
+  <img src="https://img.shields.io/badge/macOS-14.0+-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS 14.0+"/>
+  <img src="https://img.shields.io/badge/Swift-SwiftUI-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift and SwiftUI"/>
+  <img src="https://img.shields.io/badge/Engine-whisper.cpp_%2B_Core_ML-111111?style=for-the-badge" alt="whisper.cpp and Core ML"/>
+  <img src="https://img.shields.io/badge/Processing-100%25_on--device-2E7D32?style=for-the-badge" alt="100% on-device"/>
+  <img src="https://img.shields.io/badge/Release-v4.0-7C5CFF?style=for-the-badge&logo=github&logoColor=white" alt="Release v4.0"/>
+  <img src="https://img.shields.io/badge/License-PolyForm_Noncommercial-E91E63?style=for-the-badge" alt="License"/>
 </p>
 
----
+<p align="center">
+  <img src="docs/images/home.png" alt="Transcriptor X: drop a file, paste a link or record, then pick the options as one-click tiles" width="860"/>
+</p>
 
-## 📑 Índice
-
-1. [La idea en 30 segundos](#-la-idea-en-30-segundos)
-2. [Lo que puede hacer](#-lo-que-puede-hacer)
-3. [Cómo funciona por dentro](#-cómo-funciona-por-dentro)
-    - [Arquitectura general](#arquitectura-general)
-    - [Resolución de un audio paso a paso](#resolución-de-un-audio-paso-a-paso)
-    - [Pipeline de preprocesado de audio](#pipeline-de-preprocesado-de-audio)
-    - [Motor ASR whisper.cpp](#motor-asr-whispercpp)
-    - [Transcripción en vivo (streaming)](#transcripción-en-vivo-streaming)
-    - [Cola de trabajos serial](#cola-de-trabajos-serial)
-    - [Gestión elástica de memoria del modelo](#gestión-elástica-de-memoria-del-modelo)
-    - [Recuperación ante fallos (Write-Ahead Logging)](#recuperación-ante-fallos-write-ahead-logging)
-    - [Grabación de micrófono y audio del sistema](#grabación-de-micrófono-y-audio-del-sistema)
-    - [Flujo de URLs (YouTube y otros)](#flujo-de-urls-youtube-y-otros)
-    - [Persistencia y exportación](#persistencia-y-exportación)
-4. [Decisiones de ingeniería](#-decisiones-de-ingeniería)
-5. [Stack tecnológico](#-stack-tecnológico)
-6. [Modelos de IA soportados](#-modelos-de-ia-soportados)
-7. [Instalación](#-instalación)
-8. [Organización de datos locales](#-organización-de-datos-locales)
-9. [Atajos de teclado](#-atajos-de-teclado)
-10. [Privacidad y seguridad](#-privacidad-y-seguridad)
-11. [Solución de problemas](#-solución-de-problemas)
-12. [Contribución](#-contribución)
-13. [Licencias de código abierto](#-licencias-de-código-abierto)
+Transcriptor X turns meetings, lectures, interviews, podcasts and videos into clean, searchable, speaker-labelled text, and lets you dictate into any app with a single key. It is a native SwiftUI app that runs the whole pipeline on your Mac: neural noise removal, Whisper speech recognition accelerated by the Neural Engine, speaker identification, local AI summaries and translation, an editor that follows the audio word by word, and export to eleven formats. No accounts, no cloud, no telemetry.
 
 ---
 
-## 🚀 La idea en 30 segundos
+## Contents
 
-Grabar una reunión, una clase o una entrevista produce **horas de audio** y cero texto aprovechable. La mayoría de soluciones suben esas grabaciones a la nube — con todas las implicaciones de privacidad que eso conlleva — y aún así devuelven texto sin timestamps, sin diferenciar hablantes y sin limpiar el ruido de fondo.
-
-**Transcriptor X** ataca el problema de raíz:
-
-- 🧠 **IA local de última generación** — el motor `whisper.cpp` en tu propia máquina, acelerado por el Apple Neural Engine vía encoders CoreML.
-- 🧹 **Audio limpio antes de transcribir** — un preprocesado en cascada con redes neuronales de reducción de ruido (DeepFilterNet) y aislamiento de voz (Demucs), más normalización de volumen EBU R128.
-- 🗣️ **Diarización** — sabe *quién* habló (Hablante 1, Hablante 2…), con timestamps por segmento.
-- 🔴 **Graba desde el propio sistema** — captura el audio *interno* de tu Mac (reuniones, videos, juegos) gracias a `ScreenCaptureKit`.
-- 🛡️ **100% local** — tus conversaciones nunca salen de tu disco.
+- [Why it stands out](#why-it-stands-out)
+- [Everything it does](#everything-it-does)
+- [Dictation anywhere](#dictation-anywhere)
+- [Who said what, measured](#who-said-what-measured)
+- [Under the hood](#under-the-hood)
+- [Engineering highlights](#engineering-highlights)
+- [Models](#models)
+- [Install](#install)
+- [Keyboard shortcuts](#keyboard-shortcuts)
+- [Privacy](#privacy)
+- [Your data on disk](#your-data-on-disk)
+- [Tech stack](#tech-stack)
+- [License](#license)
 
 ---
 
-## ✨ Lo que puede hacer
+## Why it stands out
 
-| Capacidad | Detalle |
+- **Truly local.** Whisper, the speaker models, noise removal, summaries and translation all run on your Mac. Your recordings are never uploaded anywhere.
+- **Knows who is talking.** On-device speaker identification with a pyannote-style pipeline, assigned word by word, so a question and its answer inside the same sentence get two different speakers.
+- **Built to be used every day.** Drop a file, paste a link or press Grabar. The options are plain-language tiles with a one-line explanation each, and the same settings live in Inicio and in Settings, always in sync.
+- **Dictate into any app.** Hold a shortcut, speak, release, and the text appears where your cursor is, with a calm animated capsule that shows your voice.
+- **An editor that listens with you.** Words light up as the audio plays. Click any word to jump there. Split, merge, favourite, find and replace, fix the timing.
+- **Never loses work.** A serial job queue with write-ahead recovery: if the Mac shuts down mid-recording or mid-transcription, it picks up where it left off.
+- **Feels like a Mac app.** Menu bar presence, an optional Dock-free mode, native menus and shortcuts, VoiceOver support, Reduce Motion respected, and full Spanish and English localisation.
+
+---
+
+## Everything it does
+
+### Bring in anything
+
+| | |
 |---|---|
-| 🎙️ **Transcripción universal** | Archivos locales (`.mp3`, `.wav`, `.m4a`, `.mp4`, `.mov`, `.flac`, `.ogg`…) y cualquier contenedor que FFmpeg entienda. |
-| 🔴 **Grabación integrada** | Micrófono del sistema **y** audio interno del Mac (audio del sistema vía `ScreenCaptureKit`). Gestos: grabar, pausar, reanudar, cancelar. |
-| 🌐 **Flujo de URLs** | Pega un enlace: usa `youtube-transcript-api` para subtítulos instantáneos o, si la transcripción no existe, descarga el audio con `yt-dlp` y lo transcribe localmente. Soporta YouTube y otros dominios. |
-| 🧹 **Limpieza neuronal** | **DeepFilterNet** para eliminar ruido + **Demucs** para aislar la voz de la música de fondo (separación de stems). |
-| 🔊 **Normalización de volumen** | EBU R128 (`loudnorm`, I=-16 LUFS) para que el ASR escuche señales consistentes. |
-| ⚙️ **Control fino del ASR** | Beam size, temperatura, umbrales de entropía y de no-discurso, VAD Silero configurable, prompts de arranque, traducción automática, timestamps. |
-| 🗣️ **Diarización de hablantes** | Integración con **tinydiarize** (`-tdrz`) dentro de whisper.cpp: marca `[SPEAKER_TURN]` → etiquetas de hablante por segmento. |
-| 💾 **8 formatos de exportación** | `.txt`, `.srt`, `.vtt`, `.md`, `.csv`, `.html`, `.pdf`, `.docx` — todos generados desde una representación intermedia común. |
-| ✏️ **Editor de transcripción** | Visor interactivo con timestamps: editar texto, deshacer ediciones, restaurar el original, marcar favoritos, ocultar segmentos, buscar. |
-| 🧩 **Presets** | *Conferencia*, *Podcast*, *Entrevista*: combinaciones de modelo, idioma, VAD y diariazación con un clic. |
-| 🛡️ **Recuperación ante fallos** | Sistema tipo Write-Ahead Logging: si el Mac se apaga a mitad de una grabación o transcripción, lo recuperas en el siguiente arranque. |
-| 📦 **Instalador nativo** | DMG «arrastra a Aplicaciones» generado por script propio con fondo localizado y atajos de Finder. |
+| **Files** | Any audio or video FFmpeg can read: `.mp3`, `.m4a`, `.wav`, `.flac`, `.mp4`, `.mov` and many more. Drag several at once, reorder them, and they queue up. |
+| **Links** | Paste a YouTube (or other supported) URL. Published subtitles are used instantly when they exist; otherwise the audio is downloaded with `yt-dlp` and transcribed locally, with byte-level progress and clear, specific errors. |
+| **Recording** | Microphone or the Mac's own audio (Zoom, Teams, a video) through ScreenCaptureKit, with pause and resume, a floating recording panel and live level meters. |
+| **Meetings** | Notices when Zoom, Teams, Discord, FaceTime or a Slack huddle opens and offers to record. It can name the recording after the calendar event that is on. |
+| **Watched folders** | Point it at a folder and new recordings are transcribed automatically, with optional automatic export. |
+
+### Clean audio first
+
+Each option is a tile on the home screen, with an ⓘ that explains it in one sentence:
+
+- **Reduce noise.** DeepFilterNet for fans, traffic and echo, or Demucs to separate voices from music.
+- **Even out volume.** EBU R128 loudness normalisation, so quiet speakers come through.
+- **Skip silences.** Silero voice activity detection: faster, and no invented sentences in the gaps.
+- **Who's speaking.** On-device speaker identification.
+- **Translate to English.** Whisper writes the transcript straight in English.
+
+Presets for **Lecture**, **Podcast** and **Interview** set the model and options in one click. The language is detected automatically by default.
+
+### Edit like a pro
+
+- Word-level timestamps: the current word is highlighted as the audio plays, and the view follows playback.
+- Click to seek, play or pause from the keyboard, skip 5 seconds back or forward, change speed.
+- Split at the cursor, merge segments, undo edits, restore the original text of a segment.
+- Favourites with next/previous navigation, a "favourites only" view, find and replace across the document.
+- Adjust timings, rename speakers and give each one a colour.
+
+### Understand it with local AI
+
+An inspector next to the document brings:
+
+- **Speakers.** Who spoke and for how long, with names you choose.
+- **AI.** A suggested title, a summary, tags, and a chat with your transcript. Runs on Apple Foundation Models, Ollama or LM Studio, always on your Mac or your local network.
+- **Translation.** Three engines: Apple's on-device Translation framework, Whisper, or your local language model.
+- **Details.** Duration, model, language, options used and file information.
+
+### Find it later
+
+A history with full-text search across every transcript (SQLite FTS5), grouped by date, with a "Recently Deleted" bin that keeps documents for the period you choose.
+
+### Take it anywhere
+
+Eleven export formats from one shared document model: **Text**, **Markdown**, **Word**, **Web (HTML)**, **PDF**, **SubRip (SRT)**, **WebVTT**, **CSV**, **JSON**, **Avid (CMX3600 EDL)** for editors, and the **`.transcriptor` project** package that keeps text, audio and edits together and reopens with a double click. Each format has its own options: speakers, timestamps, grouping, milliseconds, favourites only and more.
+
+### Automate it
+
+- **`tx` command-line tool:** `tx transcribe meeting.m4a --format srt --language es`, running through the app's own queue.
+- **`transcriptorx://` URL scheme** to open the app or transcribe a link from scripts and Shortcuts.
+- **On-screen captions** that follow a recording live.
+- **Self-hosted updates** with Sparkle and a signed appcast. No telemetry.
+
+### Always one click away
+
+- A menu bar item with recording, queue, dictation and "copy last dictation".
+- **Hide from Dock** so Transcriptor X lives only in the menu bar.
+- Keep it running in the background when the window closes, so dictation, recordings and the queue stay available.
+- Settings is one click away from the toolbar.
 
 ---
 
-## 🧠 Cómo funciona por dentro
+## Dictation anywhere
 
-### Arquitectura general
+Inspired by the open-source [Handy](https://github.com/cjpais/Handy) and rebuilt in Transcriptor X's style.
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          CAPA DE INTERFAZ                           │
-│     SwiftUI + Combine (MVVM)  ·  pantalla mín. 900×600              │
-│                                                                     │
-│   ┌──────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│   │ MasterView│ │   SetupView   │ │ Preferences  │ │ Recorder UI │ │
-│   │ (historial)│ │ (inst. deps) │ │   (ajustes)   │ │  (flotante) │ │
-│   └──────────┘  └──────────────┘  └──────────────┘  └────────────┘ │
-└───────────────┬─────────────────────────────────────────────┬──────┘
-                │ ViewModel (TranscriptionViewModel)           │ Recovery UI
-┌───────────────▼─────────────────────────────────────────────▼──────┐
-│                        DOMINIO / SERVICIOS                          │
-│                                                                     │
-│  TranscriptionViewModel ──► JobManager (cola serial de trabajos)   │
-│                                  │                                  │
-│   ┌──────────────────────────────┼─────────────────────────────┐   │
-│   │  TranscriptionService         │  AudioPreprocessor          │   │
-│   │   (whisper-cli + CoreML + VAD)│   (FFmpeg → WAV 16 kHz)     │   │
-│   │                              │    │                        │   │
-│   │                              │    ├─► AudioEngineManager    │   │
-│   │                              │    │     ├─ DeepFilterBridge │   │
-│   │                              │    │     └─ DemucsProcessor  │   │
-│   │                              │    └─► loudnorm (EBU R128)   │   │
-│   └──────────────────────────────┴─────────────────────────────┘   │
-│                                                                     │
-│  URLTranscriptionService ──► Python (youtube-transcript-api / yt-dlp)│
-│  SystemAudioRecorder   ─────► ScreenCaptureKit (audio del sistema) │
-│  RecorderManager       ─────► AVFoundation (micrófono)             │
-│  ModelManager          ─────► memoria elástica del modelo IA       │
-│  RecoveryManager       ─────► Write-Ahead Logging (manifiestos)    │
-│  TranscriptionStorage  ─────► JSON atómico (historial)             │
-└─────────────────────────────────────────────────────────────────────┘
-```
+- **One shortcut, three ways to use it.** *Automatic*: hold to talk and release to paste, or tap to start and tap again to paste. *Hold*: dictate only while the key is down. *Press*: one press to start, one to finish. Record any combination, with conflicts detected.
+- **Esc cancels**, while you speak and even while it transcribes.
+- **A capsule that shows your voice.** A pulsing dot, nine bars that follow your level, and a ✕. It widens into a spinner while Whisper works, and shows at the bottom, at the top, or not at all.
+- **It pastes and puts things back.** The text is pasted with ⌘V and your clipboard is restored afterwards. It can also type character by character for fields that block pasting, or just copy. Optionally it presses Return or ⌘Return for you in chats.
+- **Clean text.** Removes filler words such as "uh", "um", "eh" and "mmm", collapses stutters, strips `[BLANK_AUDIO]`, and can add a trailing space so you can keep dictating.
+- **Yours to tune.** Pick a microphone, a model and a language just for dictation, a list of words it should spell right (names, brands, jargon), start and stop sounds with volume, and muting the speakers while you talk.
+- **Private by design.** Dictations are not saved in the history.
 
-Y su equivalente en el mundo real de los servicios:
+---
+
+## Who said what, measured
+
+Speaker identification uses [FluidAudio](https://github.com/FluidInference/FluidAudio)'s offline pipeline (pyannote community-1 segmentation, WeSpeaker embeddings, VBx clustering) on Core ML, then assigns a speaker to every word.
+
+It was validated on a real 92-minute Zoom meeting with eight people, scored against Zoom's own per-participant transcript. A reproducible harness in [`Tools/DiarizationBench`](Tools/DiarizationBench) runs FluidAudio and [speakrs](https://github.com/avencera/speakrs) on the same audio:
+
+| Engine | Speakers found | Speaker confusion | Time for 92 min | Peak memory |
+|---|---:|---:|---:|---:|
+| **FluidAudio (shipping)** | 8 of 8 | 0.1% | 18 s | 1.0 GB |
+| FluidAudio, high precision | 8 of 8 | 0.1% | 34 s | 1.2 GB |
+| speakrs Core ML | 8 of 8 | 0.1% | 15 s | 3.2 GB |
+
+On that meeting, **99.8% of the 13,524 transcript words carry the right speaker.**
+
+---
+
+## Under the hood
 
 ```mermaid
 flowchart TD
-    UI["🖥️ UI SwiftUI"] --> VM["TranscriptionViewModel"]
-    VM --> JM["JobManager (cola serial)"]
-    JM -->|"procesa 1 a 1"| TS["TranscriptionService"]
-    TS --> Pre["AudioPreprocessor"]
-    Pre --> FFM["FFmpeg → WAV 16 kHz mono"]
-    Pre --> AE["AudioEngineManager"]
-    AE --> DF["DeepFilterBridge (ruido)"]
-    AE --> DM["DemucsProcessor (voz)"]
-    Pre --> LDN["loudnorm EBU R128"]
-    TS --> WC["whisper-cli (Streaming stdout)"]
-    WC -.-> CML["Modelos ggml + Encoder CoreML"]
-    WC -.-> VAD["Silero VAD"]
-    WC -.-> TDZ["tinydiarize [SPEAKER_TURN]"]
-    VM --> URL["URLTranscriptionService"]
-    URL --> YT["Python (youtube-transcript-api)"]
-    URL --> YDL["yt-dlp + FFmpeg"]
-    VM --> SR["SystemAudioRecorder ⚡ ScreenCaptureKit"]
-    VM --> MO["ModelManager (memoria elástica)"]
-    JM -.-> RC["RecoveryManager (WAL)"]
-    VM --> ST["TranscriptionStorage (JSON atómico)"]
-    ST --> EXP["Export (8 formatos)"]
+    UI["SwiftUI workspace<br/>Inicio · editor · inspector · settings"] --> WS["WorkspaceState + LibraryStore"]
+    WS --> JM["JobManager<br/>serial queue, priorities, recovery"]
+    JM --> PRE["AudioPreprocessor<br/>FFmpeg → 16 kHz mono WAV"]
+    PRE --> DF["DeepFilterNet"]
+    PRE --> DM["Demucs"]
+    PRE --> LN["loudnorm EBU R128"]
+    JM --> WH["whisper-cli<br/>Core ML encoder · Silero VAD · word timestamps"]
+    WH --> MAP["VAD time map<br/>word times back to the original audio"]
+    MAP --> SP["SpeakerDiarizationService<br/>FluidAudio on Core ML"]
+    SP --> AS["SpeakerAssignment<br/>word-level, split where the speaker changes"]
+    AS --> DB["TranscriptionDatabase<br/>SQLite WAL + FTS5"]
+    DB --> ED["DocumentEditor + PlaybackController"]
+    ED --> AI["Local AI<br/>Apple Foundation Models · Ollama · LM Studio"]
+    ED --> EX["ExportEngine<br/>11 formats + .transcriptor package"]
+    REC["SystemAudioRecorder<br/>mic + ScreenCaptureKit"] --> JM
+    URL["URLTranscriptionService<br/>subtitles or yt-dlp"] --> JM
+    DIC["DictationManager<br/>global hotkey → whisper → paste"] --> WH
+    CLI["tx CLI · transcriptorx:// · watched folders"] --> JM
+    JM -.-> RM["RecoveryManager<br/>write-ahead manifests"]
 ```
 
-### Resolución de un audio paso a paso
+**What happens when you press Transcribe:**
 
-Cuando el usuario arrastra un `.mp4` y pulsa *Transcribir*, la aplicación ejecuta esta cadena:
-
-```
-  1. ENCOLADO        JobManager.snapshot: congela TranscriptionSettings en el momento de
-                     encolar (dominio inmutable del trabajo). El worker es SERIAL: solo
-                     hay una transcripción activa, lo que acota RAM/GPU y evita degradar
-                     el sistema con cargas paralelas.
-
-  2. PREPROCESADO    0 % ───────────────────────────► 30 %
-     (AudioPreprocessor)
-        a) FFmpeg: extrae pista y convierte a WAV 16 kHz / mono / PCM s16le.
-        b) (opc.) DeepFilterNet: elimina ruido de fondo.
-        c) (opc.) Demucs (HTDemucs): aísla la voz de la música.
-        d) (opc.) FFmpeg loudnorm I=-16:TP=-1.5:LRA=11 (EBU R128).
-
-  3. ASR              30 % ──────────────────────────► 100 %
-     (TranscriptionService)
-        a) Asegura modelo IA (descarga progresiva o uso de cache-local).
-        b) Prepara CoreML encoder (activa/desactiva renombrando a .off) y VAD Silero.
-        c) Si idioma = "auto", ejecuta --detect-language primero.
-        d) Lanza whisper-cli con los parámetros exactos del job (ver tabla).
-        e) Lee pipes: sintaxis de progreso (progress = NN%) y segmentos JSON en vivo.
-        f) Reconstruye TranscriptionResult, aplicando diarización (speakers).
-```
-
-### Pipeline de preprocesado de audio
-
-El orden **importa** y está documentado en el código. `AudioPreprocessor` compone las
-operaciones y las ejecuta sobre un directorio temporal (`transcriptor_<UUID>`) para
-nunca tocar el archivo original:
-
-| Paso | Herramienta | Parámetros | Propósito |
-|---|---|---|---|
-| 1 | `ffmpeg` | `-ar 16000 -ac 1 -c:a pcm_s16le` | Señal limpia y estándar para Whisper (16 kHz mono). |
-| 2 | `DeepFilterNet` (`deep-filter`) | binario Rust, atenuación configurable | Elimina ruido estacionario y no estacionario. |
-| 3 | `Demucs` (`demucs-bundled`) | modelo `htdemucs`, device `mps` (Apple Silicon) / `cpu`, `--shifts 1 --overlap 0.25` | Separa la pista de voz (stems), útil con música de fondo. |
-| 4 | `ffmpeg loudnorm` | `I=-16:TP=-1.5:LRA=11` | Volumen consistente según especificación EBU R128. |
-
-> **El detalle de ingeniería que marca la diferencia:** Demucs empaqueta **Python +
-> PyTorch + torchaudio + modelo** en un único binario PyInstaller (`demucs-bundled`) para
-> que el usuario nunca tenga que gestionar un entorno de Python. Se descarga con
-> `scripts/fetch_binaries.sh` desde los Releases. DeepFilterNet es un binario Rust
-> nativo (`deep-filter`) igual de autocontenido.
-
-### Motor ASR whisper.cpp
-
-`TranscriptionService` traduce cada job a una invocación precisa de **whisper-cli**
-(compilado con `-DWHISPER_COREML=1` para activar los encoders CoreML). Véase el mapeo:
-
-| Ajuste de la App | Flag de whisper-cli |
-|---|---|
-| Modelo seleccionado | `-m <modelo>` |
-| Idioma / auto-detección | `-l auto` + `--detect-language` |
-| Prompt de arranque | `--prompt` |
-| Timestamps | `-pp` |
-| Temperatura (0.0 = determinista) | `-temperature` |
-| Beam search | `-beam-size 5` / `-best-of 5` |
-| Umbral de entropía (anti-alucinación) | `-entropy-thold 2.40` |
-| Umbral de no-discurso | `-no-speech-thold 0.60` |
-| Supresión de segmentos no-fonéticos | `-suppress-nst` |
-| Diarización (hablantes) | `-tdrz` (tinydiarize) |
-| VAD Silero | `--vad --vad-model --vad-threshold --vad-min-silence-duration-ms --vad-min-speech-duration-ms --vad-speech-pad-ms` |
-| Salida JSON legible por la app | `-oj -of <base>` |
-
-**El modelo se gestiona de forma elástica** (véase *[memoria elástica](#gestión-elástica-de-memoria-del-modelo)*).
-
-### Transcripción en vivo (streaming)
-
-Nada de esperar al final: la app **parsea la salida estándar de whisper-cli mientras corre**:
-
-- Se abren pipes sobre el proceso (`readabilityHandler`).
-- Una regex captura cada segmento:
-
-```swift
-let segmentPattern = /\[(\d\d:\d\d:\d\d\.\d{3})\s*-->\s*(\d\d:\d\d:\d\d\.\d{3})\]\s*(.+)/
-```
-
-- El progreso se lee del stderr (`progress = NN%`) y el texto del stdout, alimentando en
-  tiempo real la UI (`streamingText` del job).
-- 💀 **Cancelación real:** `SIGTERM` al proceso (whisper-cli sale con 15 → job `cancelled`),
-  con el preprocesador cancelado en paralelo.
-- **Diarización:** los marcadores `[SPEAKER_TURN]` de tinydiarize incrementan el índice de
-  hablante; cada segmento final guarda su `speaker` (0, 1, 2…).
-
-### Cola de trabajos serial
-
-`JobManager` es el orquestador maestro:
-
-- Encola **n** audio/video (arrastre múltiple desde Finder) y los procesa **uno a uno** con
-  un worker asíncrono (`processQueue` → `while let nextJob = queuedJobs.first`).
-- **Por qué es serial (y no paralelo):** cada transcripción carga el modelo en RAM/GPU.
-  Transcribir 5 archivos en paralelo multiplicaría el pico de memoria. La cola acota el
-  coste a **un modelo cargado a la vez** —una decisión deliberada de robustez de sistema.
-- Cada job tiene su **propio snapshot**: los ajustes quedan congelados al encolar, congelando
-  el comportamiento aunque el usuario cambie opciones a mitad de procesamiento.
-- Gestión por estado: `queued → processing → completed | failed | cancelled`, con `retry`
-  (hasta 3 intentos), `progress`, `streamingText` y `stats` agregadas de la cola.
-- Al completar: persiste la transcripción en el historial y, si se pidió, conserva el audio.
-
-### Gestión elástica de memoria del modelo
-
-`ModelManager` implementa un patrón de **memoria elástica**:
-
-- **Lazy load:** el modelo solo se carga cuando se necesita.
-- **Idle timeout:** si la app no transcribe durante **5 minutos**, el modelo se descarga
-  (libera RAM/GPU).
-- **Background:** al pasar la app a segundo plano, el timeout se acorta a **60 segundos**.
-- **Presión de memoria:** el observador de `NSProcessInfo` descarga el modelo ante avisos
-  de presión del sistema y al cambiar el estado de energía.
-- Estados: `unloaded → loading(progress) → ready → unloading → error`.
-
-| Modelo | RAM/GPU estimada |
-|---|---:|
-| tiny | ~75 MB |
-| base | ~150 MB |
-| small | ~500 MB |
-| medium | ~1.5 GB |
-| large* | ~3 GB |
-
-### Recuperación ante fallos (Write-Ahead Logging)
-
-La ingeniería de robustez más exigente del proyecto. `RecoveryManager` (un `actor` Swift)
-escribe **manifiestos JSON *antes*** de iniciar cualquier operación:
-
-```
-Manifests/
-├── recording-<id>.json        ← RecordingManifest
-└── transcription-<id>.json    ← TranscriptionManifest
-```
-
-- **Grabando:** el manifiesto se crea *antes* de abrir el stream de audio
-  (`status: recording → finalizing → completed/interrupted`), con progresión periódica
-  (`durationAtLastUpdate`). El audio vive en `TempRecordings/`.
-- **Transcribiendo:** el manifiesto guarda el modelo y, críticamente, **segmentos parciales**
-  (`PartialSegment{start, end, text, speaker}`) que se van añadiendo con cada actualización.
-- **En el arranque:** `checkForRecoverableItems()` detecta manifiestos huérfanos →
-  mueve el audio a `Recovered/recovered_<id>.wav`, guarda el texto parcial en
-  `recovered_<id>.txt` y avisa al usuario con una notificación. **Nada se pierde.**
-
-### Grabación de micrófono y audio del sistema
-
-- **Micrófono:** pipelines de `AVFoundation` con máquina de estados explícita
-  (`RecordingState`): `idle → requestingPermission → preparingAudio → initializingCapture →
-  recording → paused → stopping → saving → completed`.
-- **Audio del sistema:** registrar *lo que suena en tu Mac* (una reunión en el navegador,
-  una clase grabada en streaming…) se hace con `ScreenCaptureKit`, la API de Apple que
-  captura el audio interno del dispositivo. Requiere el permiso de *Grabación de pantalla*.
-- El panel de grabación es un **floating panel** (ventana flotante) que permite pausar,
-  parar y ver duración sin salir de la app; el audio grabado entra directo en la misma cola
-  de transcripción.
-
-### Flujo de URLs (YouTube y otros)
-
-1. `URLDispatcher` valida la URL, limpia parámetros de seguimiento (conserva `v`, `t`,
-   `start`, `end`) y reconoce la plataforma (YouTube en todas sus variantes:
-   `watch?v=`, `embed`, `shorts`, `youtu.be`, `m.` y `nocookie`; además TikTok, Instagram,
-   Vimeo, Twitter/X…).
-2. **Modo transcripción instantánea:** para YouTube usa `youtube-transcript-api`, con
-   prioridad de idioma `es → en`, prefiriendo transcripciones manuales sobre las
-   autogeneradas, y agrupando párrafos con heurística de fin de frase.
-3. **Sin subtítulos disponibles:** el mismo flujo cae en `yt-dlp` (+ `FFmpegExtractAudio`,
-   m4a 192 kbps, sin playlists), descarga el audio y **lo transcribe localmente** con el
-   mismo pipeline. Así, el resultado de un enlace siempre es texto para editar/exportar.
-
-### Persistencia y exportación
-
-- **Historial:** `TranscriptionStorage` escribe `transcriptions.json` de forma **atómica**
-  (pretty-printed, claves ordenadas, fechas ISO8601) y notifica cambios
-  (`transcriptionsDidChange`). Los audios conservados viven en `/audio/`.
-- **Exportación inteligente:** toda salida nace de una **representación intermedia** —
-  `ExportDocument` (título, duración, idioma, modelo, hablantes, timestamps, segmentos con
-  favoritos). De ahí se derivan **los 8 formatos** sin duplicar lógica:
-
-```
-ExportDocument (IR neutral)
-   ├── .txt   → texto plano
-   ├── .srt   → subtítulos con [Hablante N] y HH:MM:SS,mmm
-   ├── .vtt   → WEBVTT con <v Hablante N>
-   ├── .md    → Markdown con ## Hablante N y timestamps en negrita
-   ├── .csv   → filas por segmento
-   ├── .html  → documento autocontenido
-   ├── .pdf   → renderizado y empaquetado
-   └── .docx  → zip OOXML con la estructura Word
-```
-
-- **Visor interactivo (`TranscriptViewer`):** los segmentos se editan, marcan como
-  favoritos, se ocultan o se restauran (historial de ediciones + `originalText`), con
-  búsqueda integrada y acceso rápido a exportar.
+1. The file joins a serial queue. You can reorder it or put it first with ⌥. A manifest is written so the job survives a crash.
+2. FFmpeg converts it to 16 kHz mono. Noise removal, voice isolation and loudness normalisation run if you chose them.
+3. `whisper-cli` transcribes with the Core ML encoder on the Neural Engine, streaming segments to the screen as they arrive, with token-level timestamps.
+4. If silences were skipped, the word timestamps are mapped back onto the original audio with the same piecewise-linear map Whisper uses for segments.
+5. FluidAudio finds the speakers and every word gets the speaker that overlaps it most; segments split where the speaker changes.
+6. The document is stored in SQLite and indexed for search, and the editor opens it with the audio ready to play.
 
 ---
 
-## 🏆 Decisiones de ingeniería
+## Engineering highlights
 
-Decisiones deliberadas, con su *porqué*, para que se note el nivel de diseño:
-
-| Decisión | Por qué |
-|---|---|
-| **Cola de transcripción serial** | Acotar el pico de RAM/GPU a un único modelo cargado evita degradar el sistema y hace el progreso predecible para el usuario. |
-| **Snapshot inmutable en cada job** | Cada trabajo se comporta idéntico sea cual sea el estado de los ajustes durante su ejecución → resultados reproducibles. |
-| **Write-Ahead Logging antes de operar** | El manifiesto se escribe *antes* de la acción: es la única forma de garantizar recuperación ante un corte de energía a mitad de grabación. |
-| **Preprocesado en cascada (FFmpeg → DeepFilter → Demucs → loudnorm)** | El ASR rinde mejor con señales limpias, mono y con volumen estable; la cadena se ejecuta sobre una copia temporal, el original jamás se altera. |
-| **Encoders CoreML + whisper.cpp nativo** | Inferencia en el Apple Neural Engine: transcripción ultrarrápida y térmicamente eficiente frente a modelos puros de CPU/GPU. |
-| **Representación intermedia para exportación** | 8 formatos con una sola fuente de verdad → la lógica de contenido no se duplica por formato. |
-| **Binarios autocontenidos (PyInstaller/Rust)** | El usuario final nunca gestiona entornos Python para Demucs ni toolchains para DeepFilterNet. |
-| **`os.log` + exportación de diagnósticos** | Logging estructurado a nivel sistema y un botón en el menú *Ayuda* que exporta logs para soporte. |
+- **Word-accurate speakers.** Whisper's VAD mode returns segment times on the original timeline but token times on the trimmed one. Rebuilding Whisper's own time map from its log fixed speaker attribution from 47% to 99.8% of words on the benchmark meeting, and keeps playback highlighting exact.
+- **Measured, not guessed.** Engine choices are backed by a benchmark harness (Swift plus Rust) with DER, JER, purity and coverage scoring against a real reference, and a word-level assignment evaluator.
+- **Crash-safe queue.** Write-ahead manifests for recordings and jobs; interrupted work comes back as recoverable rows on the next launch.
+- **Fast, durable library.** SQLite in WAL mode with a contentless FTS5 index for instant search across hours of text.
+- **One source of truth for settings.** Inicio's quick settings and Settings › Language read and write the same defaults, live in both directions.
+- **Permissions that survive updates.** Builds are signed with a stable identity, so macOS keeps Microphone, Accessibility and Screen Recording access from one version to the next. Hardened runtime with exactly the entitlements it needs.
+- **Native to the core.** Non-activating panels for the dictation capsule and recording panel, Carbon hotkeys with press and release for hold-to-talk, CoreAudio output muting, clipboard snapshot and restore, a Unix-socket server for the CLI.
+- **Accessible.** VoiceOver labels and announcements throughout, Reduce Motion and Reduce Transparency honoured, every animation interruptible and under 300 ms where it is part of a task.
+- **Tested.** Unit tests cover editor operations, formatting, speaker assignment, the VAD time map, dictation text clean-up and shortcuts.
 
 ---
 
-## 🛠️ Stack tecnológico
+## Models
 
-| Capa | Tecnología |
-|---|---|
-| **Lenguaje / UI** | Swift 5 · SwiftUI · Combine · `os.log` |
-| **Multimedia / sistema** | `AVFoundation` · `CoreAudio` · `ScreenCaptureKit` (audio del sistema) |
-| **Red** | `URLSession` (descargas con resume + delegado) |
-| **ASR** | `whisper.cpp` / `whisper-cli` + encoders **CoreML** (`ggml-<modelo>-encoder.mlmodelc`) |
-| **VAD** | Silero VAD (`ggml-silero-v6.2.0.bin`) |
-| **Diarización** | tinydiarize (`-tdrz`) |
-| **Preprocesado** | FFmpeg · DeepFilterNet (`deep-filter`, Rust) · Demucs (`demucs-bundled`, PyInstaller + PyTorch) · loudnorm EBU R128 |
-| **Flujos remotos** | Python 3 · `youtube-transcript-api` · `yt-dlp` |
-| **Persistencia** | JSON atómico (ISO8601) + estructura de archivos en `Application Support` |
-| **Build / empaquetado** | Xcode · xcodebuild · CMake (`-DWHISPER_COREML=1`) · Homebrew · `scripts/build_dmg.py` + `scripts/make_background.swift` (DMG «arrastra a Aplicaciones») |
+Whisper models are downloaded on demand and can be managed from Settings › Models. Core ML encoders run on the Neural Engine where available.
 
----
+| Model | Size | Best for |
+|---|---:|---|
+| `tiny` | 75 MB | Quick tests and the fastest dictation |
+| `base` | 142 MB | Notes and everyday dictation |
+| `small` | 466 MB | Interviews and lectures |
+| `medium` | 1.5 GB | Professional transcripts |
+| `large-v3-turbo` | 1.6 GB | Near top accuracy at high speed |
+| `large-v2` | 2.9 GB | Recordings prone to repetitions |
+| `large-v3` | 2.9 GB | Maximum multilingual accuracy |
 
-## 🧠 Modelos de IA soportados
-
-La descarga y gestión de modelos es totalmente integrada (progreso, reanudación y CoreML
-incluido en la app):
-
-| ID | Nombre en App | Peso | Encoder CoreML | Uso recomendado |
-|---|---|---|---|---:|
-| `tiny` | Ultra Rápido | 75 MB | 24 MB | Pruebas y dictado |
-| `base` | Rápido | 142 MB | 43 MB | Notas rápidas (recomendado por defecto) |
-| `small` | Equilibrado | 466 MB | 134 MB | Entrevistas sencillas / clases |
-| `medium` | Preciso | 1.5 GB | 391 MB | Nivel profesional |
-| `large-v3-turbo` | Profesional | 1.6 GB | 475 MB | Velocidad superior con gran calidad |
-| `large-v2` | Large V2 | 2.9 GB | 636 MB | Archivos con tendencia a alucinaciones |
-| `large-v3` | Máxima Calidad | 2.9 GB | 636 MB | Precisión total multi-lenguaje |
+Speaker models (FluidAudio Core ML, CC-BY-4.0) download the first time you identify speakers.
 
 ---
 
-## 📦 Instalación
+## Install
 
-### Requisitos mínimos
+**Requirements:** macOS 14 Sonoma or later. Apple Silicon recommended for Neural Engine acceleration.
 
-- **macOS 13.0 (Ventura)** o posterior.
-- **Apple Silicon (M1/M2/M3/M4)** altamente recomendado para aprovechar los encoders CoreML
-  del Neural Engine (también funciona en Intel con backend CPU).
+### Download
 
-### Quick start
+Get **`TranscriptorX-4.0.dmg`** from [Releases](https://github.com/alexbernaldo/TranscriptorX/releases/latest), open it and drag Transcriptor X to Applications. The app is not notarised, so the first time macOS asks: right-click the app › **Open** › **Open**. After that it updates itself through the app menu.
 
-#### Opción 1 — Compilar con Xcode *(recomendada para desarrollo)*
+On first launch a short setup installs what it needs (FFmpeg and whisper.cpp with Core ML) and shows the progress.
 
-1. Abre `TranscriptorNative.xcodeproj` en Xcode 14+.
-2. Esquema `TranscriptorNative` → destino `My Mac`.
-3. `Cmd + R`. El primer arranque abre el **Setup** que instala las dependencias
-   automáticamente con progreso en vivo (Homebrew → FFmpeg → whisper.cpp).
-
-#### Opción 2 — Compilar por CLI
+### Build from source
 
 ```bash
+git clone https://github.com/alexbernaldo/TranscriptorX.git
+cd TranscriptorX
+bash scripts/fetch_binaries.sh          # DeepFilterNet and Demucs into TranscriptorNative/AudioEngine/lib
+
 xcodebuild -project TranscriptorNative.xcodeproj \
-  -scheme TranscriptorNative \
-  -configuration Release \
-  -destination 'platform=macOS' \
-  -derivedDataPath ./DerivedData-CI \
-  build
-
-open "./DerivedData-CI/Build/Products/Release/TranscriptorNative.app"
+  -scheme TranscriptorNative -configuration Release \
+  -destination 'platform=macOS' -derivedDataPath ./DerivedData-CI build
 ```
 
-#### Opción 3 — DMG «arrastra a Aplicaciones» *(para usuarios finales)*
+Builds are signed with a local identity named `Transcriptor X Code Signing`. Create your own self-signed code-signing certificate with that name, or change `CODE_SIGN_IDENTITY` in the project to `-` for ad-hoc signing.
 
-Descarga `TranscriptorX-2.0.dmg` desde **[Releases](https://github.com/alexbernaldo/TranscriptorX/releases)**,
-ábrelo con doble clic y **arrastra el icono a Aplicaciones** (el fondo del disco te indica
-exactamente hacia dónde, con texto localizado en español/inglés). En máquinas distintas de
-la de desarrollo, macOS pedirá confirmación al ser una app sin notarización: botón derecho →
-*Abrir* → *Abrir* (solo la primera vez).
-
-Para regenerar el DMG tras compilar:
-
-```python
-python3 scripts/build_dmg.py \
-  --app DerivedData-CI/Build/Products/Release/TranscriptorNative.app \
-  --output dist/TranscriptorX-2.0.dmg
-```
-
-*(El script monta la imagen, aplica el diseño del Finder vía AppleScript y genera el fondo
-con `make_background.swift`.)*
-
-### Dependencias de medios y motor
-
-Si prefieres configurarlas a mano en lugar de usar el Setup:
+Package the drag-to-Applications disk image (localised background, Finder layout):
 
 ```bash
-# Homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Herramientas de medios
-brew install ffmpeg yt-dlp python3
-
-# whisper.cpp con soporte CoreML
-mkdir -p "$HOME/Library/Application Support/Transcriptor"
-cd "$HOME/Library/Application Support/Transcriptor"
-git clone https://github.com/ggerganov/whisper.cpp.git
-cd whisper.cpp
-cmake -B build -DWHISPER_COREML=1
-cmake --build build --config Release -j
+python3 scripts/build_dmg.py --app "DerivedData-CI/Build/Products/Release/Transcriptor X.app"
 ```
 
-Herramientas de audio opcionales (DeepFilterNet y Demucs) vienen como binarios de los
-Releases:
-
-```bash
-./scripts/fetch_binaries.sh   # descarga demucs-bundled y deep-filter → TranscriptorNative/AudioEngine/lib
-```
+Install the command-line tool with `scripts/install_cli.sh`.
 
 ---
 
-## 📂 Organización de datos locales
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| ⌘N | New transcription |
+| ⌘O | Open audio or video |
+| ⇧⌘L | Transcribe from a link |
+| ⌘. | Stop recording |
+| ⌃⌥Space | Dictate (configurable) |
+| ⇧⌘E | Export |
+| ⇧⌘S | Save as project |
+| ⇧⌘C | Copy transcript |
+| ⌘F / ⌥⌘F | Find / find and replace |
+| ⇧⌘F | Search the history |
+| ⌥⌘P | Play or pause |
+| ⌥⌘← / ⌥⌘→ | Back / forward 5 seconds |
+| ⌘L | Back to the playback position |
+| ⌥↩ | Split at the cursor |
+| ⌘D | Mark as favourite |
+| ⇧⌘T | Adjust timings |
+| ⌥⌘I | Show or hide the inspector |
+| ⌘, | Settings |
+| ⌘U | Check for updates |
+
+---
+
+## Privacy
+
+- Everything is processed on your Mac. The only network traffic is what you start yourself (model downloads, links you paste, first-time setup), plus a weekly check of a plain `appcast.xml` for updates.
+- No accounts, analytics, telemetry or ads.
+- Permissions are used only for what they say: Microphone for recording and dictation, Screen Recording for the Mac's own audio, Accessibility only to paste dictated text, and Calendar only to name meeting recordings.
+- Dictations are never stored in the history.
+
+---
+
+## Your data on disk
 
 ```
 ~/Library/Application Support/
 ├── Transcriptor/
-│   ├── whisper.cpp/      ← motor + pesos ggml + encoders CoreML + Silero VAD
-│   ├── Logs/             ← logs estructurados (os.log, exportables desde el menú Ayuda)
-│   ├── Recovered/        ← recuperaciones automáticas (audio y texto parcial)
-│   ├── Manifests/        ← Write-Ahead Logging (registros de sesión en curso)
-│   └── TempRecordings/   ← grabaciones en curso
+│   ├── whisper.cpp/       engine, Whisper models, Core ML encoders, Silero VAD
+│   ├── diarization/       speaker models (Core ML)
+│   ├── Manifests/         write-ahead manifests for in-flight work
+│   ├── Recovered/         audio and text recovered after a crash
+│   ├── TempRecordings/    recordings in progress
+│   └── Logs/              structured logs, exportable from the Help menu
 └── TranscriptorNative/
-    ├── transcriptions.json  ← historial (escritura atómica, ISO8601)
-    └── audio/            ← audios conservados del historial
+    ├── transcriptions.sqlite   history and full-text index
+    └── audio/                  audio kept with each transcript
 ```
 
 ---
 
-## ⌨️ Atajos de teclado
+## Tech stack
 
-| Atajo | Acción |
+| Layer | Technology |
 |---|---|
-| `Cmd + N` | Nueva transcripción |
-| `Cmd + O` | Abrir archivo de audio/video |
-| `Cmd + R` | Iniciar / grabar |
-| `Cmd + F` | Búsqueda en el transcript |
-| `Shift + Cmd + C` | Copiar transcripción completa |
-| `Cmd + Opt + Z` | Deshacer última edición de segmento |
-| `Cmd + Opt + R` | Restaurar el texto original de un segmento |
-| *Menú Ayuda* | Exportar diagnósticos · Liberar memoria del modelo · Ver modelo cargado y RAM |
+| App | Swift, SwiftUI, AppKit, Combine |
+| Speech recognition | whisper.cpp with Core ML encoders, Silero VAD |
+| Speakers | FluidAudio (pyannote community-1, WeSpeaker, VBx) on Core ML |
+| Audio | FFmpeg, DeepFilterNet, Demucs, AVFoundation, ScreenCaptureKit, CoreAudio |
+| Local AI | Apple Foundation Models, Apple Translation, Ollama, LM Studio |
+| Storage | SQLite (WAL, FTS5) |
+| Links | yt-dlp, youtube-transcript-api |
+| Updates | Sparkle 2 with EdDSA-signed appcast |
+| Tooling | XCTest, Swift Package Manager, a Rust and Python benchmark harness |
 
 ---
 
-## 🔒 Privacidad y seguridad
+## License
 
-- **100% de procesamiento en local.** Los únicos bytes que salen de tu máquina son las
-  descargas (modelos, URLs de YouTube y dependencias).
-- **Sin cuentas, sin telemetría, sin anuncios.**
-- Permisos macOS usados únicamente para sus funciones: micrófono (grabar), grabación de
-  pantalla (audio del sistema) y archivos que el propio usuario abre.
-- Licencia de los componentes de terceros documentada en `THIRD_PARTY_NOTICES.md` y
-  `licenses/` (ver sección final).
+Transcriptor X is released under the **PolyForm Noncommercial 1.0.0** license: use and modify it freely for non-commercial purposes. See [`LICENSE`](LICENSE).
 
----
-
-## ⚠️ Solución de problemas
-
-| Síntoma | Solución |
-|---|---|
-| **whisper.cpp no responde** | Ejecuta el Setup desde la UI (instala/compila con `-DWHISPER_COREML=1`) o reconstruye manualmente (sección de dependencias). |
-| **Fallo de `yt-dlp` / Python** | Comprueba que `/opt/homebrew/bin/python3` esté en `$PATH` y ejecuta `python3 -m pip install youtube-transcript-api`. |
-| **No captura audio del sistema** | Sist. Preferencias → Privacidad y seguridad → *Grabación de pantalla* → concede acceso a Transcriptor X y reinicia la app. |
-| **DeepFilter / Demucs fallan** | Verifica en `AudioEngine/lib` binarios ARM64 con `chmod +x` (descárgalos con `scripts/fetch_binaries.sh`). |
-
----
-
-## 🤝 Contribución
-
-1. Haz *fork* y crea una rama con prefijo semántico (`feat/`, `fix/`).
-2. Mantén la separación de capas **UI / Services / Dominio** (patrón del proyecto).
-3. Documenta cambios de comportamiento en `docs/heuristics-checklist.md` antes del PR.
-4. Excluye binarios pesados y artefactos (`/DerivedData`, `__pycache__`, `dist/`) del commit.
-5. Abre el PR desde `.github/PULL_REQUEST_TEMPLATE.md` e incluye captura si toca UI.
-
-Guías de diseño y UX disponibles en [`docs/`](docs/): `user-flow.md`,
-`information-architecture.md`, `ux-copy-styleguide.md`, `ux-copy-audit.md`.
-
----
-
-## 📄 Licencias de código abierto
-
-La aplicación se distribuye bajo **PolyForm Noncommercial 1.0.0** (véase `LICENSE`).
-Los componentes de terceros y sus licencias están inventariados en
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) y `licenses/`
-(DeepFilterNet, Demucs, PyTorch, torchaudio, whisper.cpp, yt-dlp, youtube-transcript-api,
-FFmpeg, Silero VAD, Homebrew…).
+Third-party components (whisper.cpp, FluidAudio and its models, DeepFilterNet, Demucs, PyTorch, FFmpeg, yt-dlp, youtube-transcript-api, Sparkle and others) and their licenses are listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).

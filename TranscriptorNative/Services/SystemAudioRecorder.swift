@@ -124,10 +124,21 @@ class SystemAudioRecorder: NSObject, ObservableObject {
     
     override init() {
         super.init()
-        Task {
-            await checkPermission()
-            refreshMicrophoneList()
-        }
+        // Passive check only: permissions are requested when the user starts recording (spec 8.5).
+        refreshPermissionStatusPassively()
+        refreshMicrophoneList()
+    }
+    
+    /// Reads the current authorisation without showing any system dialog.
+    func refreshPermissionStatusPassively() {
+        hasMicrophonePermission = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        hasScreenCapturePermission = CGPreflightScreenCaptureAccess()
+        updatePermissionStatus()
+    }
+    
+    /// Microphone authorisation without prompting.
+    var microphoneAuthorization: AVAuthorizationStatus {
+        AVCaptureDevice.authorizationStatus(for: .audio)
     }
     
     // MARK: - Microphone Enumeration

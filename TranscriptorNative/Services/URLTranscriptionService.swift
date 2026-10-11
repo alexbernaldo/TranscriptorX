@@ -9,6 +9,13 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
     @Published var isProcessing = false
     @Published var currentPhase: ProcessingPhase = .idle
     @Published var progress: Double = 0
+    /// Real values parsed from yt-dlp ("34.0% of 80.00MiB"); nil when the tool does not report them.
+    @Published var downloadedBytes: Int64?
+    @Published var totalBytes: Int64?
+    /// Raw tool output kept for «Detalles técnicos».
+    @Published var lastToolOutput: String = ""
+    /// True while the subtitles path falls back to the Innertube method.
+    @Published var usingFallbackMethod = false
     @Published var statusMessage: String = ""
     @Published var transcriptionResult: String?
     @Published var error: TranscriptionError?
@@ -115,6 +122,21 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
             return .subtitlesDisabled
         }
         return nil
+    }
+    
+    /// Parses a yt-dlp progress line: "[download]  34.0% of ~ 80.00MiB at ...".
+    static func parseYtDlpProgress(_ output: String) -> (percent: Double?, totalBytes: Int64?) {
+        guard let pr = output.range(of: #"(\d+(?:\.\d+)?)%"#, options: .regularExpression, range: nil, locale: nil),
+              let percent = Double(output[pr].dropLast()) else { return (nil, nil) }
+        var total: Int64?
+        if let sr = output.range(of: #"of\s+~?\s*(\d+(?:\.\d+)?)\s*(KiB|MiB|GiB|B)"#, options: .regularExpression) {
+            let piece = String(output[sr])
+            let numberRange = piece.range(of: #"\d+(?:\.\d+)?"#, options: .regularExpression)!
+            let value = Double(piece[numberRange]) ?? 0
+            let multiplier: Double = piece.hasSuffix("GiB") ? 1_073_741_824 : piece.hasSuffix("MiB") ? 1_048_576 : piece.hasSuffix("KiB") ? 1024 : 1
+            total = Int64(value * multiplier)
+        }
+        return (percent, total)
     }
     
     /// Como `classifyYouTubeError` pero con fallback genérico; el mensaje
@@ -230,6 +252,7 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
         await MainActor.run {
             self.statusMessage = self.localized("Intentando método alternativo...", "Trying fallback method...")
             self.progress = 0.5
+            self.usingFallbackMethod = true
         }
         
         if let videoId = extractYouTubeVideoId(from: urlString) {
@@ -280,6 +303,9 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
             self.currentPhase = .downloadingAudio
             self.statusMessage = self.localized("Descargando audio...", "Downloading audio...")
             self.progress = 0.1
+            self.downloadedBytes = nil
+            self.totalBytes = nil
+            self.lastToolOutput = ""
             self.transcriptionResult = nil
             self.error = nil
         }
@@ -339,24 +365,28 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
             // Store reference so we can kill it on cancel
             self.activeProcess = process
             
-            // Handle progress updates
-            errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            // yt-dlp writes «[download]» progress to stdout and «ERROR:» lines to stderr.
+            // Both streams are read and kept so errors can be classified (spec 8.3).
+            let buffer = ToolOutputBuffer()
+            let handle: @Sendable (FileHandle) -> Void = { [weak self] handle in
                 guard let self = self, !self.isCancelled else { return }
                 let data = handle.availableData
-                if let output = String(data: data, encoding: .utf8), !output.isEmpty {
-                    // Parse progress from yt-dlp output
-                    if output.contains("%") {
-                        if let match = output.range(of: #"(\d+\.?\d*)%"#, options: .regularExpression) {
-                            let percentStr = output[match].dropLast()
-                            if let percent = Double(percentStr) {
-                                Task { @MainActor in
-                                    self.progress = 0.1 + (percent / 100.0) * 0.8
-                                }
-                            }
+                guard let output = String(data: data, encoding: .utf8), !output.isEmpty else { return }
+                let snapshot = buffer.append(output)
+                let parsed = URLTranscriptionService.parseYtDlpProgress(output)
+                Task { @MainActor in
+                    self.lastToolOutput = String(snapshot.suffix(20_000))
+                    if let percent = parsed.percent {
+                        self.progress = 0.1 + (percent / 100.0) * 0.8
+                        if let total = parsed.totalBytes {
+                            self.totalBytes = total
+                            self.downloadedBytes = Int64(Double(total) * percent / 100.0)
                         }
                     }
                 }
             }
+            outputPipe.fileHandleForReading.readabilityHandler = handle
+            errorPipe.fileHandleForReading.readabilityHandler = handle
             
             do {
                 try process.run()
@@ -365,6 +395,7 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
                     
                     // Clean up handler
                     errorPipe.fileHandleForReading.readabilityHandler = nil
+                    outputPipe.fileHandleForReading.readabilityHandler = nil
                     self?.activeProcess = nil
                     
                     // Check if was cancelled
@@ -375,8 +406,10 @@ final class URLTranscriptionService: ObservableObject, @unchecked Sendable {
                     }
                     
                     let exitCode = process.terminationStatus
-                    let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                    let outputString = String(data: outputData, encoding: .utf8) ?? ""
+                    let restOut = String(data: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                    let restErr = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                    let outputString = buffer.append(restOut + restErr)
+                    Task { @MainActor in self.lastToolOutput = String(outputString.suffix(20_000)) }
                     
                     AppLogger.shared.log("📥 [URLService] yt-dlp exit code: \(exitCode)", level: .info, category: .transcription)
                     
@@ -928,5 +961,17 @@ if __name__ == '__main__':
         }
         
         return paragraphs.joined(separator: "\n\n")
+    }
+}
+
+/// Thread-safe accumulator for a tool's stdout + stderr.
+final class ToolOutputBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var text = ""
+    /// Appends and returns the whole output so far.
+    func append(_ more: String) -> String {
+        lock.lock(); defer { lock.unlock() }
+        text += more
+        return text
     }
 }

@@ -53,10 +53,26 @@ final class TranscriptionStorage {
     }
 
     /// Add or update a single transcription
-    func saveTranscription(_ transcription: Transcription) {
-        db.upsert(transcription)
+    @discardableResult
+    func saveTranscription(_ transcription: Transcription) -> Bool {
+        let ok = db.upsert(transcription)
         postDidChange()
+        return ok
     }
+
+    /// Writes without posting `transcriptionsDidChange` (editor saves update the list themselves).
+    @discardableResult
+    func saveQuietly(_ transcription: Transcription) -> Bool {
+        db.upsert(transcription)
+    }
+
+    func loadTrashEntries() -> [(transcription: Transcription, deletedAt: Date)] {
+        db.loadTrashEntries()
+    }
+
+    func find(id: UUID) -> Transcription? { db.find(id: id) }
+
+    var migrationOutcome: TranscriptionDatabase.MigrationOutcome { db.migrationOutcome }
 
     /// Soft-delete: pasa la transcripción a la papelera (#18).
     /// Papelera: el audio se elimina en purgeTrash/deleteForever (#18).

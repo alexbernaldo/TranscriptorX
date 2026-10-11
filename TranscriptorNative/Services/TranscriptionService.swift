@@ -41,8 +41,16 @@ class TranscriptionService: NSObject, ObservableObject {
     
     // Download state
     private var downloadProgress: ((Double) -> Void)?
+    /// Bytes received / expected for the active download (real values from URLSession).
+    var downloadBytesProgress: ((Int64, Int64) -> Void)?
     private var downloadContinuation: CheckedContinuation<URL, Error>?
     private var downloadDestination: URL?
+    private var activeDownloadTask: URLSessionDownloadTask?
+    
+    /// Cancels the model download in progress, if any. The awaiting call throws `CancellationError`.
+    func cancelActiveDownload() {
+        activeDownloadTask?.cancel()
+    }
     
     // URLSession for downloads - will be set up with self as delegate
     private var downloadSession: URLSession!
@@ -203,6 +211,7 @@ class TranscriptionService: NSObject, ObservableObject {
             self.downloadContinuation = continuation
             let request = URLRequest(url: url)
             let task = downloadSession.downloadTask(with: request)
+            self.activeDownloadTask = task
             task.resume()
             
             print("DEBUG: Started download for \(model.filename) from \(url)")
@@ -225,6 +234,7 @@ class TranscriptionService: NSObject, ObservableObject {
         self.downloadProgress = nil
         self.downloadContinuation = nil
         self.downloadDestination = nil
+        self.activeDownloadTask = nil
     }
     
     // MARK: - CoreML Management
@@ -597,7 +607,8 @@ class TranscriptionService: NSObject, ObservableObject {
         settings: TranscriptionSettings,
         preprocessOptions: AudioPreprocessor.Options = .default,
         onProgress: @escaping (Double, String) -> Void,
-        onSegment: ((LiveSegment) -> Void)? = nil
+        onSegment: ((LiveSegment) -> Void)? = nil,
+        onPhase: ((JobPhase) -> Void)? = nil
     ) async throws -> TranscriptionResult {
         
         guard let modelPath = getModelPath(for: modelId),
@@ -648,6 +659,10 @@ class TranscriptionService: NSObject, ObservableObject {
         let preprocessor = AudioPreprocessor.shared
         preprocessor.resetCancellation()
         let processedFile: URL
+        var preprocessDetail: [String] = []
+        if preprocessOptions.denoise { preprocessDetail.append("DeepFilter") }
+        if preprocessOptions.isolateVoice { preprocessDetail.append("Demucs") }
+        onPhase?(.preprocessing(detail: preprocessDetail.isEmpty ? nil : preprocessDetail.joined(separator: " + ")))
         
         do {
             processedFile = try await preprocessor.process(
@@ -674,7 +689,8 @@ class TranscriptionService: NSObject, ObservableObject {
         var effectiveSettings = settings
         effectiveSettings.useVAD = effectiveUseVAD
         
-        return try await runWhisperTranscription(
+        onPhase?(.loadingModel)
+        var result = try await runWhisperTranscription(
             file: processedFile,
             modelPath: modelPath,
             settings: effectiveSettings,
@@ -683,8 +699,30 @@ class TranscriptionService: NSObject, ObservableObject {
                 let adjustedProgress = 0.3 + (progress * 0.7)
                 onProgress(adjustedProgress, status)
             },
-            onSegment: onSegment
+            onSegment: onSegment,
+            onPhase: onPhase
         )
+
+        // STEP 3: Identify speakers (on the same preprocessed audio whisper heard).
+        // A failure keeps the transcription and is reported as a warning.
+        if settings.enableDiarization, !result.segments.isEmpty {
+            do {
+                let turns = try await SpeakerDiarizationService.shared.diarize(file: processedFile) { update in
+                    switch update {
+                    case .downloadingModels(let fraction): onPhase?(.downloadingSpeakerModels(fraction: fraction))
+                    case .analysing(let fraction): onPhase?(.detectingSpeakers(fraction: fraction))
+                    }
+                }
+                SpeakerDiarizationService.exportDiagnostics(turns: turns, source: file)
+                result.segments = SpeakerAssignment.assign(result.segments, turns: turns)
+                result.plainText = result.segments.map(\.text).joined(separator: " ")
+                AppLogger.shared.log("Speakers identified: \(Set(result.segments.compactMap(\.speaker)).count) in \(turns.count) turns", category: .transcription)
+            } catch {
+                result.speakerDetectionError = error.localizedDescription
+                AppLogger.shared.log("Speaker detection failed: \(error.localizedDescription)", level: .error, category: .transcription)
+            }
+        }
+        return result
     }
     
     /// Legacy method that returns plain text (for backward compatibility)
@@ -792,7 +830,8 @@ class TranscriptionService: NSObject, ObservableObject {
         modelPath: URL,
         settings: TranscriptionSettings,
         onProgress: @escaping (Double, String) -> Void,
-        onSegment: ((LiveSegment) -> Void)? = nil
+        onSegment: ((LiveSegment) -> Void)? = nil,
+        onPhase: ((JobPhase) -> Void)? = nil
     ) async throws -> TranscriptionResult {
         
         // If language is "auto", detect it first and use consistently
@@ -853,10 +892,8 @@ class TranscriptionService: NSObject, ObservableObject {
                     args.append("--suppress-nst")
                 }
                 
-                // Diarization (speaker detection)
-                if settings.enableDiarization {
-                    args.append("-tdrz")
-                }
+                // Speakers are identified after whisper by SpeakerDiarizationService
+                // (tinydiarize `-tdrz` needs «tdrz» models, none of which is offered).
                 
                 // VAD options
                 if settings.useVAD {
@@ -916,6 +953,7 @@ class TranscriptionService: NSObject, ObservableObject {
                             // Parse segment and notify
                             if let segment = self?.parseLiveSegment(line) {
                                 DispatchQueue.main.async {
+                                    onPhase?(.transcribing)
                                     onSegment?(segment)
                                 }
                             }
@@ -940,6 +978,7 @@ class TranscriptionService: NSObject, ObservableObject {
                             if let numMatch = progressStr.range(of: "\\d+", options: .regularExpression) {
                                 if let percent = Int(progressStr[numMatch]) {
                                     DispatchQueue.main.async {
+                                        onPhase?(.transcribing)
                                         onProgress(Double(percent) / 100.0, "Transcribiendo...")
                                     }
                                 }
@@ -965,6 +1004,9 @@ class TranscriptionService: NSObject, ObservableObject {
                     // Clean up pipe handlers
                     errorPipe.fileHandleForReading.readabilityHandler = nil
                     outputPipe.fileHandleForReading.readabilityHandler = nil
+                    // Whatever the handler had not read yet (the VAD map must be complete).
+                    let remainingStderr = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                    stderrOutput += String(data: remainingStderr, encoding: .utf8) ?? ""
                     
                     print("DEBUG: whisper-cli exited with status: " + String(process.terminationStatus))
                     print("DEBUG: Full stderr output: " + stderrOutput)
@@ -982,7 +1024,12 @@ class TranscriptionService: NSObject, ObservableObject {
                         if FileManager.default.fileExists(atPath: outputFile.path) {
                             do {
                                 let jsonData = try Data(contentsOf: outputFile)
-                                let result = try self.parseWhisperJSON(jsonData, showTimestamps: settings.timestamps)
+                                let vadMap = settings.useVAD ? WhisperVADTimeMap(log: stderrOutput) : nil
+                                if settings.useVAD && vadMap == nil {
+                                    AppLogger.shared.log("VAD time map not found in whisper-cli output; word timestamps dropped", level: .error, category: .transcription)
+                                }
+                                let result = try self.parseWhisperJSON(jsonData, showTimestamps: settings.timestamps,
+                                                                       vad: settings.useVAD ? .some(vadMap) : .none)
                                 print("DEBUG: Parsed \(result.segments.count) segments from JSON")
                                 
                                 // Clean up temp file
@@ -1061,7 +1108,10 @@ class TranscriptionService: NSObject, ObservableObject {
     // MARK: - JSON Parsing
     
     /// Parse whisper.cpp JSON output into TranscriptionResult
-    private func parseWhisperJSON(_ data: Data, showTimestamps: Bool) throws -> TranscriptionResult {
+    /// - Parameter vad: `nil` when whisper ran without VAD. With VAD, the map that brings
+    ///   token times back to the original audio; `.some(nil)` (no map) drops the words
+    ///   rather than keeping times that point at the wrong place.
+    private func parseWhisperJSON(_ data: Data, showTimestamps: Bool, vad: WhisperVADTimeMap?? = nil) throws -> TranscriptionResult {
         // whisper.cpp JSON format:
         // {
         //   "transcription": [
@@ -1151,7 +1201,13 @@ class TranscriptionService: NSObject, ObservableObject {
                     endTime: endTime,
                     text: text,
                     speaker: speaker,
-                    words: segment.tokens.map { words(from: $0) }
+                    words: segment.tokens.flatMap { tokens -> [TranscriptionSegment.WordTimestamp]? in
+                        switch vad {
+                        case .none: return words(from: tokens)
+                        case .some(.none): return nil
+                        case .some(.some(let map)): return words(from: tokens).map(map.original(of:))
+                        }
+                    }
                 ))
             }
         }
@@ -1262,14 +1318,76 @@ extension TranscriptionService: URLSessionDownloadDelegate {
         // Throttle UI updates
         DispatchQueue.main.async { [weak self] in
             self?.downloadProgress?(p)
+            self?.downloadBytesProgress?(totalBytesWritten, totalBytesExpectedToWrite)
         }
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             print("DEBUG: Download failed with error: \(error.localizedDescription)")
-            downloadContinuation?.resume(throwing: TranscriptionError.downloadFailed(error.localizedDescription))
+            if (error as NSError).code == NSURLErrorCancelled {
+                downloadContinuation?.resume(throwing: CancellationError())
+            } else {
+                downloadContinuation?.resume(throwing: TranscriptionError.downloadFailed(error.localizedDescription))
+            }
             downloadContinuation = nil
+            activeDownloadTask = nil
         }
+    }
+}
+
+/// whisper.cpp with `--vad` removes the silences before decoding. It maps segment times
+/// back to the original audio, but token times (`-ojf`) stay on the shortened timeline,
+/// so word timestamps drift later and later behind the audio. This rebuilds whisper's
+/// own piecewise-linear map from the `vad_segment_info` lines it logs to stderr.
+struct WhisperVADTimeMap: Equatable {
+    struct Point: Equatable {
+        let processed: TimeInterval
+        let original: TimeInterval
+    }
+
+    /// Sorted by processed time, one point per processed time.
+    let points: [Point]
+
+    init?(log: String) {
+        let pattern = #"vad_segment_info: orig_start: ([0-9.]+), orig_end: ([0-9.]+), vad_start: ([0-9.]+), vad_end: ([0-9.]+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        var points: [Point] = []
+        let range = NSRange(log.startIndex..., in: log)
+        for match in regex.matches(in: log, range: range) {
+            let values = (1...4).compactMap { i in Range(match.range(at: i), in: log).flatMap { Double(log[$0]) } }
+            guard values.count == 4 else { continue }
+            points.append(Point(processed: values[2], original: values[0]))
+            points.append(Point(processed: values[3], original: values[1]))
+        }
+        self.init(points: points)
+    }
+
+    init?(points: [Point]) {
+        var unique: [Point] = []
+        for point in points.sorted(by: { $0.processed < $1.processed }) where unique.last?.processed != point.processed {
+            unique.append(point)
+        }
+        guard !unique.isEmpty else { return nil }
+        self.points = unique
+    }
+
+    /// Same interpolation as whisper.cpp's `map_processed_to_original_time`.
+    func original(_ processed: TimeInterval) -> TimeInterval {
+        guard let first = points.first, let last = points.last else { return processed }
+        if processed <= first.processed { return first.original }
+        if processed >= last.processed { return last.original }
+        var low = 0, high = points.count - 1
+        while high - low > 1 {
+            let mid = (low + high) / 2
+            if points[mid].processed <= processed { low = mid } else { high = mid }
+        }
+        let a = points[low], b = points[high]
+        guard b.processed > a.processed else { return a.original }
+        return a.original + (processed - a.processed) * (b.original - a.original) / (b.processed - a.processed)
+    }
+
+    func original(of word: TranscriptionSegment.WordTimestamp) -> TranscriptionSegment.WordTimestamp {
+        TranscriptionSegment.WordTimestamp(start: original(word.start), end: original(word.end), text: word.text)
     }
 }

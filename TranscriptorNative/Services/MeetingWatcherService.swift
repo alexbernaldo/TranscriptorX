@@ -96,11 +96,14 @@ final class MeetingWatcherService: ObservableObject {
 
     private func detectTitle(appName: String, bundleId: String) async {
         let store = EKEventStore()
+        // Calendar access is requested only when the user turns on «Detectar reuniones» (spec 8.5);
+        // here it is only read if already granted.
+        let status = EKEventStore.authorizationStatus(for: .event)
         let granted: Bool
         if #available(macOS 14.0, *) {
-            granted = (try? await store.requestFullAccessToEvents()) ?? false
+            granted = status == .fullAccess
         } else {
-            granted = await requestCalendarAccessLegacy(store)
+            granted = status == .authorized
         }
 
         var eventTitle: String?
@@ -122,21 +125,11 @@ final class MeetingWatcherService: ObservableObject {
         }
 
         let suggested = eventTitle ?? String(
-            format: localized("Reunión — %@", "Meeting — %@"),
+            format: localized("Reunión en %@", "Meeting in %@"),
             appName
         )
         await MainActor.run { [weak self] in
             self?.meetingState = .detected(app: appName, suggestedTitle: suggested)
-        }
-    }
-
-    private func requestCalendarAccessLegacy(_ store: EKEventStore) async -> Bool {
-        // Only reachable on macOS 13, where `.authorized` is the grant state.
-        if EKEventStore.authorizationStatus(for: .event) == .authorized { return true }
-        return await withCheckedContinuation { cont in
-            store.requestAccess(to: .event) { granted, _ in
-                cont.resume(returning: granted)
-            }
         }
     }
 }

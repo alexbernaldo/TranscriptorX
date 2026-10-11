@@ -11,6 +11,20 @@ final class TranscriptionDatabase {
 
     static let shared = TranscriptionDatabase()
 
+    /// Result of the one-shot `transcriptions.json` → SQLite migration in this launch (spec 8.6).
+    enum MigrationOutcome: Equatable {
+        case none
+        case migrated(backup: URL)
+        case failed(String)
+    }
+    private(set) var migrationOutcome: MigrationOutcome = .none
+    /// The legacy file is present and still needs migrating (checked without opening the database).
+    static var needsLegacyMigration: Bool {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("TranscriptorNative", isDirectory: true)
+        return FileManager.default.fileExists(atPath: dir.appendingPathComponent("transcriptions.json").path)
+    }
+
     private var db: OpaquePointer?
     private let queue = DispatchQueue(label: "transcriptor.sqlite")   // acceso serial
     private let encoder: JSONEncoder
@@ -114,9 +128,10 @@ final class TranscriptionDatabase {
     // MARK: - CRUD
 
     /// Inserta o reemplaza una transcripción y sincroniza el espejo FTS.
-    func upsert(_ t: Transcription, isDeleted: Bool = false) {
+    @discardableResult
+    func upsert(_ t: Transcription, isDeleted: Bool = false) -> Bool {
         queue.sync {
-            guard let db else { return }
+            guard let db else { return false }
 
             // 1. Espejo FTS: retirar la entrada antigua (INSERT OR REPLACE cambia rowid)
             var oldEntry: (row: Int64, title: String, text: String)?
@@ -137,12 +152,12 @@ final class TranscriptionDatabase {
                 INSERT OR REPLACE INTO transcriptions
                     (id, payload, title, created_at, duration, is_favorite, language, deleted_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-            """) else { return }
+            """) else { return false }
             defer { sqlite3_finalize(stmt) }
             guard let payload = try? String(data: encoder.encode(t), encoding: .utf8) else {
                 AppLogger.shared.log("SQLite upsert: encode failed for \(t.id)",
                                      level: .error, category: .app)
-                return
+                return false
             }
             bind(stmt, 1, t.id.uuidString)
             bind(stmt, 2, payload)
@@ -159,12 +174,12 @@ final class TranscriptionDatabase {
             guard sqlite3_step(stmt) == SQLITE_DONE else {
                 AppLogger.shared.log("SQLite upsert error: \(String(cString: sqlite3_errmsg(db)))",
                                      level: .error, category: .app)
-                return
+                return false
             }
 
             // 3. Espejo FTS con el rowid nuevo
-            guard let row = rowid(of: t.id) else { return }
-            guard let fts = prepare("INSERT INTO transcriptions_fts(rowid, title, text) VALUES (?, ?, ?);") else { return }
+            guard let row = rowid(of: t.id) else { return true }
+            guard let fts = prepare("INSERT INTO transcriptions_fts(rowid, title, text) VALUES (?, ?, ?);") else { return true }
             defer { sqlite3_finalize(fts) }
             sqlite3_bind_int64(fts, 1, row)
             bind(fts, 2, t.title)
@@ -173,6 +188,7 @@ final class TranscriptionDatabase {
                 AppLogger.shared.log("SQLite FTS sync error: \(String(cString: sqlite3_errmsg(db)))",
                                      level: .error, category: .app)
             }
+            return true
         }
     }
 
@@ -244,6 +260,23 @@ final class TranscriptionDatabase {
             ) else { return [] }
             defer { sqlite3_finalize(stmt) }
             return decodeRows(stmt)
+        }
+    }
+
+    /// Papelera con la fecha de borrado de cada entrada (días restantes, spec 6.14).
+    func loadTrashEntries() -> [(transcription: Transcription, deletedAt: Date)] {
+        queue.sync {
+            guard let stmt = prepare(
+                "SELECT payload, deleted_at FROM transcriptions WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC;"
+            ) else { return [] }
+            defer { sqlite3_finalize(stmt) }
+            var rows: [(Transcription, Date)] = []
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                if let t = decodePayload(at: stmt, column: 0) {
+                    rows.append((t, Date(timeIntervalSince1970: sqlite3_column_double(stmt, 1))))
+                }
+            }
+            return rows
         }
     }
 
@@ -428,14 +461,19 @@ final class TranscriptionDatabase {
             return
         }
 
-        guard let data = try? Data(contentsOf: json),
-              let items = try? decoder.decode([Transcription].self, from: data) else {
+        let items: [Transcription]
+        do {
+            let data = try Data(contentsOf: json)
+            items = try decoder.decode([Transcription].self, from: data)
+        } catch {
             AppLogger.shared.log("Legacy JSON present but unreadable — keeping file",
                                  level: .error, category: .app)
+            migrationOutcome = .failed(String(describing: error))
             return
         }
         items.forEach { upsert($0) }
         moveToBackup(json)
+        migrationOutcome = .migrated(backup: json.deletingLastPathComponent().appendingPathComponent("transcriptions.json.bak"))
         AppLogger.shared.log("Migrated \(items.count) transcriptions to SQLite", category: .app)
     }
 

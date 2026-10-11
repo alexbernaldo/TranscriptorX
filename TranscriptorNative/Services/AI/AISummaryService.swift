@@ -47,7 +47,68 @@ final class AISummaryService: ObservableObject {
         return nil
     }
 
-    private func prompt(for kind: Kind, transcript: String) -> (system: String, user: String) {
+    /// Client for an explicit provider choice (inspector › IA). `model` is the provider's model name.
+    func client(for provider: AIProviderKind, model: String?) async -> (any LocalLLMClient)? {
+        switch provider {
+        case .ollama:
+            if let model, !model.isEmpty {
+                let c = OllamaClient(model: model)
+                return await c.isAvailable() ? c : nil
+            }
+            return await ollamaClient()
+        case .lmstudio:
+            let c = LMStudioClient(model: model ?? "")
+            return await c.isAvailable() ? c : nil
+        case .appleFoundation:
+            let c = AppleFoundationClient()
+            return await c.isAvailable() ? c : nil
+        }
+    }
+
+    /// Models offered by a local server (Ollama `/api/tags`, LM Studio `/v1/models`).
+    func availableModels(for provider: AIProviderKind) async -> [String] {
+        switch provider {
+        case .ollama:
+            var req = URLRequest(url: URL(string: "http://localhost:11434/api/tags")!)
+            req.timeoutInterval = 2
+            guard let (data, _) = try? await URLSession.shared.data(for: req),
+                  let tags = try? JSONDecoder().decode(OllamaTags.self, from: data) else { return [] }
+            return tags.models?.map(\.name) ?? []
+        case .lmstudio:
+            struct Models: Decodable { struct M: Decodable { let id: String }; let data: [M] }
+            var req = URLRequest(url: URL(string: "http://localhost:1234/v1/models")!)
+            req.timeoutInterval = 2
+            guard let (data, _) = try? await URLSession.shared.data(for: req),
+                  let models = try? JSONDecoder().decode(Models.self, from: data) else { return [] }
+            return models.data.map(\.id)
+        case .appleFoundation:
+            return []
+        }
+    }
+
+    /// Runs a task and returns the text without writing to storage (the caller decides).
+    func generate(_ kind: Kind, transcript: String, using client: any LocalLLMClient) async throws -> String {
+        let (system, user) = prompt(for: kind, transcript: String(transcript.prefix(24000)))
+        var text = try await client.chat(system: system, user: user, temperature: 0.2)
+        if kind == .longSummary && transcript.count > 24000 {
+            var partials: [String] = []
+            var start = transcript.startIndex
+            var part = 1
+            while start < transcript.endIndex {
+                try Task.checkCancellation()
+                let end = transcript.index(start, offsetBy: 6000, limitedBy: transcript.endIndex) ?? transcript.endIndex
+                let p = prompt(for: .shortSummary, transcript: String(transcript[start..<end]))
+                partials.append("Part \(part): " + (try await client.chat(system: p.system, user: p.user, temperature: 0.2)))
+                start = end
+                part += 1
+            }
+            let merged = prompt(for: .longSummary, transcript: partials.joined(separator: "\n\n"))
+            text = try await client.chat(system: merged.system, user: merged.user, temperature: 0.2)
+        }
+        return text
+    }
+
+    func prompt(for kind: Kind, transcript: String) -> (system: String, user: String) {
         switch kind {
         case .title:
             return ("You name transcripts. No quotes, colons, subtitles or emoji. Max 8 words.",

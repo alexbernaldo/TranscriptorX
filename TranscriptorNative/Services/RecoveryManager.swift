@@ -72,6 +72,9 @@ actor RecoveryManager {
         let fileURL: URL
         let duration: TimeInterval?
         let partialText: String?
+        /// Original input of an interrupted transcription (from its manifest), so it can be resumed.
+        var sourceAudioURL: URL? = nil
+        var modelId: String? = nil
         
         enum RecoveryType {
             case audio
@@ -263,6 +266,8 @@ actor RecoveryManager {
         // Check transcription manifests
         let transcriptionManifests = loadAllTranscriptionManifests()
         for manifest in transcriptionManifests where manifest.status != .completed {
+            let sourceAudio = URL(fileURLWithPath: manifest.audioFilePath)
+            let audioExists = FileManager.default.fileExists(atPath: sourceAudio.path)
             if !manifest.segments.isEmpty {
                 // Has partial transcription - save it
                 let partialText = manifest.segments.map { $0.text }.joined(separator: " ")
@@ -278,7 +283,9 @@ actor RecoveryManager {
                         date: manifest.startTime,
                         fileURL: recoveredURL,
                         duration: nil,
-                        partialText: String(partialText.prefix(200))
+                        partialText: String(partialText.prefix(200)),
+                        sourceAudioURL: audioExists ? sourceAudio : nil,
+                        modelId: manifest.modelId
                     ))
                     
                     AppLogger.shared.log("Recovered partial transcription", category: .recovery, metadata: [
@@ -290,6 +297,18 @@ actor RecoveryManager {
                         "error": error.localizedDescription
                     ])
                 }
+            } else if audioExists {
+                // Interrupted before the first segment: the input and model are enough to resume.
+                recoveredItems.append(RecoveredItem(
+                    id: manifest.id,
+                    type: .transcription,
+                    date: manifest.startTime,
+                    fileURL: sourceAudio,
+                    duration: nil,
+                    partialText: nil,
+                    sourceAudioURL: sourceAudio,
+                    modelId: manifest.modelId
+                ))
             }
             
             // Clean up manifest
@@ -327,6 +346,35 @@ actor RecoveryManager {
         return items.sorted { $0.date > $1.date }
     }
     
+    /// A recording stopped because the app quit: kept so it can be transcribed next time (spec 6.25).
+    nonisolated func storeRecordingForNextLaunch(_ url: URL) -> URL? {
+        let dest = recoveredDir.appendingPathComponent("pending_\(UUID().uuidString).\(url.pathExtension.isEmpty ? "wav" : url.pathExtension)")
+        do {
+            try FileManager.default.moveItem(at: url, to: dest)
+            return dest
+        } catch {
+            AppLogger.shared.logError(error, context: "storeRecordingForNextLaunch", category: .recovery)
+            return nil
+        }
+    }
+
+    /// Recordings saved on quit that have not been transcribed or discarded yet.
+    nonisolated func pendingRecordings() -> [RecoveredItem] {
+        let contents = (try? FileManager.default.contentsOfDirectory(at: recoveredDir, includingPropertiesForKeys: [.creationDateKey])) ?? []
+        return contents.filter { $0.lastPathComponent.hasPrefix("pending_") }.map { url in
+            let date = (try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date()
+            let id = UUID(uuidString: String(url.deletingPathExtension().lastPathComponent.dropFirst("pending_".count))) ?? UUID()
+            return RecoveredItem(id: id, type: .audio, date: date, fileURL: url, duration: nil, partialText: nil)
+        }
+    }
+
+    /// Marks a pending recording as handled (kept on disk as a regular recovered file).
+    nonisolated func resolvePendingRecording(_ url: URL) {
+        guard url.lastPathComponent.hasPrefix("pending_") else { return }
+        let dest = url.deletingLastPathComponent().appendingPathComponent("recovered_" + url.lastPathComponent.dropFirst("pending_".count))
+        try? FileManager.default.moveItem(at: url, to: dest)
+    }
+
     /// Delete a recovered item
     func deleteRecoveredItem(at url: URL) throws {
         try FileManager.default.removeItem(at: url)
