@@ -327,9 +327,19 @@ enum QuitIntent {
         if event.paramDescriptor(forKeyword: AEKeyword(kAEQuitReason)) != nil { return true }
         if let sender = event.attributeDescriptor(forKeyword: AEKeyword(keySenderPIDAttr))?.int32Value,
            sender != 0, sender != getpid() {
-            return true
+            return !isWindowCloserUtility(sender)
         }
         return false
+    }
+
+    /// Utilities that quit every app whose last window closes. Transcriptor X is meant to stay
+    /// in the menu bar without a window (dictation, recording, queue), so while «Seguir
+    /// funcionando al cerrar la ventana» is on, their quits are not the user's intent.
+    static let windowCloserUtilities: Set<String> = ["onebadidea.Swift-Quit"]
+
+    private static func isWindowCloserUtility(_ pid: pid_t) -> Bool {
+        guard let id = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier else { return false }
+        return windowCloserUtilities.contains(id)
     }
 
     static func describeCurrentEvent() -> String {

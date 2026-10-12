@@ -7,38 +7,44 @@ el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [4.0.2] - 2026-10-12
+
+### Fixed
+
+- Closing the window no longer quits the app when "Keep running when the window closes" is on and a utility that quits windowless apps (such as Swift Quit) is installed. Those quit requests are ignored and logged; ⌘Q, Quit, the Dock, other apps, logging out and updates still quit as usual.
+
 ## [4.0.1] - 2026-10-12
 
-### Cambiado
+### Changed
 
-- Grabar es un botón simple: la primera vez pregunta la fuente; después se cambia en Ajustes › Grabación o con clic derecho › «Fuentes de grabación…».
+- Record is a single button: the first time it asks for the source; afterwards it is changed in Settings › Recording or with right-click › "Recording Sources…".
 
-### Corregido
+### Fixed
 
-- La app distingue los cierres que pides tú (⌘Q, Salir, el Dock, otra app, cerrar sesión, actualizaciones) de los que se envía a sí misma mientras vive en la barra de menús, y registra qué app pide cada cierre. Si una utilidad como Swift Quit cierra apps sin ventanas, añade Transcriptor X a sus excepciones.
+- The app tells the quits you ask for (⌘Q, Quit, the Dock, another app, logging out, updates) apart from the ones it sends itself while living in the menu bar, and logs which app asked for each quit.
 
 ## [4.0] - 2026-10-11
 
-### Añadido
+### Added
 
-- Dictado inspirado en Handy: atajo configurable con modos Automático, Mantener y Pulsar; Esc o ✕ cancelan, también durante la transcripción; cápsula animada con onda de voz; pegado por portapapeles que lo restaura, escritura directa o solo copiar; envío con Intro o ⌘Intro; micrófono, modelo e idioma propios; palabras personalizadas; quitar muletillas; sonidos y silenciar altavoces.
-- «Ocultar del Dock»: la app puede vivir solo en la barra de menús.
-- Opciones de Inicio como iconos siempre visibles, con ⓘ que explica cada una, y botón de Ajustes en la barra de herramientas.
-- Menú de la barra: dictar, terminar, cancelar y copiar el último dictado.
-- Banco de pruebas de identificación de hablantes (`Tools/DiarizationBench`) y modo diagnóstico de turnos.
+- Dictation inspired by Handy: configurable shortcut with Automatic, Hold and Press modes; Esc or ✕ cancel, even while transcribing; animated capsule that follows your voice; paste through the clipboard and restore it, type directly or copy only; send with Return or ⌘Return; its own microphone, model and language; custom words; filler-word removal; sounds and speaker muting.
+- "Hide from Dock": the app can live only in the menu bar.
+- Home options as always-visible icons, each with an ⓘ that explains it, and a Settings button in the toolbar.
+- Menu bar: dictate, finish, cancel and copy the last dictation.
+- Speaker identification benchmark (`Tools/DiarizationBench`) and a raw-turns diagnostic mode.
 
-### Cambiado
+### Changed
 
-- Inicio y Ajustes › Idioma comparten la misma configuración, sincronizada en los dos sentidos.
-- Detección automática del idioma por defecto, también en los presets.
-- Grabar vive solo en el centro de Inicio (con su selector de fuentes); «+» es un botón simple.
-- La app se firma con una identidad estable para que macOS conserve los permisos entre versiones.
+- Home and Settings › Language share one configuration, synced both ways.
+- Automatic language detection by default, presets included.
+- Record lives only in the centre of Home; "+" is a plain button.
+- The app is signed with a stable identity so macOS keeps its permissions across versions.
 
-### Corregido
+### Fixed
 
-- Con «Saltar silencios», los tiempos de palabra quedaban desplazados respecto al audio: los hablantes se asignaban mal (47 % de palabras correctas, ahora 99,8 %) y el resaltado al reproducir se desfasaba.
-- El micrófono y el calendario se denegaban en silencio por faltar sus entitlements con hardened runtime.
-- Los enlaces internos a Ajustes no abrían la ventana en macOS 14 o posterior.
+- With "Skip silences", word timestamps were shifted from the audio: speakers were assigned wrongly (47% of words right, now 99.8%) and playback highlighting drifted.
+- Microphone and calendar access were silently denied because their hardened-runtime entitlements were missing.
+- Internal links to Settings did not open the window on macOS 14 and later.
 
 ## [3.0] - 2026-10-11
 

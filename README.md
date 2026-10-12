@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Swift-SwiftUI-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift and SwiftUI"/>
   <img src="https://img.shields.io/badge/Engine-whisper.cpp_%2B_Core_ML-111111?style=for-the-badge" alt="whisper.cpp and Core ML"/>
   <img src="https://img.shields.io/badge/Processing-100%25_on--device-2E7D32?style=for-the-badge" alt="100% on-device"/>
-  <img src="https://img.shields.io/badge/Release-v4.0.1-7C5CFF?style=for-the-badge&logo=github&logoColor=white" alt="Release v4.0.1"/>
+  <img src="https://img.shields.io/badge/Release-v4.0.2-7C5CFF?style=for-the-badge&logo=github&logoColor=white" alt="Release v4.0.2"/>
   <img src="https://img.shields.io/badge/License-PolyForm_Noncommercial-E91E63?style=for-the-badge" alt="License"/>
 </p>
 
@@ -218,7 +218,7 @@ Speaker models (FluidAudio Core ML, CC-BY-4.0) download the first time you ident
 
 ### Download
 
-Get **`TranscriptorX-4.0.1.dmg`** from [Releases](https://github.com/alexbernaldo/TranscriptorX/releases/latest), open it and drag Transcriptor X to Applications. The app is not notarised, so the first time macOS asks: right-click the app › **Open** › **Open**. After that it updates itself through the app menu.
+Get **`TranscriptorX-4.0.2.dmg`** from [Releases](https://github.com/alexbernaldo/TranscriptorX/releases/latest), open it and drag Transcriptor X to Applications. The app is not notarised, so the first time macOS asks: right-click the app › **Open** › **Open**. After that it updates itself through the app menu.
 
 On first launch a short setup installs what it needs (FFmpeg and whisper.cpp with Core ML) and shows the progress.
 
