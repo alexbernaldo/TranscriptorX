@@ -44,6 +44,11 @@ struct AppCommands: Commands {
     let exportDiagnostics: () -> Void
 
     var body: some Commands {
+        // ⌘Q goes through QuitIntent so it is told apart from quits nobody asked for.
+        CommandGroup(replacing: .appTermination) {
+            Button(TXL.t("menu.quit", "Salir de Transcriptor X")) { QuitIntent.quit() }
+                .keyboardShortcut("q")
+        }
         CommandGroup(replacing: .newItem) {
             Button(TXL.t("menu.new", "Nueva transcripción")) {
                 WindowCoordinator.showMainWindow(); workspace.goHome()

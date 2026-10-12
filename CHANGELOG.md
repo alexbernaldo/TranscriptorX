@@ -7,6 +7,16 @@ el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [4.0.1] - 2026-10-12
+
+### Cambiado
+
+- Grabar es un botón simple: la primera vez pregunta la fuente; después se cambia en Ajustes › Grabación o con clic derecho › «Fuentes de grabación…».
+
+### Corregido
+
+- La app distingue los cierres que pides tú (⌘Q, Salir, el Dock, otra app, cerrar sesión, actualizaciones) de los que se envía a sí misma mientras vive en la barra de menús, y registra qué app pide cada cierre. Si una utilidad como Swift Quit cierra apps sin ventanas, añade Transcriptor X a sus excepciones.
+
 ## [4.0] - 2026-10-11
 
 ### Añadido

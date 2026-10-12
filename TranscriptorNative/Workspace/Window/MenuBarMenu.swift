@@ -83,7 +83,7 @@ struct MenuBarMenu: View {
         }
         Button(TXL.t("menubar.settings", "Ajustes…")) { SettingsNavigator.open(SettingsNavigator.shared.section) }
         Divider()
-        Button(TXL.t("menubar.quit", "Salir de Transcriptor X")) { NSApp.terminate(nil) }
+        Button(TXL.t("menubar.quit", "Salir de Transcriptor X")) { QuitIntent.quit() }
     }
 }
 

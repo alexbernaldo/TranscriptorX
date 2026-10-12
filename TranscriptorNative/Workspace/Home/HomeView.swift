@@ -190,69 +190,26 @@ struct HomeView: View {
     }
 }
 
-/// Grabar + the sources chevron: the only Grabar in the window (the toolbar no longer has one),
-/// so the sources popover hangs from here.
+/// Grabar: the only one in the window. The first time it asks for the source in a popover
+/// hanging from it; the sources stay in Ajustes › Grabación and in the context menu.
 private struct HomeRecordButton: View {
     @ObservedObject private var workspace = WorkspaceState.shared
     @ObservedObject private var recording = RecordingController.shared
 
     var body: some View {
-        HStack(spacing: 0) {
-            Button { recording.primaryAction() } label: {
-                HStack(spacing: 6) {
-                    Circle().fill(TX.Colors.record).frame(width: 8, height: 8).accessibilityHidden(true)
-                    Text(TXL.t("record.button", "Grabar"))
-                }
-                .padding(.leading, 18)
-                .padding(.trailing, 14)
-                .frame(height: TX.Size.controlLarge)
-                .contentShape(Rectangle())
+        Button { recording.primaryAction() } label: {
+            HStack(spacing: 6) {
+                Circle().fill(TX.Colors.record).frame(width: 8, height: 8).accessibilityHidden(true)
+                Text(TXL.t("record.button", "Grabar"))
             }
-            .buttonStyle(SplitHalfStyle())
-            .help(TXL.t("record.help", "Grabar"))
-
-            Rectangle().fill(TX.Colors.border).frame(width: 1, height: 16).accessibilityHidden(true)
-
-            Button { workspace.showRecordPopover.toggle() } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
-                    .frame(width: 30, height: TX.Size.controlLarge)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(SplitHalfStyle())
-            .help(TXL.t("record.sources", "Fuentes de grabación"))
-            .accessibilityLabel(TXL.t("record.sources", "Fuentes de grabación"))
         }
-        .font(.system(size: 13, weight: .regular))
-        .foregroundStyle(TX.Colors.textPrimary)
-        .background(RoundedRectangle(cornerRadius: TX.Radius.control, style: .continuous).fill(TX.Colors.bgControl))
-        .clipShape(RoundedRectangle(cornerRadius: TX.Radius.control, style: .continuous))
-        .fixedSize()
+        .buttonStyle(TXSecondaryButtonStyle(size: .large))
+        .help(TXL.t("record.help", "Grabar"))
+        .contextMenu {
+            Button(TXL.t("record.sources.menu", "Fuentes de grabación…")) { workspace.showRecordPopover = true }
+        }
         .popover(isPresented: $workspace.showRecordPopover, arrowEdge: .bottom) {
             RecordPopover()
-        }
-    }
-}
-
-/// One half of a split button: hover and press tint only that half, with a short press scale.
-private struct SplitHalfStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        SplitHalf(configuration: configuration)
-    }
-
-    private struct SplitHalf: View {
-        let configuration: ButtonStyleConfiguration
-        @State private var hovering = false
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-        var body: some View {
-            configuration.label
-                .background(hovering ? TX.Colors.bgControlHover : .clear)
-                .overlay(configuration.isPressed ? TX.Colors.bgPressed : .clear)
-                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
-                .animation(TX.Motion.release, value: configuration.isPressed)
-                .onHover { hovering = $0 }
-                .animation(TX.Motion.hover, value: hovering)
         }
     }
 }

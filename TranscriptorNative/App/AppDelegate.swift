@@ -240,23 +240,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        // #10 (macOS 27): closing the main window can post a kAEQuit; explicit quits carry a key or mouse event.
         let menubar = UserDefaults.standard.bool(forKey: "showMenuBarExtra")
         let keepRunning = UserDefaults.standard.bool(forKey: "keepRunningInBackground") || UserDefaults.standard.bool(forKey: "hideDockIcon")
-        let explicitUserAction: Bool
-        if let ev = NSApp.currentEvent {
-            switch ev.type {
-            case .keyDown, .leftMouseDown, .rightMouseDown, .leftMouseUp, .rightMouseUp: explicitUserAction = true
-            default: explicitUserAction = false
-            }
-        } else {
-            explicitUserAction = false
+        let canLiveInBackground = menubar && keepRunning
+        // Which app asked (e.g. a utility that quits apps without windows) helps when the
+        // app «disappears».
+        AppLogger.shared.log("Quit requested", category: .app, metadata: ["appleEvent": QuitIntent.describeCurrentEvent()])
+        if !canLiveInBackground || QuitIntent.isWanted() {
+            let reply = MainActor.assumeIsolated { confirmQuitIfBusy() }
+            if reply == .terminateCancel { QuitIntent.userAsked = false }
+            return reply
         }
-        let visibleNormalWindow = NSApp.windows.contains { $0.isVisible && $0.level == .normal && $0.canBecomeMain }
-        if menubar && keepRunning && !explicitUserAction && !visibleNormalWindow {
-            return .terminateCancel
-        }
-        return MainActor.assumeIsolated { confirmQuitIfBusy() }
+        // macOS 27 sometimes sends the app a quit of its own when its window opens or closes
+        // while it lives in the menu bar. It used to slip through when it arrived during a
+        // click (e.g. «Nueva transcripción…» in the menu bar) and the app vanished.
+        AppLogger.shared.log("Ignored a quit the user did not ask for", category: .app,
+                             metadata: ["appleEvent": QuitIntent.describeCurrentEvent()])
+        return .terminateCancel
     }
 
     /// «¿Salir de Transcriptor X?» only with a recording or active jobs (spec 6.25).
@@ -304,4 +304,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension Notification.Name {
     static let recoveredItemsFound = Notification.Name("recoveredItemsFound")
     static let transcribeURL = Notification.Name("transcribeURL")   // #22 — deep link transcriptorx://transcribe
+}
+
+/// Whether a quit is something the user (or the system on their behalf) asked for.
+enum QuitIntent {
+    /// Set by our own Quit commands and by Sparkle before it relaunches.
+    @MainActor static var userAsked = false
+
+    /// Our Quit menu items and ⌘Q.
+    @MainActor static func quit() {
+        userAsked = true
+        NSApp.terminate(nil)
+    }
+
+    /// A deliberate quit: one of ours, another process (Dock, Activity Monitor, a script,
+    /// an installer) or log out / restart / shut down.
+    static func isWanted() -> Bool {
+        if MainActor.assumeIsolated({ userAsked }) { return true }
+        guard let event = NSAppleEventManager.shared().currentAppleEvent,
+              event.eventClass == AEEventClass(kCoreEventClass),
+              event.eventID == AEEventID(kAEQuitApplication) else { return false }
+        if event.paramDescriptor(forKeyword: AEKeyword(kAEQuitReason)) != nil { return true }
+        if let sender = event.attributeDescriptor(forKeyword: AEKeyword(keySenderPIDAttr))?.int32Value,
+           sender != 0, sender != getpid() {
+            return true
+        }
+        return false
+    }
+
+    static func describeCurrentEvent() -> String {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent else { return "none" }
+        let sender = event.attributeDescriptor(forKeyword: AEKeyword(keySenderPIDAttr))?.int32Value ?? 0
+        let reason = event.paramDescriptor(forKeyword: AEKeyword(kAEQuitReason))?.typeCodeValue ?? 0
+        let app = sender == getpid() ? "self" : (NSRunningApplication(processIdentifier: sender)?.localizedName ?? "pid \(sender)")
+        return "from=\(app) reason=\(reason)"
+    }
 }

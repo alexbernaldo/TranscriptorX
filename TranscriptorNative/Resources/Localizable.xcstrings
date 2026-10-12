@@ -9291,6 +9291,23 @@
         }
       }
     },
+    "menu.quit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit Transcriptor X"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salir de Transcriptor X"
+          }
+        }
+      }
+    },
     "menu.record" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13860,6 +13877,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fuentes de grabación"
+          }
+        }
+      }
+    },
+    "record.sources.menu" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording Sources…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuentes de grabación…"
           }
         }
       }

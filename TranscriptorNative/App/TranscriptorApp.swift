@@ -25,6 +25,11 @@ final class UpdaterModel: NSObject, ObservableObject, SPUUpdaterDelegate {
         lastCheck = controller.updater.lastUpdateCheckDate
     }
 
+    /// Sparkle quits the app to install: that quit is wanted.
+    func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
+        MainActor.assumeIsolated { QuitIntent.userAsked = true }
+    }
+
     func checkForUpdates() {
         isChecking = true
         lastError = nil
