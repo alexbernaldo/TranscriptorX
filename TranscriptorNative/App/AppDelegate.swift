@@ -30,6 +30,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated {
             AppearanceMode.apply(AppearanceMode.current)
             DockVisibility.apply()
+            // El icono del Dock sigue a la ventana: cerrar la ventana lo quita; abrirla lo devuelve.
+            let center = NotificationCenter.default
+            for name in [NSWindow.willCloseNotification, NSWindow.didBecomeMainNotification, NSWindow.didMiniaturizeNotification] {
+                center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                    DispatchQueue.main.async { MainActor.assumeIsolated { DockVisibility.apply() } }
+                }
+            }
         }
 
         AppLogger.shared.log("Application launched", category: .app)

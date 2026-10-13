@@ -413,12 +413,30 @@ enum DictationInserter {
 enum DockVisibility {
     static var isHidden: Bool { UserDefaults.standard.bool(forKey: "hideDockIcon") }
 
+    /// Con «Seguir funcionando al cerrar la ventana» y la barra de menús activas, el icono del Dock
+    /// solo se ve mientras hay una ventana abierta: al cerrarla desaparece y la app sigue en la barra de menús.
+    static var hidesDockWhenNoWindow: Bool {
+        let d = UserDefaults.standard
+        return d.bool(forKey: "showMenuBarExtra") && d.bool(forKey: "keepRunningInBackground")
+    }
+
+    /// Ventana principal abierta (minimizada también cuenta: el usuario la tiene en el Dock).
+    static var hasOpenMainWindow: Bool {
+        NSApp.windows.contains {
+            $0.identifier?.rawValue.hasPrefix(WindowCoordinator.mainWindowID) == true
+                && ($0.isVisible || $0.isMiniaturized)
+        }
+    }
+
     static func apply() {
         if isHidden { UserDefaults.standard.set(true, forKey: "showMenuBarExtra") }
-        let policy: NSApplication.ActivationPolicy = isHidden ? .accessory : .regular
+        let hide = isHidden || (hidesDockWhenNoWindow && !hasOpenMainWindow)
+        let policy: NSApplication.ActivationPolicy = hide ? .accessory : .regular
         guard NSApp.activationPolicy() != policy else { return }
         let visible = NSApp.windows.filter { $0.isVisible && $0.canBecomeKey }
         NSApp.setActivationPolicy(policy)
+        // Sin ventanas (la acabas de cerrar) no se roba el foco a la app que estés usando.
+        guard !visible.isEmpty else { return }
         // Changing the policy deactivates the app; bring back the window the user was in.
         DispatchQueue.main.async {
             NSApp.activate(ignoringOtherApps: true)

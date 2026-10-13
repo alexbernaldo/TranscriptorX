@@ -15,6 +15,8 @@ enum WindowCoordinator {
 
     /// Brings the main window back (Dock, menu bar, transcriptorx://open). Called from explicit user actions.
     static func showMainWindow() {
+        // Sin Dock mientras no había ventana: vuelve a aparecer al abrirla.
+        if !DockVisibility.isHidden, NSApp.activationPolicy() != .regular { NSApp.setActivationPolicy(.regular) }
         if let window = mainWindow {
             if window.isMiniaturized { window.deminiaturize(nil) }
             window.makeKeyAndOrderFront(nil)
