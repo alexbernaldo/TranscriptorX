@@ -41,3 +41,11 @@ Rama: `feature/model-catalog` (creada desde `feature/tx-planes`, HEAD `cc67847`)
 
 ## 4. Preguntas para el usuario antes de seguir
 Ver informe en el chat (puntos 1-3 de la sección 2).
+
+## 5. Estado de cierre (sesión de verificación)
+
+- «Automático» ya no se guarda como ID: `ModelSelection.prepare` lo resuelve al crear el trabajo, el dictado y los Atajos.
+- Red: `FluidNetworkGate` mantiene `ModelHub.offlineMode` activo; solo «Descargar» (y la primera descarga del modelo de hablantes) lo abre.
+  Sparkle conserva su comprobación semanal automática (decisión anterior, ajena a los modelos): revisar si choca con «nada de red sin acción del usuario».
+- Texto en vivo: `LiveTranscription` (Nemotron) alimenta la vista En vivo, el panel flotante y los subtítulos.
+- Pendiente de tu parte: probar con modelos descargados (Parakeet y Nemotron en español), audios para `Tools/eval/es/…` y una copia de tu base de datos real.
