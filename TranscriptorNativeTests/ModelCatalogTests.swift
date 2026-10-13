@@ -156,8 +156,8 @@ final class ModelCatalogTests: XCTestCase {
     }
 
     func testLegacyDictationDefaultBecomesAutomatic() {
-        XCTAssertNil(TaskModelPreferences.dictationStorage("useDefault"))
-        XCTAssertEqual(ModelAssignment(storage: TaskModelPreferences.dictationStorage("useDefault")), .automatic)
+        XCTAssertNil(TaskModelPreferences.dictationStorage("default"))
+        XCTAssertEqual(ModelAssignment(storage: TaskModelPreferences.dictationStorage("default")), .automatic)
     }
 
     func testIDsAreUniqueAndPersistentLegacyIDsExist() {

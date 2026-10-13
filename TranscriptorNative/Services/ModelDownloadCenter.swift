@@ -57,9 +57,16 @@ final class ModelDownloadCenter: ObservableObject {
         }
         Task {
             do {
-                try await service.downloadModel(modelId) { _ in }
+                // Parakeet y Nemotron informan de una fracción; Whisper, de bytes (downloadBytesProgress).
+                try await service.downloadModel(modelId) { fraction in
+                    guard ModelCatalog.descriptor(id: modelId)?.engine != .whisper else { return }
+                    Task { @MainActor in
+                        self.states[modelId] = .downloading(received: Int64(fraction * 1000), total: 1000)
+                    }
+                }
                 states[modelId] = nil
                 revision += 1
+                ModelStorageService.shared.notifyChanged()
                 AppLogger.shared.log("Model downloaded: \(modelId)", category: .model)
                 JobManager.shared.modelBecameAvailable(modelId)
             } catch is CancellationError {

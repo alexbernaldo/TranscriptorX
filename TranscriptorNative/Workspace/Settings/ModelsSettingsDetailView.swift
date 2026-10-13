@@ -7,6 +7,7 @@ struct ModelsSettingsDetailView: View {
     @ObservedObject private var prefs = TaskModelPreferences.shared
     @ObservedObject private var storage = ModelStorageService.shared
     @ObservedObject private var jobs = JobManager.shared
+    @ObservedObject private var downloads = ModelDownloadCenter.shared
     @ObservedObject private var defaults = DefaultsModel.shared
 
     @State private var advancedExpanded = false
@@ -272,7 +273,7 @@ struct ModelsSettingsDetailView: View {
 
     @ViewBuilder
     private func modelActionView(_ m: ModelDescriptor, isDownloaded: Bool) -> some View {
-        let downloadState = ModelDownloadCenter.shared.state(for: m.id)
+        let downloadState = downloads.state(for: m.id)
 
         switch downloadState {
         case .downloading(let received, let total):
@@ -287,6 +288,17 @@ struct ModelsSettingsDetailView: View {
                 .buttonStyle(TXBorderlessButtonStyle())
                 .controlSize(.small)
             }
+        case .failed(let message):
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(TXL.t("models.downloadFailed", "No se pudo descargar"))
+                    .font(.system(size: 11)).foregroundStyle(TX.Colors.error)
+                    .help(message)
+                Button(TXL.t("common.retry", "Reintentar")) { downloads.download(m.id) }
+                    .buttonStyle(TXSecondaryButtonStyle()).controlSize(.small)
+            }
+        case .pending:
+            Text(TXL.t("models.download.pending", "En cola…"))
+                .font(.system(size: 11)).foregroundStyle(TX.Colors.textSecondary)
         default:
             if isDownloaded {
                 Menu {

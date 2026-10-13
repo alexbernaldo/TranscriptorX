@@ -78,3 +78,22 @@ final class NoImplicitNetworkTests: XCTestCase {
         XCTAssertFalse(ModelStorageService.shared.localURLs(for: "nemotron-streaming-multilingual-0.6b").isEmpty)
     }
 }
+
+/// Prueba con red real (solo con TX_NET_TEST=1): descarga Rápido y transcribe un audio en español.
+final class ParakeetEndToEndTests: XCTestCase {
+    func testDownloadAndTranscribeSpanish() async throws {
+        let env = ProcessInfo.processInfo.environment
+        try XCTSkipUnless(env["TX_NET_TEST"] == "1", "needs network")
+        let wav = try XCTUnwrap(env["TX_NET_WAV"])
+        FluidNetworkGate.lockDown()
+        try await TranscriptionService.shared.downloadModel("parakeet-tdt-0.6b-v3") { _ in }
+        XCTAssertTrue(ModelStorageService.shared.isDownloaded("parakeet-tdt-0.6b-v3"))
+        var s = TranscriptionSettings.default
+        s.language = "es"
+        s.selectedModelId = "parakeet-tdt-0.6b-v3"
+        let r = try await TranscriptionService.shared.transcribe(
+            file: URL(fileURLWithPath: wav), modelId: s.selectedModelId, settings: s, onProgress: { _, _ in })
+        print("PARAKEET-RESULT: \(r.plainText)")
+        XCTAssertFalse(r.plainText.isEmpty)
+    }
+}

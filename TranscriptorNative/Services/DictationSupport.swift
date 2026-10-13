@@ -62,7 +62,7 @@ enum DictationPreferences {
             "dictation.trailingSpace": true,
             "dictation.removeFillers": true,
             "dictation.translate": false,
-            "dictation.model": useDefault,
+            "dictation.model": ModelSelection.autoToken,
             "dictation.language": useDefault,
             "dictation.overlay": OverlayPosition.bottom.rawValue,
             "dictation.microphone": "",

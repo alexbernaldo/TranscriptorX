@@ -703,15 +703,14 @@ private struct DictationSettings: View {
                 TXSeparator()
                 SettingsRow(label: TXL.t("settings.dictation.model", "Modelo"),
                             help: TXL.t("settings.dictation.model.help", "Un modelo pequeño pega antes; uno grande se equivoca menos.")) {
-                    Picker("", selection: $model) {
-                        Text(TXL.t("settings.dictation.asDefaults", "Como en Ajustes › Idioma")).tag(DictationPreferences.useDefault)
-                        Divider()
-                        ForEach(ModelCapabilities.catalogue) { entry in
-                            let name = ModelCatalog.formattedName(for: entry.id, showTechnical: TaskModelPreferences.shared.showTechnicalNames)
-                            Text(name).tag(entry.id)
-                        }
-                    }
-                    .labelsHidden().fixedSize()
+                    ModelPickerView(
+                        task: .dictation,
+                        showsManage: false,
+                        assignment: Binding(
+                            get: { ModelAssignment(storage: TaskModelPreferences.dictationStorage(model)) },
+                            set: { model = $0.storage }
+                        )
+                    )
                 }
                 if model == "base" && !hasSeenFastDictationNotice {
                     VStack(alignment: .leading, spacing: 6) {

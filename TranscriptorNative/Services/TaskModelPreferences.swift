@@ -96,7 +96,8 @@ final class TaskModelPreferences: ObservableObject {
     static let keyShowExperimental = "showExperimentalModels"
     static let keyRenameNoticePending = "models.renameNotice.pending"
     /// Clave del dictado en versiones anteriores para «usar el modelo de archivos».
-    static let legacyDictationDefault = "useDefault"
+    /// «Como en Ajustes › Idioma» guardaba `DictationPreferences.useDefault` («default»).
+    static let legacyDictationDefaults: Set<String> = ["default", "useDefault"]
 
     @Published var filesAssignment: ModelAssignment {
         didSet {
@@ -147,8 +148,8 @@ final class TaskModelPreferences: ObservableObject {
 
     /// «useDefault» de versiones anteriores pasa a Automático.
     nonisolated static func dictationStorage(_ raw: String?) -> String? {
-        guard let raw, raw != legacyDictationDefault else { return nil }
-        return raw
+        guard let raw, !legacyDictationDefaults.contains(raw), raw != ModelSelection.autoToken, !raw.isEmpty else { return nil }
+        return ModelCatalog.migratedId(fromStored: raw) ?? raw
     }
 
     private func pullFilesAssignment() {
@@ -235,7 +236,7 @@ final class TaskModelPreferences: ObservableObject {
             if let encoded = try? JSONEncoder().encode(saved) { d.set(encoded, forKey: "transcription_settings") }
         }
         for key in [keyDictation, keyRecording, keyLiveCaptions] {
-            guard let raw = d.string(forKey: key), raw != legacyDictationDefault, raw != ModelSelection.autoToken else { continue }
+            guard let raw = d.string(forKey: key), !legacyDictationDefaults.contains(raw), raw != ModelSelection.autoToken else { continue }
             if let id = ModelCatalog.migratedId(fromStored: raw), id != raw { d.set(id, forKey: key) }
         }
         if isUpgrade { d.set(true, forKey: keyRenameNoticePending) }
