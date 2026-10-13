@@ -221,20 +221,58 @@ enum ModelCatalog {
         whisper("base", "Ligero", "Notas rápidas", .advanced, speed: 4, accuracy: 2),
         whisper("large-v2", "Clásico", "Audios con repeticiones", .advanced, speed: 1, accuracy: 5),
         whisper("tiny", "Express", "Solo pruebas", .advanced, speed: 5, accuracy: 1),
+        // Experimentales
+        ModelDescriptor(
+            id: "parakeet-redux", engine: .parakeet,
+            nameKey: "model.parakeet-redux.name", nameDefault: "Mini",
+            subtitleKey: "model.parakeet-redux.subtitle", subtitleDefault: "Dictado en equipos con poca memoria",
+            group: .experimental, languages: .only(languagesParakeetV3),
+            capabilities: caps(parakeetBase, minOS: 15),
+            sourceRepo: "FluidInference/parakeet-redux-coreml", license: "CC-BY-4.0",
+            attribution: "Parakeet Redux (moondream), reentrenamiento ternario de NVIDIA Parakeet TDT v3 (CC-BY-4.0)",
+            scales: ModelScales(speed: 5, accuracy: 3),
+            capabilityBadgeKey: "model.badge.neuralEngine", capabilityBadgeDefault: "Neural Engine"),
     ]
-    // Experimentales (Cohere, Redux): se añaden en la fase 5, solo con confirmación.
 
     static func descriptor(id: String) -> ModelDescriptor? { all.first { $0.id == id } }
 
-    /// Resuelve un ID técnico o un nombre visible («Turbo»), sin distinguir mayúsculas ni acentos.
+    /// Resuelve un ID técnico o un nombre visible («Turbo», «Ultra Rápido»), sin distinguir mayúsculas ni acentos.
     static func descriptor(matching query: String) -> ModelDescriptor? {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
-        return all.first { $0.id.lowercased() == q }
-            ?? all.first {
-                $0.displayName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) == q
-            }
+        if let direct = all.first(where: { $0.id.lowercased() == q }) { return direct }
+        if let byName = all.first(where: {
+            $0.displayName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) == q
+        }) { return byName }
+        let legacyMap: [String: String] = [
+            "ultra rapido": "tiny",
+            "rapido": "base",
+            "equilibrado": "small",
+            "profesional": "large-v3-turbo",
+            "maxima calidad": "large-v3"
+        ]
+        if let legacyId = legacyMap[q], let d = all.first(where: { $0.id == legacyId }) {
+            return d
+        }
+        return nil
     }
+
+    /// Nombre amigable según el ajuste «Mostrar nombres técnicos en toda la app».
+    static func formattedName(for modelId: String, showTechnical: Bool = false) -> String {
+        guard let d = descriptor(id: modelId) else { return modelId }
+        return showTechnical ? "\(d.displayName) (\(d.id))" : d.displayName
+    }
+
+    /// Nombres anteriores para la migración/aviso de actualización único (6.5).
+    static let legacyDisplayNames: [String: String] = [
+        "tiny": "Ultra Rápido",
+        "base": "Rápido",
+        "small": "Equilibrado",
+        "medium": "Preciso",
+        "large-v3-turbo": "Profesional",
+        "large-v2": "Large V2",
+        "large-v3": "Máxima Calidad",
+    ]
 
     /// Modelos visibles, por grupo, aplicando el ajuste «Mostrar modelos experimentales».
     static func visible(showExperimental: Bool) -> [ModelDescriptor] {

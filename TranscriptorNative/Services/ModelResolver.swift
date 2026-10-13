@@ -27,10 +27,27 @@ struct ModelResolverContext: Sendable {
     /// Código ISO elegido o detectado; `nil`/«auto» = desconocido.
     var language: String?
     var translateToEnglish: Bool = false
+    /// Idioma detectado previamente (por ejemplo, con el probe de 30 s de Whisper).
+    var detectedLanguage: String?
 
     var knownLanguage: String? {
-        guard let l = language?.lowercased(), !l.isEmpty, l != "auto" else { return nil }
-        return String(l.prefix(2))
+        if let l = language?.lowercased(), !l.isEmpty, l != "auto" {
+            return String(l.prefix(2))
+        }
+        if let d = detectedLanguage?.lowercased(), !d.isEmpty, d != "auto" {
+            return String(d.prefix(2))
+        }
+        return nil
+    }
+
+    var hasInstalledWhisper: Bool {
+        installed.contains { id in
+            ModelCatalog.descriptor(id: id)?.engine == .whisper
+        }
+    }
+
+    var bestInstalledWhisperId: String? {
+        ModelResolver.whisperFallbackOrder.first { installed.contains($0) }
     }
 }
 
@@ -42,6 +59,9 @@ enum ModelNotice: Equatable, Sendable {
     case notDownloaded(requested: String, used: String?)
     /// Subtítulos en vivo sin modelo compatible para el idioma.
     case noLiveModel(language: String)
+    /// Idioma desconocido sin ningún Whisper descargado:
+    /// Parakeet detecta y Trabajo en proceso muestra «Idioma detectado: X».
+    case languageAutoDetectedByParakeet
 }
 
 struct ModelResolution: Equatable, Sendable {
@@ -62,6 +82,9 @@ enum ModelResolver {
     static let turbo = "large-v3-turbo"
     static let live = "nemotron-streaming-multilingual-0.6b"
     static let liveEnglish = "nemotron-streaming-en-0.6b"
+
+    /// Mejor Whisper instalado, de más a menos preciso: último recurso cuando falta el deseado.
+    static let whisperFallbackOrder = ["large-v3", "large-v3-turbo", "large-v2", "medium", "small", "base", "tiny"]
 
     static func incompatibility(of m: ModelDescriptor, task: ModelTask, in ctx: ModelResolverContext) -> ModelIncompatibility? {
         if ctx.osMajor < m.minOS { return .needsOS(m.minOS) }
@@ -84,8 +107,19 @@ enum ModelResolver {
                                 in ctx: ModelResolverContext) -> ModelDescriptor? {
         func byId(_ id: String) -> ModelDescriptor? { ModelCatalog.descriptor(id: id) }
         func pickFiles() -> ModelDescriptor? {
-            let fastOK = byId(fast).map { incompatibility(of: $0, task: .files, in: ctx) == nil } ?? false
-            return fastOK ? byId(fast) : byId(turbo)
+            if let _ = ctx.knownLanguage {
+                let fastOK = byId(fast).map { incompatibility(of: $0, task: .files, in: ctx) == nil } ?? false
+                return fastOK ? byId(fast) : byId(turbo)
+            }
+
+            // Idioma desconocido:
+            if ctx.hasInstalledWhisper {
+                // Hay Whisper disponible: probe de 30 s. El objetivo por defecto es Turbo.
+                return byId(turbo)
+            } else {
+                // Sin ningún Whisper descargado: usa Rápido (Parakeet detecta y avisa en Trabajo en proceso).
+                return byId(fast)
+            }
         }
         switch task {
         case .files, .recording:
@@ -98,9 +132,6 @@ enum ModelResolver {
             return nil
         }
     }
-
-    /// Mejor Whisper instalado, de más a menos preciso: último recurso cuando falta el deseado.
-    private static let whisperFallbackOrder = ["large-v3", "large-v3-turbo", "large-v2", "medium", "small", "base", "tiny"]
 
     static func resolve(task: ModelTask, assignment: ModelAssignment, filesAssignment: ModelAssignment = .automatic,
                         in ctx: ModelResolverContext) -> ModelResolution {
@@ -131,7 +162,11 @@ enum ModelResolver {
                                    notice: task == .liveCaptions ? ctx.knownLanguage.map { .noLiveModel(language: $0) } : nil)
         }
         if let ok = usable(target.id, task: task, ctx) {
-            return ModelResolution(model: ok, needsDownload: nil, notice: nil)
+            var notice: ModelNotice? = nil
+            if (task == .files || task == .recording), ctx.knownLanguage == nil, !ctx.hasInstalledWhisper, target.id == fast {
+                notice = .languageAutoDetectedByParakeet
+            }
+            return ModelResolution(model: ok, needsDownload: nil, notice: notice)
         }
         let alt = fallbackInstalled(task: task, excluding: target.id, filesAssignment: filesAssignment, ctx)
         // En Automático solo avisamos si había algo que descargar y nada mejor instalado.

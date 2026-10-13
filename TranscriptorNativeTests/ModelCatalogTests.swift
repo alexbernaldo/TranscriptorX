@@ -21,9 +21,30 @@ final class ModelResolverTests: XCTestCase {
         XCTAssertEqual(ModelResolver.resolve(task: .files, assignment: .automatic, in: ctx(lang: "ja")).model?.id, ModelResolver.turbo)
     }
 
-    func testUnknownLanguageIsTreatedAsParakeetAutoDetect() {
-        XCTAssertEqual(ModelResolver.resolve(task: .files, assignment: .automatic, in: ctx(lang: "auto")).model?.id, ModelResolver.fast)
-        XCTAssertEqual(ModelResolver.resolve(task: .files, assignment: .automatic, in: ctx(lang: nil)).model?.id, ModelResolver.fast)
+    // MARK: Automático e idioma desconocido (reglas de 30s probe)
+
+    func testUnknownLanguageWithWhisperDownloadedAndAudioNotInParakeetUsesTurboOrBestWhisper() {
+        // Caso 1: Hay Whisper descargado, audio detectado fuera de los 25 de Parakeet (ej. coreano) -> usa Turbo / mejor Whisper
+        var c = ctx(installed: ["large-v3-turbo", "parakeet-tdt-0.6b-v3"], lang: "auto")
+        c.detectedLanguage = "ko"
+        let r = ModelResolver.resolve(task: .files, assignment: .automatic, in: c)
+        XCTAssertEqual(r.model?.id, ModelResolver.turbo)
+    }
+
+    func testUnknownLanguageWithWhisperDownloadedAndAudioInParakeetUsesFast() {
+        // Caso 2: Hay Whisper descargado, audio detectado en los 25 de Parakeet (ej. español) -> usa Rápido
+        var c = ctx(installed: ["large-v3-turbo", "parakeet-tdt-0.6b-v3"], lang: "auto")
+        c.detectedLanguage = "es"
+        let r = ModelResolver.resolve(task: .files, assignment: .automatic, in: c)
+        XCTAssertEqual(r.model?.id, ModelResolver.fast)
+    }
+
+    func testUnknownLanguageWithNoWhisperDownloadedUsesFastAndFlagsNotice() {
+        // Caso 3: No hay ningún Whisper descargado -> usa Rápido con aviso para Trabajo en proceso
+        let c = ModelResolverContext(installed: ["parakeet-tdt-0.6b-v3"], osMajor: 15, language: "auto")
+        let r = ModelResolver.resolve(task: .files, assignment: .automatic, in: c)
+        XCTAssertEqual(r.model?.id, ModelResolver.fast)
+        XCTAssertEqual(r.notice, .languageAutoDetectedByParakeet)
     }
 
     func testTranslateForcesWhisper() {
@@ -117,7 +138,22 @@ final class ModelCatalogTests: XCTestCase {
         XCTAssertEqual(ModelCatalog.descriptor(matching: "turbo")?.id, "large-v3-turbo")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "MÁXIMA PRECISION")?.id, "large-v3")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "Large-V3-Turbo")?.id, "large-v3-turbo")
+        // Nombres legados
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Ultra Rápido")?.id, "tiny")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Profesional")?.id, "large-v3-turbo")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Equilibrado")?.id, "small")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Mini")?.id, "parakeet-redux")
         XCTAssertNil(ModelCatalog.descriptor(matching: "nope"))
+    }
+
+    func testParakeetReduxMiniIsExperimentalAndRequiresMacOS15() {
+        let redux = ModelCatalog.descriptor(id: "parakeet-redux")!
+        XCTAssertEqual(redux.group, .experimental)
+        XCTAssertEqual(redux.minOS, 15)
+        let ctx14 = ModelResolverContext(installed: ["parakeet-redux"], osMajor: 14)
+        XCTAssertEqual(ModelResolver.incompatibility(of: redux, task: .dictation, in: ctx14), .needsOS(15))
+        let ctx15 = ModelResolverContext(installed: ["parakeet-redux"], osMajor: 15)
+        XCTAssertNil(ModelResolver.incompatibility(of: redux, task: .dictation, in: ctx15))
     }
 
     func testExperimentalHiddenUnlessEnabled() {
