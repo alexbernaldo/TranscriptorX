@@ -307,7 +307,8 @@ struct ModelInfo: Identifiable, Hashable {
 // MARK: - Settings
 struct TranscriptionSettings: Codable, Equatable {
     var language: String = "auto"             // detect the language by default
-    var selectedModelId: String = "base"
+    /// ID técnico, o «auto» (Automático: el resolver elige el modelo al crear el trabajo).
+    var selectedModelId: String = "auto"
     
     // Preprocessing options
     var deepfilter: Bool = false       // DeepFilterNet noise reduction

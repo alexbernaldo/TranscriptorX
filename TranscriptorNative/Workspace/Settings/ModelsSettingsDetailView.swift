@@ -330,9 +330,34 @@ struct ModelsSettingsDetailView: View {
                     TXSeparator()
                     SettingsRow(
                         label: TXL.t("models.adv.experimental", "Mostrar modelos experimentales"),
-                        help: TXL.t("models.adv.experimental.help", "Habilita modelos como Mini (Parakeet Redux) y Cohere Transcribe.")
+                        help: TXL.t("models.adv.experimental.help", "Muestra los modelos en pruebas, como Mini (Parakeet Redux).")
                     ) {
                         Toggle("", isOn: $prefs.showExperimental).toggleStyle(.switch).labelsHidden()
+                    }
+                }
+
+                SettingsGroup(title: TXL.t("models.adv.engines", "Motores")) {
+                    SettingsRow(
+                        label: TXL.t("models.adv.fastVersion", "Versión de Rápido"),
+                        help: TXL.t("models.adv.fastVersion.help", "Qué modelo de Parakeet usa «Rápido» en Automático. Ultra es más preciso y ocupa más.")
+                    ) {
+                        Picker("", selection: $prefs.fastModelId) {
+                            Text(verbatim: "v3").tag(ModelResolver.fast)
+                            Text(verbatim: "Ultra").tag("parakeet-ultra")
+                        }
+                        .labelsHidden().pickerStyle(.segmented).fixedSize()
+                    }
+                    TXSeparator()
+                    SettingsRow(
+                        label: TXL.t("models.adv.latency", "Latencia de En vivo"),
+                        help: TXL.t("models.adv.latency.help", "Menos milisegundos, texto más rápido pero con menos puntuación. Cada tramo se descarga por separado. 4480 ms solo en el modelo multilingüe.")
+                    ) {
+                        Picker("", selection: $prefs.nemotronChunkMs) {
+                            ForEach(NemotronStreamingEngine.supportedChunks(modelId: NemotronStreamingEngine.multilingualId), id: \.self) { ms in
+                                Text("\(ms) ms").tag(ms)
+                            }
+                        }
+                        .labelsHidden().fixedSize()
                     }
                 }
 
@@ -386,8 +411,9 @@ struct ModelsSettingsDetailView: View {
                         help: TXL.t("models.storage.help", "Carpeta local con los archivos binarios y modelos compilados.")
                     ) {
                         HStack(spacing: 8) {
-                            Button(TXL.t("common.showInFinder", "Mostrar en Finder")) {
-                                storage.revealInFinder(for: "base")
+                            Menu(TXL.t("common.showInFinder", "Mostrar en Finder")) {
+                                Button { storage.revealStorageFolder(engine: .whisper) } label: { Text(verbatim: "Whisper") }
+                                Button { storage.revealStorageFolder(engine: .parakeet) } label: { Text(verbatim: "Parakeet · Nemotron") }
                             }
                             .buttonStyle(TXSecondaryButtonStyle())
                             .controlSize(.small)

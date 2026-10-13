@@ -265,6 +265,7 @@ enum ModelCatalog {
 
     /// Nombre amigable según el ajuste «Mostrar nombres técnicos en toda la app».
     static func formattedName(for modelId: String, showTechnical: Bool = false) -> String {
+        if modelId == "auto" { return TXL.t("models.auto.name", "Automático") }
         guard let d = descriptor(id: modelId) else { return modelId }
         return showTechnical ? "\(d.displayName) (\(d.id))" : d.displayName
     }

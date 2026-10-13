@@ -14,6 +14,8 @@ struct CLIRequest: Codable {
     var overwrite: Bool?
     var model: String?
     var saveToHistory: Bool?
+    /// `tx models --plain`: una línea «id<TAB>nombre» por modelo (formato de versiones anteriores).
+    var plain: Bool?
 }
 
 enum CLIEventType: String, Codable {

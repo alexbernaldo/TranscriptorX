@@ -110,23 +110,30 @@ struct ModelPickerView: View {
         let stateText = isDownloaded ? TXL.t("models.state.downloaded", "Descargado") : TXL.f("models.state.download", "Descargar · %@", sizeText)
         let name = ModelCatalog.formattedName(for: m.id, showTechnical: prefs.showTechnicalNames)
 
+        let badge = m.capabilityBadgeKey.flatMap { k in m.capabilityBadgeDefault.map { TXL.t(k, $0) } }
+        let tech = prefs.showTechnicalNames ? "" : m.id
+
         if let reason = incomp {
-            // Desactivado con motivo secundario
+            // Desactivado, con el motivo en el propio texto (no depende del color).
             Button {} label: {
                 Text("\(name) · \(reason.reason)")
             }
             .disabled(true)
+            .help(tech.isEmpty ? m.subtitle : "\(m.subtitle) (\(tech))")
+            .accessibilityLabel("\(name), \(m.engine.badge). \(reason.reason)")
         } else {
             Button {
                 assignment = .model(m.id)
             } label: {
-                let fullTitle = "\(name) · \(m.engine.badge) · \(stateText)"
+                let fullTitle = ([name, m.engine.badge, badge, stateText].compactMap { $0 }).joined(separator: " · ")
                 if isSelected {
                     Label(fullTitle, systemImage: "checkmark")
                 } else {
                     Text(fullTitle)
                 }
             }
+            .help(tech.isEmpty ? m.subtitle : "\(m.subtitle) (\(tech))")
+            .accessibilityLabel("\(name), \(m.engine.badge). \(m.subtitle). \(stateText)\(isSelected ? ", " + TXL.t("a11y.selected", "seleccionado") : "")")
         }
     }
 }

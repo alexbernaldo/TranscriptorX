@@ -22154,13 +22154,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enables models such as Mini (Parakeet Redux) and Cohere Transcribe."
+            "value": "Shows models in testing, such as Mini (Parakeet Redux)."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Habilita modelos como Mini (Parakeet Redux) y Cohere Transcribe."
+            "value": "Muestra los modelos en pruebas, como Mini (Parakeet Redux)."
           }
         }
       }
@@ -23793,6 +23793,125 @@
           "stringUnit": {
             "state": "translated",
             "value": "Modelo en uso: %@"
+          }
+        }
+      }
+    },
+    "models.adv.engines": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engines"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motores"
+          }
+        }
+      }
+    },
+    "models.adv.fastVersion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fast version"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión de Rápido"
+          }
+        }
+      }
+    },
+    "models.adv.fastVersion.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which Parakeet model Fast uses in Automatic. Ultra is more accurate and larger."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qué modelo de Parakeet usa «Rápido» en Automático. Ultra es más preciso y ocupa más."
+          }
+        }
+      }
+    },
+    "models.adv.latency": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live latency"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latencia de En vivo"
+          }
+        }
+      }
+    },
+    "models.adv.latency.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewer milliseconds give faster text with less punctuation. Each chunk is downloaded separately. 4480 ms only in the multilingual model."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menos milisegundos, texto más rápido pero con menos puntuación. Cada tramo se descarga por separado. 4480 ms solo en el modelo multilingüe."
+          }
+        }
+      }
+    },
+    "a11y.selected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "selected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seleccionado"
+          }
+        }
+      }
+    },
+    "models.auto.name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático"
           }
         }
       }

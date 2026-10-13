@@ -201,7 +201,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Never downloads without confirmation: the sheet opens with the link filled in (spec 6.4).
             let target = comps.queryItems?.first(where: { $0.name == "url" })?.value
             AppLogger.shared.log("Deep link transcribe", category: .app, metadata: ["url": target ?? "(none)"])
-            NotificationCenter.default.post(name: .transcribeURL, object: nil, userInfo: ["url": target as Any])
+            // «model» acepta un nombre («Turbo») o un ID técnico; solo preselecciona el modelo en el sheet.
+            let rawModel = comps.queryItems?.first(where: { $0.name == "model" })?.value
+            let model = rawModel.flatMap { ModelCatalog.migratedId(fromStored: $0) ?? ($0.lowercased() == "auto" ? "auto" : nil) }
+            NotificationCenter.default.post(name: .transcribeURL, object: nil,
+                                            userInfo: ["url": target as Any, "model": model as Any])
         case "open":
             AppLogger.shared.log("Deep link open", category: .app)
             MainActor.assumeIsolated { WindowCoordinator.showMainWindow() }

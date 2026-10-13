@@ -123,6 +123,9 @@ struct ExportRequest: Equatable {
 final class WorkspaceState: ObservableObject {
     static let shared = WorkspaceState()
 
+    /// Modelo pedido por `transcriptorx://transcribe?…&model=` (el sheet de enlace lo preselecciona y lo consume).
+    var schemeModelId: String?
+
     @Published var route: WorkspaceRoute = .home {
         didSet { routeDidChange(from: oldValue) }
     }
@@ -391,6 +394,7 @@ final class WorkspaceState: ObservableObject {
         nc.publisher(for: .transcribeURL).receive(on: RunLoop.main)
             .sink { [weak self] note in
                 WindowCoordinator.showMainWindow()
+                self?.schemeModelId = note.userInfo?["model"] as? String
                 self?.sheet = .url(prefill: note.userInfo?["url"] as? String, fromScheme: true, jobId: nil)
             }.store(in: &cancellables)
         nc.publisher(for: .openNewTranscriptionWithFile).receive(on: RunLoop.main)

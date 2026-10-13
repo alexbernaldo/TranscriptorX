@@ -60,6 +60,10 @@ struct LinkSheet: View {
             } else if let prefill {
                 link = prefill
             }
+            if fromScheme, let model = workspace.schemeModelId {
+                quick.settings.selectedModelId = model
+                workspace.schemeModelId = nil
+            }
             fieldFocused = true
         }
         .txOnChange(of: job?.status) { status in

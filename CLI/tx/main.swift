@@ -7,8 +7,8 @@ func parse(_ args: [String]) throws -> CLIRequest {
         throw ArgumentError(message: """
         Usage:
           tx transcribe <files...> [--language <code>] [--format <txt|srt|vtt|csv|md|json|html>]
-             [--output <file>] [--output-dir <dir>] [--model <id>] [--overwrite]
-          tx models
+             [--output <file>] [--output-dir <dir>] [--model <name|id|auto>] [--overwrite]
+          tx models [--plain]
           tx version
         """)
     }
@@ -16,7 +16,7 @@ func parse(_ args: [String]) throws -> CLIRequest {
     var paths: [String] = []
     var req = CLIRequest(command: command, paths: [], language: nil, format: nil,
                          output: nil, outputDir: nil, overwrite: nil, model: nil,
-                         saveToHistory: nil)
+                         saveToHistory: nil, plain: nil)
     while !rest.isEmpty {
         let a = rest.removeFirst()
         switch a {
@@ -26,6 +26,7 @@ func parse(_ args: [String]) throws -> CLIRequest {
         case "--output-dir": req.outputDir = rest.removeFirst()
         case "--model": req.model = rest.removeFirst()
         case "--overwrite": req.overwrite = true
+        case "--plain": req.plain = true
         default:
             if a.hasPrefix("--") { throw ArgumentError(message: "Unknown flag: \(a)") }
             paths.append(a)
