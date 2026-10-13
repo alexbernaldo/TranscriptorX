@@ -10,15 +10,15 @@ final class ModelStorageService: ObservableObject {
 
     @Published private(set) var revision: Int = 0
 
-    private let fileManager = FileManager.default
+    private nonisolated let fileManager = FileManager.default
 
-    private var whisperModelsDir: URL {
-        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    private nonisolated var whisperModelsDir: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return appSupport.appendingPathComponent("Transcriptor/whisper.cpp/models")
     }
 
-    private var fluidAudioBaseDir: URL {
-        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    private nonisolated var fluidAudioBaseDir: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return appSupport.appendingPathComponent("FluidAudio/Models")
     }
 
@@ -47,7 +47,7 @@ final class ModelStorageService: ObservableObject {
 
     // MARK: - Localización de archivos
 
-    func localURLs(for modelId: String) -> [URL] {
+    nonisolated func localURLs(for modelId: String) -> [URL] {
         guard let descriptor = ModelCatalog.descriptor(id: modelId) else { return [] }
         switch descriptor.engine {
         case .whisper:
@@ -61,7 +61,7 @@ final class ModelStorageService: ObservableObject {
         }
     }
 
-    func isDownloaded(_ modelId: String) -> Bool {
+    nonisolated func isDownloaded(_ modelId: String) -> Bool {
         guard let descriptor = ModelCatalog.descriptor(id: modelId) else { return false }
         switch descriptor.engine {
         case .whisper:
@@ -75,13 +75,13 @@ final class ModelStorageService: ObservableObject {
         }
     }
 
-    func installedModelIds() -> Set<String> {
+    nonisolated func installedModelIds() -> Set<String> {
         Set(ModelCatalog.all.map(\.id).filter { isDownloaded($0) })
     }
 
     // MARK: - Tamaños
 
-    func sizeOnDisk(for modelId: String) -> Int64? {
+    nonisolated func sizeOnDisk(for modelId: String) -> Int64? {
         guard isDownloaded(modelId) else { return nil }
         var total: Int64 = 0
         for url in localURLs(for: modelId) {
@@ -90,7 +90,7 @@ final class ModelStorageService: ObservableObject {
         return total > 0 ? total : nil
     }
 
-    private func diskUsage(of url: URL) -> Int64 {
+    nonisolated private func diskUsage(of url: URL) -> Int64 {
         var isDir: ObjCBool = false
         guard fileManager.fileExists(atPath: url.path, isDirectory: &isDir) else { return 0 }
         if isDir.boolValue {
@@ -111,7 +111,7 @@ final class ModelStorageService: ObservableObject {
     /// Tamaño formateado.
     /// Si está descargado: bytes reales de disco (p. ej. "141 MB").
     /// Si NO está descargado: estimado del manifiesto con «≈» (p. ej. "≈ 142 MB").
-    func displaySize(for modelId: String) -> String {
+    nonisolated func displaySize(for modelId: String) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
@@ -123,11 +123,11 @@ final class ModelStorageService: ObservableObject {
         return "≈ " + formatter.string(fromByteCount: estimated)
     }
 
-    func totalStorageUsed() -> Int64 {
+    nonisolated func totalStorageUsed() -> Int64 {
         installedModelIds().compactMap { sizeOnDisk(for: $0) }.reduce(0, +)
     }
 
-    func formattedTotalStorageUsed() -> String {
+    nonisolated func formattedTotalStorageUsed() -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
@@ -156,7 +156,7 @@ final class ModelStorageService: ObservableObject {
         notifyChanged()
     }
 
-    func checkIntegrity(for modelId: String) -> Bool {
+    nonisolated func checkIntegrity(for modelId: String) -> Bool {
         guard isDownloaded(modelId) else { return false }
         guard let descriptor = ModelCatalog.descriptor(id: modelId) else { return false }
         if descriptor.engine == .whisper {

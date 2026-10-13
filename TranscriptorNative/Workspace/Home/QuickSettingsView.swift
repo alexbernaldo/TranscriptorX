@@ -85,47 +85,29 @@ struct LanguagePicker: View {
     }
 }
 
-/// Model menu grouped by «Multilingües» / «Solo inglés», with disk size and state (spec 6.5).
+/// Model menu grouped by Automático / Recomendados / Avanzados (spec 6.1).
 struct ModelPicker: View {
     @ObservedObject var model: QuickSettingsModel
-    @ObservedObject private var downloads = ModelDownloadCenter.shared
 
-    var body: some View {
-        let catalogue = ModelCapabilities.catalogue
-        let multilingual = catalogue.filter { !$0.englishOnly }
-        let english = catalogue.filter { $0.englishOnly }
-        Menu {
-            Section(TXL.t("models.group.multilingual", "Multilingües")) {
-                ForEach(multilingual) { entry in item(entry) }
+    private var assignmentBinding: Binding<ModelAssignment> {
+        Binding(
+            get: {
+                ModelAssignment(storage: model.settings.selectedModelId)
+            },
+            set: { newAssignment in
+                model.settings.selectedModelId = newAssignment.storage
+                model.userChanged()
             }
-            if !english.isEmpty {
-                Section(TXL.t("models.group.english", "Solo inglés")) {
-                    ForEach(english) { entry in item(entry) }
-                }
-            }
-            Divider()
-            Button(TXL.t("models.manage", "Gestionar modelos…")) { SettingsNavigator.open(.models) }
-        } label: {
-            Text(model.settings.selectedModelId)
-        }
-        .fixedSize()
-        .help(TXL.t("models.help", "Modelo de transcripción"))
-        .accessibilityLabel(TXL.f("models.a11y", "Modelo, %@", model.settings.selectedModelId))
+        )
     }
 
-    private func item(_ entry: ModelCapabilities.Entry) -> some View {
-        let downloaded = downloads.revision >= 0 && downloads.isDownloaded(entry.id)
-        let state = downloaded ? TXL.t("models.state.downloaded", "Descargado") : TXL.f("models.state.download", "Descargar · %@", entry.size)
-        return Button {
-            model.settings.selectedModelId = entry.id
-            model.userChanged()
-        } label: {
-            if model.settings.selectedModelId == entry.id {
-                Label("\(entry.id) · \(state)", systemImage: "checkmark")
-            } else {
-                Text("\(entry.id) · \(state)")
-            }
-        }
+    var body: some View {
+        ModelPickerView(
+            task: .files,
+            currentLanguage: model.settings.language,
+            translate: model.settings.translate,
+            assignment: assignmentBinding
+        )
     }
 }
 

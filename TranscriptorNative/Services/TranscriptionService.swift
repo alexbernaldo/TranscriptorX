@@ -97,71 +97,20 @@ class TranscriptionService: NSObject, ObservableObject {
         }
     }
     
-    static let availableModels: [WhisperModel] = [
-        WhisperModel(
-            id: "tiny",
-            name: "Ultra Rápido",
-            filename: "ggml-tiny.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
-            size: "75 MB",
-            coreMLSupported: true,
-            coreMLSize: "24 MB"
-        ),
-        WhisperModel(
-            id: "base",
-            name: "Rápido",
-            filename: "ggml-base.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-            size: "142 MB",
-            coreMLSupported: true,
-            coreMLSize: "43 MB"
-        ),
-        WhisperModel(
-            id: "small",
-            name: "Equilibrado",
-            filename: "ggml-small.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
-            size: "466 MB",
-            coreMLSupported: true,
-            coreMLSize: "134 MB"
-        ),
-        WhisperModel(
-            id: "medium",
-            name: "Preciso",
-            filename: "ggml-medium.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
-            size: "1.5 GB",
-            coreMLSupported: true,
-            coreMLSize: "391 MB"
-        ),
-        WhisperModel(
-            id: "large-v3-turbo",
-            name: "Profesional",
-            filename: "ggml-large-v3-turbo.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
-            size: "1.6 GB",
-            coreMLSupported: true,
-            coreMLSize: "475 MB"
-        ),
-        WhisperModel(
-            id: "large-v2",
-            name: "Large V2",
-            filename: "ggml-large-v2.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v2.bin",
-            size: "2.9 GB",
-            coreMLSupported: true,
-            coreMLSize: "636 MB"
-        ),
-        WhisperModel(
-            id: "large-v3",
-            name: "Máxima Calidad",
-            filename: "ggml-large-v3.bin",
-            downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin",
-            size: "2.9 GB",
-            coreMLSupported: true,
-            coreMLSize: "636 MB"
-        )
-    ]
+    // Vista derivada de ModelCatalog (única fuente de verdad)
+    static var availableModels: [WhisperModel] {
+        ModelCatalog.all.filter { $0.engine == .whisper }.map { desc in
+            WhisperModel(
+                id: desc.id,
+                name: desc.displayName,
+                filename: "ggml-\(desc.id).bin",
+                downloadURL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-\(desc.id).bin",
+                size: ModelStorageService.shared.displaySize(for: desc.id),
+                coreMLSupported: true,
+                coreMLSize: ""
+            )
+        }
+    }
     
     // MARK: - Model Management
     

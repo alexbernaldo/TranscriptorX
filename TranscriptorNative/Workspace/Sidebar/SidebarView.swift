@@ -555,21 +555,101 @@ struct SearchResultRow: View {
 
 /// «Modelo listo · medium» while a whisper process holds it, otherwise «Modelo en reposo».
 /// whisper-cli loads the model in each transcription and frees it when it finishes (spec 8.6 adapted).
+/// Pie de la barra lateral con estado en memoria y popover interactivo (spec 6.3).
 struct ModelStatusLine: View {
     @ObservedObject private var jobs = JobManager.shared
+    @State private var showingPopover = false
+
+    private var inUseId: String? { jobs.modelInUse }
+    private var inUseDescriptor: ModelDescriptor? { inUseId.flatMap { ModelCatalog.descriptor(id: $0) } }
+    private var inUseName: String {
+        guard let inUseId else { return TXL.t("model.memory.none", "Ningún modelo en memoria") }
+        return inUseDescriptor?.displayName ?? inUseId
+    }
+
+    private var statusLineText: String {
+        guard let job = jobs.currentJob else {
+            return TXL.t("model.memory.none", "Ningún modelo en memoria")
+        }
+        switch job.phase {
+        case .loadingModel:
+            return TXL.f("model.status.loading", "Cargando %@…", inUseName)
+        case .transcribing:
+            return TXL.f("model.status.ready", "Modelo listo · %@", inUseName)
+        default:
+            return TXL.t("model.memory.none", "Ningún modelo en memoria")
+        }
+    }
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: jobs.modelInUse == nil ? "circle.dashed" : "circle.fill")
-                .font(.system(size: 9))
-                .foregroundStyle(jobs.modelInUse == nil ? TX.Colors.textTertiary : TX.Colors.purpleX)
-                .accessibilityHidden(true)
-            Text(jobs.modelInUse.map { TXL.f("model.status.ready", "Modelo listo · %@", $0) } ?? TXL.t("model.status.idle", "Modelo en reposo"))
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(TX.Colors.textTertiary)
-                .lineLimit(1)
-            Spacer()
+        Button {
+            showingPopover.toggle()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: inUseId == nil ? "circle.dashed" : "circle.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(inUseId == nil ? TX.Colors.textTertiary : TX.Colors.purpleX)
+                    .accessibilityHidden(true)
+                Text(statusLineText)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(inUseId == nil ? TX.Colors.textTertiary : TX.Colors.textPrimary)
+                    .lineLimit(1)
+                Spacer()
+            }
         }
+        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(statusLineText)
+        .popover(isPresented: $showingPopover, arrowEdge: .top) {
+            popoverContent
+        }
+    }
+
+    private var popoverContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(TXL.t("models.sidebar.detailsTitle", "Estado del modelo"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(TX.Colors.textPrimary)
+
+            Divider()
+
+            if let id = inUseId {
+                let desc = inUseDescriptor
+                let name = desc?.displayName ?? id
+                let engine = desc?.engine.badge ?? "Whisper"
+                let compute = (desc?.capabilities.computeUnits == .neuralEngine) ? "Neural Engine" : "CPU"
+
+                infoRow(label: TXL.t("models.sidebar.model", "Modelo"), value: name)
+                infoRow(label: TXL.t("models.sidebar.engine", "Motor"), value: engine)
+                infoRow(label: TXL.t("models.sidebar.technicalId", "ID técnico"), value: id)
+                infoRow(label: TXL.t("models.sidebar.compute", "Unidades"), value: compute)
+                infoRow(label: TXL.t("models.sidebar.task", "Tarea"), value: TXL.t("models.task.files", "Archivos"))
+
+                Divider()
+
+                Button(TXL.t("models.memory.freeNow", "Liberar ahora")) {
+                    if let activeId = jobs.jobs.first(where: { $0.status == .processing })?.id {
+                        _ = jobs.cancel(jobId: activeId)
+                    }
+                    showingPopover = false
+                }
+                .buttonStyle(TXSecondaryButtonStyle())
+                .controlSize(.small)
+            } else {
+                Text(TXL.t("models.sidebar.noModelLoaded", "No hay ningún modelo cargado actualmente en memoria."))
+                    .font(.system(size: 12))
+                    .foregroundStyle(TX.Colors.textSecondary)
+            }
+        }
+        .padding(14)
+        .frame(width: 250)
+    }
+
+    private func infoRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label).font(.system(size: 11)).foregroundStyle(TX.Colors.textSecondary)
+            Spacer()
+            Text(value).font(.system(size: 11, weight: .medium)).foregroundStyle(TX.Colors.textPrimary)
+        }
     }
 }

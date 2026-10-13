@@ -242,7 +242,8 @@ enum ModelCatalog {
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
         if let direct = all.first(where: { $0.id.lowercased() == q }) { return direct }
         if let byName = all.first(where: {
-            $0.displayName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) == q
+            $0.displayName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) == q ||
+            $0.nameDefault.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) == q
         }) { return byName }
         let legacyMap: [String: String] = [
             "ultra rapido": "tiny",
@@ -257,10 +258,20 @@ enum ModelCatalog {
         return nil
     }
 
+    /// Devuelve el ID canónico para un nombre o ID existente o heredado.
+    static func canonicalId(from query: String) -> String? {
+        descriptor(matching: query)?.id
+    }
+
     /// Nombre amigable según el ajuste «Mostrar nombres técnicos en toda la app».
     static func formattedName(for modelId: String, showTechnical: Bool = false) -> String {
         guard let d = descriptor(id: modelId) else { return modelId }
         return showTechnical ? "\(d.displayName) (\(d.id))" : d.displayName
+    }
+
+    /// ID técnico como nombre secundario/tooltip
+    static func technicalName(id: String) -> String {
+        id
     }
 
     /// Nombres anteriores para la migración/aviso de actualización único (6.5).
@@ -299,7 +310,8 @@ enum ModelAssignment: Equatable, Codable, Sendable {
     private static let autoToken = "auto"
     init(storage: String?) {
         guard let storage, storage != Self.autoToken, !storage.isEmpty else { self = .automatic; return }
-        self = .model(storage)
+        let canonical = ModelCatalog.canonicalId(from: storage) ?? storage
+        self = .model(canonical)
     }
     var storage: String {
         switch self { case .automatic: return Self.autoToken; case .model(let id): return id }

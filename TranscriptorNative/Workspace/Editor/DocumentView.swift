@@ -424,14 +424,21 @@ struct DocumentHeader: View {
         }
     }
 
-    /// «12 oct 2026, 10:42 · 42 min 10 s · Español · 3 hablantes» (the model is not stored with
-    /// documents, so it is not shown; spec 12.1 #22).
+    /// «12 oct 2026, 10:42 · 42 min 10 s · Español · 3 hablantes · Transcrito con Turbo (Whisper)»
     private var metadata: String {
         var parts = [TXFormat.longDateTime(editor.document.createdAt)]
         if editor.documentDuration > 0 { parts.append(TXFormat.longDuration(editor.documentDuration)) }
         parts.append(TXFormat.languageName(editor.document.language))
         let speakers = editor.speakers.count
         if speakers > 0 { parts.append(TXL.n("history.speakers", "%d hablante", "%d hablantes", speakers)) }
+        if let modelId = editor.document.modelId {
+            let desc = ModelCatalog.descriptor(id: modelId)
+            let name = desc?.displayName ?? modelId
+            let engine = desc?.engine.badge ?? (editor.document.engine ?? "Whisper")
+            parts.append(TXL.f("editor.transcribedWith", "Transcrito con %@ (%@)", name, engine))
+        } else {
+            parts.append(TXL.t("editor.modelUnknown", "Modelo desconocido"))
+        }
         return parts.joined(separator: " · ")
     }
 }

@@ -287,79 +287,21 @@ struct ModelInfo: Identifiable, Hashable {
         }
     }
     
-    // Modelos con nombres amigables
-    static let allModels: [ModelInfo] = [
-        ModelInfo(
-            id: "tiny",
-            name: "Ultra Rápido",
-            technicalName: "Whisper Tiny",
-            size: "75 MB",
-            speed: "Instantáneo",
-            quality: 1,
-            recommended: false,
-            description: "El más rápido. Ideal para pruebas rápidas o audios muy claros. Puede tener errores en palabras complejas."
-        ),
-        ModelInfo(
-            id: "base",
-            name: "Rápido",
-            technicalName: "Whisper Base", 
-            size: "142 MB",
-            speed: "Muy rápido",
-            quality: 2,
-            recommended: true,
-            description: "Buen equilibrio entre velocidad y calidad. Recomendado para empezar. Funciona bien con audios claros."
-        ),
-        ModelInfo(
-            id: "small",
-            name: "Equilibrado",
-            technicalName: "Whisper Small",
-            size: "466 MB",
-            speed: "Normal",
-            quality: 3,
-            recommended: false,
-            description: "Mejor precisión para la mayoría de casos. Bueno para entrevistas y podcasts con buena calidad de audio."
-        ),
-        ModelInfo(
-            id: "medium",
-            name: "Preciso",
-            technicalName: "Whisper Medium",
-            size: "1.5 GB",
-            speed: "Lento",
-            quality: 4,
-            recommended: false,
-            description: "Alta precisión. Ideal para transcripciones importantes donde la exactitud es prioritaria."
-        ),
-        ModelInfo(
-            id: "large-v3-turbo",
-            name: "Profesional",
-            technicalName: "Whisper Large V3 Turbo",
-            size: "1.6 GB",
-            speed: "Normal",
-            quality: 5,
-            recommended: false,
-            description: "La mejor calidad disponible con velocidad optimizada. Para transcripciones profesionales y audios difíciles."
-        ),
-        ModelInfo(
-            id: "large-v2",
-            name: "Large V2",
-            technicalName: "Whisper Large V2",
-            size: "2.9 GB",
-            speed: "Muy lento",
-            quality: 5,
-            recommended: false,
-            description: "Anterior versión de mayor calidad. Útil si V3 no da los resultados esperados."
-        ),
-        ModelInfo(
-            id: "large-v3",
-            name: "Máxima Calidad",
-            technicalName: "Whisper Large V3",
-            size: "2.9 GB",
-            speed: "Muy lento",
-            quality: 5,
-            recommended: false,
-            description: "Máxima precisión posible. Para audios con ruido, acentos complejos o vocabulario técnico. Requiere más tiempo."
-        )
-    ]
+    // Vista derivada de ModelCatalog (única fuente de verdad)
+    static var allModels: [ModelInfo] {
+        ModelCatalog.all.map { d in
+            ModelInfo(
+                id: d.id,
+                name: d.displayName,
+                technicalName: d.id,
+                size: ModelStorageService.shared.displaySize(for: d.id),
+                speed: d.scales.speed >= 4 ? "Muy rápido" : (d.scales.speed >= 3 ? "Normal" : "Lento"),
+                quality: d.scales.accuracy,
+                recommended: d.group == .recommended,
+                description: d.subtitle
+            )
+        }
+    }
 }
 
 // MARK: - Settings

@@ -93,7 +93,10 @@ enum DictationPreferences {
     static func transcriptionSettings() -> TranscriptionSettings {
         var settings = QuickSettingsModel.defaultSettings()
         let model = defaults.string(forKey: "dictation.model") ?? useDefault
-        if model != useDefault { settings.selectedModelId = model }
+        if model != useDefault {
+            let canonical = ModelCatalog.canonicalId(from: model) ?? model
+            settings.selectedModelId = canonical
+        }
         let language = defaults.string(forKey: "dictation.language") ?? useDefault
         if language != useDefault { settings.language = language }
         settings.translate = translate && !ModelCapabilities.isEnglishOnly(settings.selectedModelId)

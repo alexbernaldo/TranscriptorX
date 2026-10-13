@@ -50,7 +50,8 @@ struct JobView: View {
                 .textSelection(.enabled)
                 .help(origin)
             FlowTags(tags: QuickSettingsModel.summaryTags(for: job.settings, presetName: job.urlMethod == .subtitles ? nil : job.presetName)
-                     + (job.urlMethod == .subtitles ? [TXL.t("link.method.subtitles.tag", "Subtítulos de YouTube")] : []))
+                     + (job.urlMethod == .subtitles ? [TXL.t("link.method.subtitles.tag", "Subtítulos de YouTube")] : [])
+                     + (job.languageNotice.map { [$0] } ?? []))
         }
     }
 
@@ -103,38 +104,45 @@ struct JobView: View {
     // MARK: Waiting for a model
 
     @ViewBuilder private var waitingModelPanel: some View {
-        let model = job.settings.selectedModelId
+        let modelId = job.settings.selectedModelId
+        let desc = ModelCatalog.descriptor(id: modelId)
+        let modelDisplayName = desc?.displayName ?? modelId
+        let technicalName = modelId
+
         VStack(alignment: .leading, spacing: 8) {
-            switch downloads.state(for: model) {
+            switch downloads.state(for: modelId) {
             case .downloading(let received, let total):
                 Text(total > 0
-                     ? TXL.f("model.downloading.bytes", "Descargando %@ · %@ de %@", model, TXFormat.bytes(received), TXFormat.bytes(total))
-                     : TXL.f("model.downloading", "Descargando %@…", model))
+                     ? TXL.f("model.downloading.bytes", "Descargando %@ · %@ de %@", modelDisplayName, TXFormat.bytes(received), TXFormat.bytes(total))
+                     : TXL.f("model.downloading", "Descargando %@…", modelDisplayName))
                     .font(.system(size: 13).monospacedDigit())
                     .foregroundStyle(TX.Colors.textPrimary)
+                    .help(technicalName)
                 TXProgressLine(kind: total > 0 ? .determinate(Double(received) / Double(total)) : .indeterminate)
                     .frame(maxWidth: 320)
-                Button(TXL.t("model.cancelDownload", "Cancelar descarga")) { downloads.cancel(model) }
+                Button(TXL.t("model.cancelDownload", "Cancelar descarga")) { downloads.cancel(modelId) }
                     .buttonStyle(TXBorderlessButtonStyle())
             case .pending:
-                Text(TXL.f("model.pending", "%@ espera su turno para descargarse", model))
+                Text(TXL.f("model.pending", "%@ espera su turno para descargarse", modelDisplayName))
                     .font(.system(size: 13)).foregroundStyle(TX.Colors.textSecondary)
+                    .help(technicalName)
                 TXProgressLine(kind: .waiting).frame(maxWidth: 320)
             case .failed:
-                ErrorBlock(title: TXL.f("model.downloadFailed.title", "No se pudo descargar %@", model),
+                ErrorBlock(title: TXL.f("model.downloadFailed.title", "No se pudo descargar %@", modelDisplayName),
                            explanation: TXL.t("model.downloadFailed.text", "Se ha interrumpido la conexión."),
                            details: nil) {
-                    Button(TXL.t("common.retry", "Reintentar")) { downloads.download(model) }
+                    Button(TXL.t("common.retry", "Reintentar")) { downloads.download(modelId) }
                         .buttonStyle(TXSecondaryButtonStyle())
                 }
+                .help(technicalName)
             case nil:
-                Text(TXL.f("model.notDownloaded", "%@ no está descargado", model))
+                Text(TXL.f("model.notDownloaded", "%@ no está descargado", modelDisplayName))
                     .font(.system(size: 13, weight: .medium)).foregroundStyle(TX.Colors.textPrimary)
-                if let size = ModelCapabilities.catalogue.first(where: { $0.id == model })?.size {
-                    Text(TXL.f("model.downloadSize", "Ocupa %@ en disco.", size))
-                        .font(.system(size: 12)).foregroundStyle(TX.Colors.textSecondary)
-                }
-                Button(TXL.t("model.download", "Descargar")) { downloads.download(model) }
+                    .help(technicalName)
+                let size = ModelStorageService.shared.displaySize(for: modelId)
+                Text(TXL.f("model.downloadSize", "Ocupa %@ en disco.", size))
+                    .font(.system(size: 12)).foregroundStyle(TX.Colors.textSecondary)
+                Button(TXL.t("model.download", "Descargar")) { downloads.download(modelId) }
                     .buttonStyle(TXSecondaryButtonStyle())
             }
         }
@@ -219,12 +227,15 @@ struct JobErrorPanel: View {
                 .buttonStyle(TXSecondaryButtonStyle())
             }
         case .modelDownload(let model):
-            ErrorBlock(title: TXL.f("model.downloadFailed.title", "No se pudo descargar %@", model),
+            let desc = ModelCatalog.descriptor(id: model)
+            let modelDisplayName = desc?.displayName ?? model
+            ErrorBlock(title: TXL.f("model.downloadFailed.title", "No se pudo descargar %@", modelDisplayName),
                        explanation: TXL.t("model.downloadFailed.text", "Se ha interrumpido la conexión."),
                        details: error.technicalDetails) {
                 Button(TXL.t("common.retry", "Reintentar")) { JobManager.shared.retry(jobId: job.id) }
                     .buttonStyle(TXSecondaryButtonStyle())
             }
+            .help(model)
         case .engine, .other:
             ErrorBlock(title: TXL.t("error.engine.title", "La transcripción se ha detenido"),
                        explanation: TXL.t("error.engine.text", "whisper terminó con un error."),
@@ -233,8 +244,11 @@ struct JobErrorPanel: View {
                     .buttonStyle(TXSecondaryButtonStyle())
                     .disabled(!job.canRetry)
                 Menu(TXL.t("error.tryOtherModel", "Probar con otro modelo")) {
-                    ForEach(ModelCapabilities.catalogue.filter { $0.id != job.settings.selectedModelId }) { entry in
-                        Button(entry.id) { JobManager.shared.retry(jobId: job.id, modelId: entry.id) }
+                    ForEach(ModelCatalog.all.filter { $0.id != job.settings.selectedModelId }) { entry in
+                        Button("\(entry.displayName) · \(entry.engine.badge)") {
+                            JobManager.shared.retry(jobId: job.id, modelId: entry.id)
+                        }
+                        .help(entry.id)
                     }
                 }
                 .fixedSize()

@@ -404,6 +404,16 @@ struct DetailsTab: View {
                 detail(TXL.t("details.created", "Creada"), TXFormat.longDateTime(doc.createdAt))
                 detail(TXL.t("details.duration", "Duración"), TXFormat.longDuration(editor.documentDuration))
                 detail(TXL.t("details.language", "Idioma"), TXFormat.languageName(doc.language))
+                if let modelId = doc.modelId {
+                    let desc = ModelCatalog.descriptor(id: modelId)
+                    let name = desc?.displayName ?? modelId
+                    let engine = desc?.engine.badge ?? (doc.engine ?? "Whisper")
+                    detail(TXL.t("details.model", "Modelo"), name)
+                    detail(TXL.t("details.engine", "Motor"), engine)
+                    detail(TXL.t("details.technicalId", "ID técnico"), modelId)
+                } else {
+                    detail(TXL.t("details.model", "Modelo"), TXL.t("editor.modelUnknown", "Modelo desconocido"))
+                }
                 detail(TXL.t("details.segments", "Segmentos"), TXFormat.integer(segments.count))
                 detail(TXL.t("details.words", "Palabras"), TXFormat.integer(doc.text.split(whereSeparator: { $0.isWhitespace }).count))
                 detail(TXL.t("details.favorites", "Favoritos"), TXFormat.integer(segments.filter(\.isFavorite).count))

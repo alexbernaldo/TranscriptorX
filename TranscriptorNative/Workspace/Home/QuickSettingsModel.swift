@@ -107,6 +107,16 @@ final class QuickSettingsModel: ObservableObject {
         }
     }
 
+    /// Modelo asignado a cada preset mostrado con su nombre amigable (6.6).
+    static func presetModelName(_ id: String?) -> String? {
+        switch id {
+        case "lecture": return ModelCatalog.descriptor(id: "large-v3")?.displayName
+        case "podcast": return ModelCatalog.descriptor(id: "medium")?.displayName
+        case "interview": return ModelCatalog.descriptor(id: "large-v3-turbo")?.displayName
+        default: return nil
+        }
+    }
+
     /// Settings for a preset id on top of the user's defaults (record popover).
     static func settings(forPreset id: String) -> TranscriptionSettings {
         let model = QuickSettingsModel()
@@ -197,7 +207,11 @@ final class QuickSettingsModel: ObservableObject {
     static func summaryTags(for s: TranscriptionSettings, presetName: String?) -> [String] {
         var tags: [String] = []
         if let presetName { tags.append(presetName) }
-        tags.append(s.selectedModelId)
+        let modelDesc = ModelCatalog.descriptor(id: s.selectedModelId)
+        let showTech = TaskModelPreferences.shared.showTechnicalNames
+        let modelName = modelDesc.map { ModelCatalog.formattedName(for: $0.id, showTechnical: showTech) } ?? s.selectedModelId
+        let engineBadge = modelDesc?.engine.badge ?? "Whisper"
+        tags.append("\(modelName) · \(engineBadge)")
         tags.append(TXFormat.languageName(s.language))
         if s.isolateVoice { tags.append("Demucs") } else if s.deepfilter { tags.append("DeepFilter") }
         if s.normalize { tags.append(TXL.t("options.tag.normalize", "Normalizar")) }
@@ -221,7 +235,9 @@ enum ModelCapabilities {
             : TXL.t("options.speakers.helpDownload", "Detecta quién habla en este Mac. La primera vez descarga el modelo de hablantes.")
     }
     /// English-only models end in «.en»; none of the catalogue models is one.
-    static func isEnglishOnly(_ modelId: String) -> Bool { modelId.hasSuffix(".en") || modelId.contains(".en-") }
+    static func isEnglishOnly(_ modelId: String) -> Bool {
+        ModelCatalog.descriptor(id: modelId)?.isEnglishOnly ?? (modelId.hasSuffix(".en") || modelId.contains(".en-"))
+    }
 
     struct Entry: Identifiable {
         let id: String
@@ -230,11 +246,17 @@ enum ModelCapabilities {
         let englishOnly: Bool
     }
 
-    /// Catalogue ordered from fastest to most accurate (tiny → large-v3).
+    /// Vista derivada de ModelCatalog (única fuente de verdad)
     static var catalogue: [Entry] {
-        let order = ["tiny", "base", "small", "medium", "large-v3-turbo", "large-v2", "large-v3"]
-        return TranscriptionService.availableModels
-            .sorted { (order.firstIndex(of: $0.id) ?? 99) < (order.firstIndex(of: $1.id) ?? 99) }
-            .map { Entry(id: $0.id, size: $0.size, neuralEngine: $0.coreMLSupported, englishOnly: isEnglishOnly($0.id)) }
+        let showExp = UserDefaults.standard.bool(forKey: "showExperimentalModels")
+        return ModelCatalog.visible(showExperimental: showExp)
+            .map { d in
+                Entry(
+                    id: d.id,
+                    size: ModelStorageService.shared.displaySize(for: d.id),
+                    neuralEngine: d.capabilities.computeUnits == .neuralEngine,
+                    englishOnly: d.isEnglishOnly
+                )
+            }
     }
 }

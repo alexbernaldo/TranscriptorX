@@ -262,34 +262,8 @@ private struct BehaviorSettings: View {
 // MARK: - Modelos (spec 6.21)
 
 private struct ModelsSettings: View {
-    @ObservedObject private var defaults = DefaultsModel.shared
-    @ObservedObject private var jobs = JobManager.shared
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(TXL.t("models.scale.fast", "Más rápido")).font(.system(size: 11, weight: .medium)).foregroundStyle(TX.Colors.textSecondary)
-                Rectangle().fill(TX.Colors.border).frame(height: 1)
-                Text(TXL.t("models.scale.accurate", "Más preciso")).font(.system(size: 11, weight: .medium)).foregroundStyle(TX.Colors.textSecondary)
-            }
-            .padding(.bottom, 8)
-            .accessibilityElement(children: .combine)
-            ModelTable(defaultModel: Binding(get: { defaults.settings.selectedModelId }, set: { defaults.settings.selectedModelId = $0 }))
-                .frame(height: 230)
-                .padding(.bottom, TX.Space.s16)
-            SettingsGroup {
-                SettingsRow(label: TXL.t("models.neuralEngine", "Acelerar con Neural Engine"),
-                            help: TXL.t("models.neuralEngine.help", "Descarga la versión acelerada del modelo la primera vez que se usa, si existe.")) {
-                    Toggle("", isOn: $defaults.settings.useCoreML).toggleStyle(.switch).labelsHidden()
-                }
-            }
-            SettingsGroup(title: TXL.t("models.memory", "Memoria")) {
-                SettingsRow(label: jobs.modelInUse.map { TXL.f("models.memory.inUse", "En memoria: %@", $0) } ?? TXL.t("models.memory.none", "Ningún modelo en memoria"),
-                            help: TXL.t("models.memory.help", "whisper carga el modelo al empezar cada transcripción y lo libera al terminar.")) {
-                    EmptyView()
-                }
-            }
-        }
+        ModelsSettingsDetailView()
     }
 }
 
@@ -731,7 +705,10 @@ private struct DictationSettings: View {
                     Picker("", selection: $model) {
                         Text(TXL.t("settings.dictation.asDefaults", "Como en Ajustes › Idioma")).tag(DictationPreferences.useDefault)
                         Divider()
-                        ForEach(ModelCapabilities.catalogue) { Text($0.id).tag($0.id) }
+                        ForEach(ModelCapabilities.catalogue) { entry in
+                            let name = ModelCatalog.formattedName(for: entry.id, showTechnical: TaskModelPreferences.shared.showTechnicalNames)
+                            Text(name).tag(entry.id)
+                        }
                     }
                     .labelsHidden().fixedSize()
                 }

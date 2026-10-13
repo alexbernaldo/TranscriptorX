@@ -17,6 +17,7 @@
 		F80000000000000000000004 /* ModelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000003 /* ModelResolver.swift */; };
 		F80000000000000000000006 /* TranscriptionSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000005 /* TranscriptionSchema.swift */; };
 		F8000000000000000000000A /* ModelStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000009 /* ModelStorageService.swift */; };
+		F8000000000000000000000C /* TaskModelPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8000000000000000000000B /* TaskModelPreferences.swift */; };
 		F80000000000000000000008 /* ModelCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000007 /* ModelCatalogTests.swift */; };
 		1100000000000007 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000007 /* TranscriptionService.swift */; };
 		110000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000F /* Assets.xcassets */; };
@@ -28,6 +29,7 @@
 		1100000000000045 /* DictationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000045 /* DictationManager.swift */; };
 		D1C7A7E00000000000000002 /* DictationSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C7A7E00000000000000001 /* DictationSupport.swift */; };
 		1100000000000046 /* DictationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000046 /* DictationOverlay.swift */; };
+		F8000000000000000000000E /* ModelPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8000000000000000000000D /* ModelPickerView.swift */; };
 		1100000000000047 /* DictationOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000047 /* DictationOverlayController.swift */; };
 		110000000000002A /* TranscriptionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000002A /* TranscriptionStorage.swift */; };
 		1100000000000041 /* MeetingWatcherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000041 /* MeetingWatcherService.swift */; };
@@ -102,6 +104,7 @@
 		AD0A2104E46934D2952B1FCD /* ToolsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADC83EC1CB8C20603B4FA810 /* ToolsCheck.swift */; };
 		ADAA338DF68A309CEF6D4F97 /* WizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD656866A14357FFED5A9C7A /* WizardView.swift */; };
 		ADD7B8CEF4AD604DCD168E91 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD03B70CF0A941EE14DAB108 /* SettingsView.swift */; };
+		F80000000000000000000010 /* ModelsSettingsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8000000000000000000000F /* ModelsSettingsDetailView.swift */; };
 		AD2D161E2D02698B601B6270 /* TranscriptorDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AD7CC3F3499894232E0436A9 /* TranscriptorDocument.icns */; };
 		ADA11311DEF2C563F2655F3D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AD11FDE440BA2C60AEC352C5 /* AppIcon.icon */; };
 		EB7E57000000000003 /* EditorOperationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB7E57000000000001 /* EditorOperationsTests.swift */; };
@@ -167,6 +170,7 @@
 		F80000000000000000000003 /* ModelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelResolver.swift; sourceTree = "<group>"; };
 		F80000000000000000000005 /* TranscriptionSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionSchema.swift; sourceTree = "<group>"; };
 		F80000000000000000000009 /* ModelStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStorageService.swift; sourceTree = "<group>"; };
+		F8000000000000000000000B /* TaskModelPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModelPreferences.swift; sourceTree = "<group>"; };
 		F80000000000000000000007 /* ModelCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalogTests.swift; sourceTree = "<group>"; };
 		1000000000000007 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		100000000000000F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -179,6 +183,7 @@
 		1000000000000045 /* DictationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationManager.swift; sourceTree = "<group>"; };
 		D1C7A7E00000000000000001 /* DictationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationSupport.swift; sourceTree = "<group>"; };
 		1000000000000046 /* DictationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlay.swift; sourceTree = "<group>"; };
+		F8000000000000000000000D /* ModelPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelPickerView.swift; sourceTree = "<group>"; };
 		1000000000000047 /* DictationOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlayController.swift; sourceTree = "<group>"; };
 		100000000000002A /* TranscriptionStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStorage.swift; sourceTree = "<group>"; };
 		1000000000000041 /* MeetingWatcherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingWatcherService.swift; sourceTree = "<group>"; };
@@ -252,6 +257,7 @@
 		ADC83EC1CB8C20603B4FA810 /* ToolsCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ToolsCheck.swift"; sourceTree = "<group>"; };
 		AD656866A14357FFED5A9C7A /* WizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WizardView.swift"; sourceTree = "<group>"; };
 		AD03B70CF0A941EE14DAB108 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
+		F8000000000000000000000F /* ModelsSettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsSettingsDetailView.swift; sourceTree = "<group>"; };
 		AD7CC3F3499894232E0436A9 /* TranscriptorDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "TranscriptorDocument.icns"; sourceTree = "<group>"; };
 		AD11FDE440BA2C60AEC352C5 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "AppIcon.icon"; sourceTree = "<group>"; };
 		EB7E57000000000001 /* EditorOperationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorOperationsTests.swift; sourceTree = "<group>"; };
@@ -356,6 +362,7 @@
 			isa = PBXGroup;
 			children = (
 				1000000000000046 /* DictationOverlay.swift */,
+				F8000000000000000000000D /* ModelPickerView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -399,6 +406,7 @@
 				F80000000000000000000003 /* ModelResolver.swift */,
 				F80000000000000000000005 /* TranscriptionSchema.swift */,
 				F80000000000000000000009 /* ModelStorageService.swift */,
+				F8000000000000000000000B /* TaskModelPreferences.swift */,
 				EA1000000000000F /* URLTranscriptionService.swift */,
 				1000000000000045 /* DictationManager.swift */,
 				D1C7A7E00000000000000001 /* DictationSupport.swift */,
@@ -673,6 +681,7 @@
 			isa = PBXGroup;
 			children = (
 				AD03B70CF0A941EE14DAB108 /* SettingsView.swift */,
+				F8000000000000000000000F /* ModelsSettingsDetailView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -846,6 +855,7 @@
 				F80000000000000000000004 /* ModelResolver.swift in Sources */,
 				F80000000000000000000006 /* TranscriptionSchema.swift in Sources */,
 				F8000000000000000000000A /* ModelStorageService.swift in Sources */,
+				F8000000000000000000000C /* TaskModelPreferences.swift in Sources */,
 				1100000000000007 /* TranscriptionService.swift in Sources */,
 				EA6384292F2AB30500FC5152 /* AudioPreprocessor.swift in Sources */,
 				EA63842A2F2AB40000FC5152 /* AudioEngineManager.swift in Sources */,
@@ -863,6 +873,7 @@
 				1100000000000045 /* DictationManager.swift in Sources */,
 				D1C7A7E00000000000000002 /* DictationSupport.swift in Sources */,
 				1100000000000046 /* DictationOverlay.swift in Sources */,
+				F8000000000000000000000E /* ModelPickerView.swift in Sources */,
 				1100000000000047 /* DictationOverlayController.swift in Sources */,
 				EA04EB262F32B4600093692F /* JobManager.swift in Sources */,
 				EA1000000000000E /* URLTranscriptionService.swift in Sources */,
@@ -924,6 +935,7 @@
 				AD0A2104E46934D2952B1FCD /* ToolsCheck.swift in Sources */,
 				ADAA338DF68A309CEF6D4F97 /* WizardView.swift in Sources */,
 				ADD7B8CEF4AD604DCD168E91 /* SettingsView.swift in Sources */,
+				F80000000000000000000010 /* ModelsSettingsDetailView.swift in Sources */,
 				ADBBFB27B12C841858708807 /* SpeakerAssignment.swift in Sources */,
 				AD48652BC6E0EC135350475A /* SpeakerDiarizationService.swift in Sources */,
 			);

@@ -58,8 +58,25 @@ struct DictationOverlay: View {
                        centre: { VoiceBars(level: recorder.audioLevel, live: dictation.phase == .listening) },
                        right: { CancelButton() })
         case .transcribing:
-            threeZones(left: { Spinner() }, centre: { label(TXL.t("dictation.transcribing", "Transcribiendo…")) },
-                       right: { CancelButton() })
+            let modelId = DictationPreferences.transcriptionSettings().selectedModelId
+            let modelName = ModelCatalog.descriptor(id: modelId)?.displayName ?? modelId
+            threeZones(
+                left: { Spinner() },
+                centre: {
+                    VStack(spacing: 1) {
+                        Text(TXL.t("dictation.transcribing", "Transcribiendo…"))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color(nsColor: NSColor(txHex: 0xA9A5B5)))
+                            .lineLimit(1)
+                        Text(modelName)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color(nsColor: NSColor(txHex: 0x8E8A9E)))
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 4)
+                },
+                right: { CancelButton() }
+            )
         case .pasted:
             threeZones(left: { symbol("checkmark", NSColor(txHex: 0x3FCF8E)) }, centre: { label(dictation.statusText) },
                        right: { Color.clear.frame(width: 22) })

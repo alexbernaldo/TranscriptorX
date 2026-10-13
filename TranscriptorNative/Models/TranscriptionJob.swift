@@ -178,6 +178,8 @@ struct TranscriptionJob: Identifiable, Equatable {
     var subtitlesFallback = false
     /// Preset name shown in the job summary («Clase», «Podcast», «Entrevista» or nil for custom).
     var presetName: String?
+    /// Aviso o idioma detectado en proceso (p. ej. "Idioma detectado: ko").
+    var languageNotice: String?
 
     // MARK: - Initialization
 

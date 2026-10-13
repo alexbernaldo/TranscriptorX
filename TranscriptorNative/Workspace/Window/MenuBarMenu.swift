@@ -81,6 +81,17 @@ struct MenuBarMenu: View {
             WindowCoordinator.showMainWindow()
             WorkspaceState.shared.columnVisibility = .all
         }
+        let currentModelName: String = {
+            if let inUse = jobs.modelInUse, let desc = ModelCatalog.descriptor(id: inUse) {
+                return "\(desc.displayName) (\(desc.engine.badge))"
+            }
+            if let desc = TaskModelPreferences.shared.resolve(task: .files).model {
+                return "\(desc.displayName) (\(desc.engine.badge))"
+            }
+            return TXL.t("models.memory.none", "Ninguno")
+        }()
+        Button(TXL.f("menubar.currentModel", "Modelo: %@", currentModelName)) {}
+            .disabled(true)
         Button(TXL.t("menubar.settings", "Ajustes…")) { SettingsNavigator.open(SettingsNavigator.shared.section) }
         Divider()
         Button(TXL.t("menubar.quit", "Salir de Transcriptor X")) { QuitIntent.quit() }

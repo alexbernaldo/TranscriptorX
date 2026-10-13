@@ -34,7 +34,10 @@ struct RecordPopover: View {
                 Picker("", selection: $recording.presetId) {
                     Text(TXL.t("preset.defaults", "Valores por defecto")).tag("")
                     ForEach(QuickSettingsModel.presetIds, id: \.self) { id in
-                        Text(QuickSettingsModel.presetTitle(id) ?? id).tag(id)
+                        let title = QuickSettingsModel.presetTitle(id) ?? id
+                        let model = QuickSettingsModel.presetModelName(id)
+                        let label = model != nil ? "\(title) → \(model!)" : title
+                        Text(label).tag(id)
                     }
                 }
                 .labelsHidden()
@@ -46,10 +49,22 @@ struct RecordPopover: View {
                 .foregroundStyle(TX.Colors.textSecondary)
                 .lineLimit(1)
 
+            let s = QuickSettingsModel.settings(forPreset: recording.presetId)
+            let langCode = String(s.language.prefix(2)).lowercased()
+            let captionsAvailable = s.language == "auto" || ModelCatalog.languagesNemotronMultilingual.contains(langCode)
+
             Toggle(TXL.t("record.popover.captions", "Subtítulos en pantalla"), isOn: $captionsEnabled)
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .font(.system(size: 13))
+                .disabled(!captionsAvailable)
+                .help(!captionsAvailable ? TXL.t("record.captions.unavailable", "No disponible en este idioma") : "")
+
+            if !captionsAvailable {
+                Text(TXL.t("record.captions.unavailable", "No disponible en este idioma"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(TX.Colors.textSecondary)
+            }
 
             HStack {
                 Spacer()
@@ -68,7 +83,8 @@ struct RecordPopover: View {
 
     private var summary: String {
         let s = QuickSettingsModel.settings(forPreset: recording.presetId)
-        return "\(TXFormat.languageName(s.language)) · \(s.selectedModelId)"
+        let modelName = ModelCatalog.formattedName(for: s.selectedModelId, showTechnical: TaskModelPreferences.shared.showTechnicalNames)
+        return "\(TXFormat.languageName(s.language)) · \(modelName)"
     }
 
     private func updatePreview() {
