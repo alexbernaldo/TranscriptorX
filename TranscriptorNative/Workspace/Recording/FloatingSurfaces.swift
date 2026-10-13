@@ -300,6 +300,13 @@ final class LiveCaptionCenter: ObservableObject {
         received(sentence)
     }
 
+    /// Texto en vivo (Nemotron): se muestra al momento y se va sustituyendo; sin el retraso de los
+    /// subtítulos de una transcripción en curso, que haría llegar las frases tarde y a trompicones.
+    func showLive(_ text: String) {
+        guard isEnabled, !text.isEmpty else { return }
+        show(text)
+    }
+
     private func received(_ sentence: String) {
         guard isEnabled else { return }
         let task = Task { [weak self] in

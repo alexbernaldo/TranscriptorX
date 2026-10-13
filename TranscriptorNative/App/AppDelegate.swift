@@ -11,6 +11,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Ninguna descarga implícita de FluidAudio: solo «Descargar» abre la red (FluidNetworkGate).
         FluidNetworkGate.lockDown()
+        // App de barra de menús: macOS no debe terminarla por estar en segundo plano o sin ventanas.
+        ProcessInfo.processInfo.disableAutomaticTermination("menu-bar app")
+        ProcessInfo.processInfo.disableSuddenTermination()
         TaskModelPreferences.migrateStoredModelNames()
         // Claves de la app con defaults (#10): menú de barra + segundo plano
         UserDefaults.standard.register(defaults: [

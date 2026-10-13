@@ -263,7 +263,7 @@ final class LiveTranscription: ObservableObject {
         let caption = Self.lastSentence(of: trimmed)
         if !caption.isEmpty, caption != lastCaption {
             lastCaption = caption
-            LiveCaptionCenter.shared.emitLiveSegment(caption)
+            LiveCaptionCenter.shared.showLive(caption)
         }
     }
 

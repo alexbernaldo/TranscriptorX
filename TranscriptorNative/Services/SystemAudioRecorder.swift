@@ -100,6 +100,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
     private var streamOutput: AudioStreamOutput?
     private var assetWriter: AVAssetWriter?
     private var audioInput: AVAssetWriterInput?
+    private var systemSessionStarted = false
     private var audioEngine: AVAudioEngine?
     private var audioConverter: AVAudioConverter?
     private var durationTimer: Timer?
@@ -577,14 +578,18 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         config.minimumFrameInterval = CMTime(value: 1, timescale: 1) // 1 fps minimum
         config.showsCursor = false
         
-        // Setup asset writer with recovery-managed URL
-        assetWriter = try AVAssetWriter(outputURL: outputURL, fileType: .m4a)
+        // WAV de 16 kHz mono (PCM), como el micrófono: el AAC a 16 kHz fallaba con «No se puede codificar el contenido».
+        let wavURL = outputURL.deletingPathExtension().appendingPathExtension("wav")
+        assetWriter = try AVAssetWriter(outputURL: wavURL, fileType: .wav)
         
         let audioSettings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVSampleRateKey: 16000,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderBitRateKey: 128000
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: targetSampleRate,
+            AVNumberOfChannelsKey: targetChannels,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsNonInterleaved: false
         ]
         
         audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
@@ -594,8 +599,9 @@ class SystemAudioRecorder: NSObject, ObservableObject {
             assetWriter?.add(audioInput)
         }
         
+        // La sesión empieza en la marca de tiempo de la primera muestra (ScreenCaptureKit usa el reloj del sistema).
+        systemSessionStarted = false
         assetWriter?.startWriting()
-        assetWriter?.startSession(atSourceTime: .zero)
         
         // Create stream output handler
         streamOutput = AudioStreamOutput { [weak self] sampleBuffer in
@@ -609,7 +615,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         
         try await stream?.startCapture()
         
-        recordedFileURL = outputURL
+        recordedFileURL = wavURL
         AppLogger.shared.log("System audio capture started, output: \(outputURL.path)", category: .recording)
     }
     
@@ -651,6 +657,10 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         guard !isPaused else { return }
         
         // Write to file
+        if !systemSessionStarted {
+            systemSessionStarted = true
+            assetWriter?.startSession(atSourceTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
+        }
         if audioInput?.isReadyForMoreMediaData == true {
             audioInput?.append(sampleBuffer)
         }
