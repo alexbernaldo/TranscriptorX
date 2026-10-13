@@ -354,7 +354,8 @@ final class JobManager: ObservableObject {
         guard !transcriptionService.isModelDownloaded(modelId) else { return }
         job.status = .waitingModel
         job.phase = .waitingModel
-        if userInitiated { ModelDownloadCenter.shared.download(modelId) }
+        // Solo descarga solo si el usuario eligió ese modelo; con «Automático» espera al botón «Descargar».
+        if userInitiated && !job.modelWasAutomatic { ModelDownloadCenter.shared.download(modelId) }
     }
 
     func modelBecameAvailable(_ modelId: String) {

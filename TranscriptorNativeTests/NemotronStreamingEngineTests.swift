@@ -40,3 +40,22 @@ final class NemotronStreamingEngineTests: XCTestCase {
         XCTAssertNil(manager.activeModelId)
     }
 }
+
+final class NemotronNoImplicitDownloadTests: XCTestCase {
+    func testLiveSessionWithoutModelFailsWithoutNetwork() async throws {
+        FluidNetworkGate.lockDown()
+        try XCTSkipIf(NemotronStreamingEngine.installedVariant(modelId: NemotronStreamingEngine.multilingualId, chunkMs: 1120) != nil)
+        do {
+            try await NemotronStreamingEngine.shared.startLiveSession(
+                modelId: NemotronStreamingEngine.multilingualId, language: "es", chunkMs: 1120)
+            XCTFail("must not load")
+        } catch let e as NemotronStreamingEngine.NemotronError {
+            guard case .modelNotFound = e else { return XCTFail("\(e)") }
+        }
+    }
+
+    func testEnglishModelHasNo4480Tier() {
+        XCTAssertFalse(NemotronStreamingEngine.supportedChunks(modelId: NemotronStreamingEngine.englishId).contains(4480))
+        XCTAssertTrue(NemotronStreamingEngine.supportedChunks(modelId: NemotronStreamingEngine.multilingualId).contains(4480))
+    }
+}

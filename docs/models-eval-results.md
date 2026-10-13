@@ -1,5 +1,14 @@
 # Informe de Evaluación de Modelos ASR — Transcriptor X
 
+> **Prueba técnica, sin valor para elegir modelo.** Este informe solo lista el catálogo y qué había
+> descargado en el Mac de desarrollo. **No se transcribió ningún audio**: no existe `Tools/eval/es/{dictado,entrevista,clase}/`
+> y no hay WER, CER, RTF ni memoria medidos. Las escalas de Velocidad y Precisión (1–5) de la UI son orientativas.
+> Para medir de verdad: copiar los audios y sus referencias `.txt` a `Tools/eval/es/…` y ejecutar
+> `swift run --package-path Tools/eval tx-eval`. Turbo sigue siendo el modelo de fábrica del dictado.
+>
+> El estado «Descargado/Listo» de la tabla es el de la fecha del informe y no es fiable para Nemotron
+> (la ruta de comprobación estaba mal; corregida después en `ModelStorageService`).
+
 - **Fecha:** 2026-10-13T11:28:10Z
 - **Plataforma:** macOS 27.0.1 (Apple Silicon · Neural Engine)
 - **Entorno:** FluidAudio 0.17.7 + whisper.cpp

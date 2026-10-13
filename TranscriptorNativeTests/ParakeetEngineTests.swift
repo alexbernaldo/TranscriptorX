@@ -49,3 +49,32 @@ final class ParakeetEngineTests: XCTestCase {
         XCTAssertTrue(handlerRan)
     }
 }
+
+/// Privacidad: FluidAudio no puede tocar la red salvo durante una descarga pedida por el usuario.
+final class NoImplicitNetworkTests: XCTestCase {
+    func testGateKeepsFluidAudioOfflineOutsideUserDownloads() async throws {
+        FluidNetworkGate.lockDown()
+        XCTAssertTrue(ModelHub.offlineMode)
+        await FluidNetworkGate.withUserDownload {
+            XCTAssertFalse(ModelHub.offlineMode)
+        }
+        XCTAssertTrue(ModelHub.offlineMode)
+    }
+
+    func testLoadingMissingParakeetModelFailsInsteadOfDownloading() async throws {
+        FluidNetworkGate.lockDown()
+        try XCTSkipIf(ModelStorageService.shared.isDownloaded("parakeet-redux"), "model present")
+        do {
+            _ = try await ParakeetEngine.shared.loadManager(for: .redux)
+            XCTFail("must not load")
+        } catch let e as ParakeetEngine.ParakeetError {
+            if case .modelNotFound = e {} else if case .unsupportedPlatform = e {} else { XCTFail("\(e)") }
+        }
+    }
+
+    func testStorageSeesFluidAudioCacheFolders() {
+        XCTAssertEqual(ModelStorageService.shared.localURLs(for: "parakeet-tdt-0.6b-v3"),
+                       [AsrModels.defaultCacheDirectory(for: .v3)])
+        XCTAssertFalse(ModelStorageService.shared.localURLs(for: "nemotron-streaming-multilingual-0.6b").isEmpty)
+    }
+}
