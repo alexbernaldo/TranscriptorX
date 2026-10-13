@@ -130,3 +130,31 @@ struct ModelPickerView: View {
         }
     }
 }
+
+/// «Modelo en uso» compacto: nombre (o nombre e ID con «Mostrar nombres técnicos») y motor.
+/// El ID técnico va siempre en el tooltip.
+struct ModelInUseChip: View {
+    let modelId: String
+    var prefix: String? = nil
+    @ObservedObject private var prefs = TaskModelPreferences.shared
+
+    var body: some View {
+        let d = ModelCatalog.descriptor(id: modelId)
+        let name = ModelCatalog.formattedName(for: modelId, showTechnical: prefs.showTechnicalNames)
+        let engine = d?.engine.badge
+        let text = [name, engine].compactMap { $0 }.joined(separator: " · ")
+        HStack(spacing: 4) {
+            Image(systemName: "cpu").font(.system(size: 10)).accessibilityHidden(true)
+            Text(prefix.map { "\($0) \(text)" } ?? text)
+        }
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(TX.Colors.textSecondary)
+        .lineLimit(1)
+        .padding(.horizontal, 6)
+        .frame(height: 18)
+        .background(RoundedRectangle(cornerRadius: TX.Radius.tag, style: .continuous).fill(TX.Colors.bgControl))
+        .help(modelId)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(TXL.f("models.inUse.a11y", "Modelo en uso: %@", text))
+    }
+}

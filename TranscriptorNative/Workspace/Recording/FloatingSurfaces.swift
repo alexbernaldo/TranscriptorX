@@ -37,7 +37,7 @@ final class FloatingRecordingPanelController: NSObject, NSWindowDelegate {
     private var panel: NonActivatingPanel?
     private var observers = Set<AnyCancellable>()
     static let compact = NSSize(width: 300, height: 52)
-    static let expanded = NSSize(width: 300, height: 96)
+    static let expanded = NSSize(width: 300, height: 120)
 
     private override init() {
         super.init()
@@ -134,6 +134,7 @@ struct FloatingRecordingPanelView: View {
     @EnvironmentObject var controller: RecordingController
     @ObservedObject private var recorder = SystemAudioRecorder.shared
     @ObservedObject private var jobs = JobManager.shared
+    @ObservedObject private var live = LiveTranscription.shared
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @State private var hovering = false
 
@@ -147,11 +148,23 @@ struct FloatingRecordingPanelView: View {
             }
             .frame(height: 36)
             if hovering, case .recording = controller.phase {
-                Text(TXL.t("recordingPanel.noLiveText", "El texto aparecerá cuando termine la grabación."))
-                    .font(.system(size: 13))
-                    .foregroundStyle(TX.Colors.textSecondary)
-                    .lineLimit(2)
-                    .transition(.opacity)
+                VStack(alignment: .leading, spacing: 4) {
+                    if live.text.isEmpty {
+                        Text(TXL.t("recordingPanel.noLiveText", "El texto aparecerá cuando termine la grabación."))
+                            .font(.system(size: 13))
+                            .foregroundStyle(TX.Colors.textSecondary)
+                            .lineLimit(2)
+                    } else {
+                        Text(LiveTranscription.lastSentence(of: live.text))
+                            .font(.system(size: 13))
+                            .foregroundStyle(TX.Colors.textPrimary)
+                            .lineLimit(2)
+                    }
+                    if let id = live.modelId, live.state == .running || live.state == .loading {
+                        ModelInUseChip(modelId: id)
+                    }
+                }
+                .transition(.opacity)
             }
         }
         .padding(.horizontal, 12)
@@ -281,9 +294,6 @@ final class LiveCaptionCenter: ObservableObject {
             self?.received(segment.text)
         }
     }
-
-    /// Recording has no live text (spec 12.1 #3): captions start with the final transcription.
-    func recordingStarted() {}
 
     /// Emite un segmento de texto en vivo para subtítulos en pantalla (Nemotron streaming).
     func emitLiveSegment(_ sentence: String) {

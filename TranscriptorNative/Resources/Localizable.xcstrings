@@ -23694,6 +23694,108 @@
           }
         }
       }
+    },
+    "live.text.a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live text"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto en vivo"
+          }
+        }
+      }
+    },
+    "live.text.loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading %@…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando %@…"
+          }
+        }
+      }
+    },
+    "live.text.needsDownload": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To see the text while you record, download %1$@ (%2$@)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para ver el texto mientras grabas, descarga %1$@ (%2$@)."
+          }
+        }
+      }
+    },
+    "live.text.running": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live text with %@. The final transcription runs when you stop."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto en vivo con %@. La transcripción final se hace al detener."
+          }
+        }
+      }
+    },
+    "live.text.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No live text for this language. The text will appear when you stop recording."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay texto en vivo para este idioma. El texto aparecerá al detener la grabación."
+          }
+        }
+      }
+    },
+    "models.inUse.a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model in use: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo en uso: %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

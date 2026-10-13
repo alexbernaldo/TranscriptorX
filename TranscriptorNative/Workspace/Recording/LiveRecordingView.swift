@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Vista En vivo (spec 6.9). The recorder writes a file and does not transcribe while
-/// recording (spec 12.1 #3), so this view shows the recording strip and the level; the text
-/// appears in the job view as soon as the recording stops and the engine runs.
+/// Vista En vivo (spec 6.9). While recording, Nemotron's text appears here as it is heard
+/// (`LiveTranscription`); the final transcription of the whole file runs when the recording stops.
 struct LiveRecordingView: View {
     @ObservedObject private var controller = RecordingController.shared
     @ObservedObject private var recorder = SystemAudioRecorder.shared
+    @ObservedObject private var live = LiveTranscription.shared
+    @ObservedObject private var downloads = ModelDownloadCenter.shared
+    @ObservedObject private var prefs = TaskModelPreferences.shared
     @AppStorage("liveCaptionEnabled") private var captionsEnabled = false
     @EnvironmentObject var workspace: WorkspaceState
 
@@ -48,14 +50,25 @@ struct LiveRecordingView: View {
                                 .foregroundStyle(TX.Colors.textSecondary)
                             HStack(spacing: 12) {
                                 LevelFragments(level: recorder.audioLevel, height: 28)
-                                Text(controller.phase == .processing
-                                     ? TXL.t("live.processing.text", "Preparando la transcripción de la grabación…")
-                                     : TXL.t("live.recording.text", "El texto aparecerá aquí en cuanto detengas la grabación: se transcribe el audio completo en este Mac."))
-                                    .txStyle(TX.Typography.transcript)
-                                    .foregroundStyle(TX.Colors.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                if controller.phase == .processing {
+                                    Text(TXL.t("live.processing.text", "Preparando la transcripción de la grabación…"))
+                                        .txStyle(TX.Typography.transcript)
+                                        .foregroundStyle(TX.Colors.textSecondary)
+                                } else {
+                                    liveStatus
+                                }
                             }
-                            WaitingFragments()
+                            if live.text.isEmpty {
+                                WaitingFragments()
+                            } else {
+                                Text(live.text)
+                                    .txStyle(TX.Typography.transcript)
+                                    .foregroundStyle(TX.Colors.textPrimary)
+                                    .textSelection(.enabled)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityLabel(TXL.t("live.text.a11y", "Texto en vivo"))
+                                    .accessibilityValue(live.text)
+                            }
                         }
                     }
                 }
@@ -68,6 +81,39 @@ struct LiveRecordingView: View {
         .background(TX.Colors.bgWindow)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(TXL.t("region.live", "Grabación en curso"))
+    }
+
+    /// What the live text is doing: model in use, loading, or why there is none.
+    @ViewBuilder private var liveStatus: some View {
+        let modelName = live.modelId.map { ModelCatalog.formattedName(for: $0, showTechnical: prefs.showTechnicalNames) } ?? ""
+        switch live.state {
+        case .loading:
+            Text(TXL.f("live.text.loading", "Cargando %@…", modelName))
+                .font(.system(size: 12)).foregroundStyle(TX.Colors.textSecondary)
+        case .running, .off:
+            Text(live.modelId == nil
+                 ? TXL.t("live.recording.text", "El texto aparecerá aquí en cuanto detengas la grabación: se transcribe el audio completo en este Mac.")
+                 : TXL.f("live.text.running", "Texto en vivo con %@. La transcripción final se hace al detener.", modelName))
+                .font(.system(size: 12)).foregroundStyle(TX.Colors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        case .needsDownload(let id):
+            HStack(spacing: 8) {
+                Text(TXL.f("live.text.needsDownload", "Para ver el texto mientras grabas, descarga %@ (%@).", modelName,
+                           ModelStorageService.shared.displaySize(for: id)))
+                    .font(.system(size: 12)).foregroundStyle(TX.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if case .downloading = downloads.state(for: id) {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button(TXL.t("model.download", "Descargar")) { downloads.download(id) }
+                        .buttonStyle(TXSecondaryButtonStyle())
+                }
+            }
+        case .unavailable(let message), .failed(let message):
+            Text(message)
+                .font(.system(size: 12)).foregroundStyle(TX.Colors.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     /// 44 pt strip on bg.surface: dot, «Grabando · 12:04», source, captions button, «Detener».
@@ -91,10 +137,13 @@ struct LiveRecordingView: View {
                     .foregroundStyle(TX.Colors.textSecondary)
             }
             TXChip(text: controller.usesMicrophone ? TXL.t("record.source.mic", "Micrófono") : TXL.t("record.source.system", "Audio del sistema"))
+            if let id = live.modelId, live.state == .running || live.state == .loading {
+                ModelInUseChip(modelId: id)
+            }
             Spacer()
             let s = QuickSettingsModel.settings(forPreset: controller.presetId)
-            let langCode = String(s.language.prefix(2)).lowercased()
-            let captionsAvailable = s.language == "auto" || ModelCatalog.languagesNemotronMultilingual.contains(langCode)
+            let liveResolution = LiveTranscription.resolution(language: s.language)
+            let captionsAvailable = liveResolution.model != nil || liveResolution.needsDownload != nil
 
             Button { captionsEnabled.toggle() } label: {
                 Image(systemName: (captionsEnabled && captionsAvailable) ? "captions.bubble.fill" : "captions.bubble")

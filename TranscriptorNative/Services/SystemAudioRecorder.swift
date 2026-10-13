@@ -90,6 +90,10 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         }
     }
     
+    /// Recibe el audio capturado (hilo de audio) para el texto en vivo de Nemotron.
+    /// El archivo grabado no cambia: es una copia de lectura.
+    nonisolated(unsafe) var liveAudioTap: ((AVAudioPCMBuffer) -> Void)?
+
     // MARK: - Private Properties
     
     private var stream: SCStream?
@@ -650,6 +654,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         if audioInput?.isReadyForMoreMediaData == true {
             audioInput?.append(sampleBuffer)
         }
+        if let tap = liveAudioTap, let pcm = AVAudioPCMBuffer.fromSampleBuffer(sampleBuffer) { tap(pcm) }
         
         // Calculate audio level and waveform for visualizer
         updateAudioLevel(from: sampleBuffer)
@@ -835,6 +840,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
             }
         }
         
+        liveAudioTap?(convertedBuffer)
         // Update audio level and waveform
         updateAudioLevelFromBuffer(convertedBuffer)
         updateWaveformFromBuffer(convertedBuffer)
@@ -882,6 +888,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
             }
         }
         
+        liveAudioTap?(buffer)
         // Update audio level and waveform
         updateAudioLevelFromBuffer(buffer)
         updateWaveformFromBuffer(buffer)
@@ -1187,6 +1194,18 @@ private class AudioStreamOutput: NSObject, SCStreamOutput {
 // MARK: - AVAudioPCMBuffer Extension
 
 extension AVAudioPCMBuffer {
+    /// Copia PCM de un `CMSampleBuffer` de ScreenCaptureKit (texto en vivo).
+    static func fromSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> AVAudioPCMBuffer? {
+        guard let desc = CMSampleBufferGetFormatDescription(sampleBuffer) else { return nil }
+        let format = AVAudioFormat(cmAudioFormatDescription: desc)
+        let frames = AVAudioFrameCount(CMSampleBufferGetNumSamples(sampleBuffer))
+        guard frames > 0, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
+        buffer.frameLength = frames
+        let status = CMSampleBufferCopyPCMDataIntoAudioBufferList(
+            sampleBuffer, at: 0, frameCount: Int32(frames), into: buffer.mutableAudioBufferList)
+        return status == noErr ? buffer : nil
+    }
+
     func toCMSampleBuffer(presentationTime: AVAudioTime) -> CMSampleBuffer? {
         let format = self.format
         

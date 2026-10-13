@@ -6,8 +6,8 @@ import AVFoundation
 /// hand-off of the recorded file to the queue. The capture itself is `SystemAudioRecorder`.
 ///
 /// Real capabilities (validated against the code, spec 12.1 #3–#4): one source at a time
-/// (microphone or system audio) and no live text while recording; the transcription runs
-/// in the queue when the recording stops.
+/// (microphone or system audio). While recording, `LiveTranscription` shows Nemotron's text;
+/// the final transcription of the whole file runs in the queue when the recording stops.
 @MainActor
 final class RecordingController: ObservableObject {
     static let shared = RecordingController()
@@ -114,9 +114,7 @@ final class RecordingController: ObservableObject {
                 phase = .recording
                 WorkspaceState.shared.route = .live
                 AccessibilityAnnouncer.announce(TXL.t("recording.announce.started", "Grabación iniciada"))
-                if UserDefaults.standard.bool(forKey: "liveCaptionEnabled") {
-                    LiveCaptionCenter.shared.recordingStarted()
-                }
+                LiveTranscription.shared.start(language: QuickSettingsModel.settings(forPreset: presetId).language)
                 FloatingRecordingPanelController.shared.update()
             } else {
                 phase = .failed(recorder.errorMessage ?? TXL.t("recording.error.start", "No se pudo empezar a grabar"))
@@ -130,6 +128,7 @@ final class RecordingController: ObservableObject {
         phase = .processing
         AccessibilityAnnouncer.announce(TXL.t("recording.announce.stopped", "Grabación detenida, procesando"))
         FloatingRecordingPanelController.shared.update()
+        LiveTranscription.shared.stop()
         Task {
             let url = await recorder.stopRecording()
             if let url {
@@ -157,6 +156,7 @@ final class RecordingController: ObservableObject {
     /// Quit confirmation: stop and keep what was recorded.
     func stopForQuit() async {
         guard phase == .recording else { return }
+        LiveTranscription.shared.stop()
         _ = await recorder.stopRecording()
     }
 
@@ -167,8 +167,110 @@ final class RecordingController: ObservableObject {
 
     private func recorderStateChanged(_ state: RecordingState) {
         if case .failed(let error) = state, phase == .recording {
+            LiveTranscription.shared.stop()
             phase = .failed(error.userMessage)
             FloatingRecordingPanelController.shared.update()
         }
+    }
+}
+
+// MARK: - Texto en vivo (Nemotron)
+
+/// Texto de Nemotron mientras se graba: lo muestran la vista En vivo y los subtítulos en pantalla.
+/// La transcripción definitiva sigue haciéndose con el archivo completo al detener la grabación.
+@MainActor
+final class LiveTranscription: ObservableObject {
+    static let shared = LiveTranscription()
+
+    enum State: Equatable {
+        case off
+        case loading
+        case running
+        /// El modelo en vivo para este idioma no está descargado (la vista ofrece «Descargar»).
+        case needsDownload(modelId: String)
+        /// Ningún modelo en vivo admite el idioma, o no hay Apple Silicon.
+        case unavailable(String)
+        case failed(String)
+    }
+
+    @Published private(set) var state: State = .off
+    @Published private(set) var text = ""
+    @Published private(set) var modelId: String?
+
+    private var continuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
+    private var lastCaption = ""
+
+    /// Modelo en vivo para un idioma según Ajustes › Modelos › Subtítulos en vivo.
+    static func resolution(language: String) -> ModelResolution {
+        TaskModelPreferences.shared.resolve(task: .liveCaptions, currentLanguage: language, translate: false)
+    }
+
+    func start(language: String) {
+        stop()
+        text = ""
+        lastCaption = ""
+        let r = Self.resolution(language: language)
+        guard let model = r.model else {
+            modelId = r.needsDownload?.id
+            if let need = r.needsDownload {
+                state = .needsDownload(modelId: need.id)
+            } else {
+                state = .unavailable(TXL.t("live.text.unavailable", "No hay texto en vivo para este idioma. El texto aparecerá al detener la grabación."))
+            }
+            return
+        }
+        modelId = model.id
+        state = .loading
+        let chunk = ModelEngineSettings.nemotronChunkMs(for: model.id)
+        let (stream, continuation) = AsyncStream<AVAudioPCMBuffer>.makeStream(bufferingPolicy: .bufferingNewest(400))
+        self.continuation = continuation
+        Task { [weak self] in
+            let engine = NemotronStreamingEngine.shared
+            do {
+                try await engine.startLiveSession(modelId: model.id, language: language, chunkMs: chunk)
+                guard let self, self.continuation != nil else { _ = await engine.endLiveSession(); return }
+                self.state = .running
+                SystemAudioRecorder.shared.liveAudioTap = { buffer in continuation.yield(buffer) }
+                for await buffer in stream {
+                    let partial = try await engine.feed(buffer)
+                    self.update(partial)
+                }
+                let final = await engine.endLiveSession()
+                if !final.isEmpty { self.update(final) }
+                if self.state == .running { self.state = .off }
+            } catch {
+                SystemAudioRecorder.shared.liveAudioTap = nil
+                _ = await engine.endLiveSession()
+                AppLogger.shared.logError(error, context: "Live transcription", category: .recording)
+                self?.state = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    /// Deja de recibir audio; el texto ya mostrado se queda hasta la próxima grabación.
+    func stop() {
+        SystemAudioRecorder.shared.liveAudioTap = nil
+        continuation?.finish()
+        continuation = nil
+        if state == .loading || state == .running { state = .off }
+    }
+
+    private func update(_ partial: String) {
+        let trimmed = partial.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed != text else { return }
+        text = trimmed
+        let caption = Self.lastSentence(of: trimmed)
+        if !caption.isEmpty, caption != lastCaption {
+            lastCaption = caption
+            LiveCaptionCenter.shared.emitLiveSegment(caption)
+        }
+    }
+
+    /// Última frase (o las últimas ~14 palabras) para la cápsula de subtítulos.
+    static func lastSentence(of text: String) -> String {
+        let body = text.trimmingCharacters(in: CharacterSet(charactersIn: " .?!"))
+        let start = body.lastIndex(where: { ".?!".contains($0) }).map { body.index(after: $0) } ?? body.startIndex
+        let words = body[start...].split(separator: " ")
+        return words.suffix(14).joined(separator: " ")
     }
 }
