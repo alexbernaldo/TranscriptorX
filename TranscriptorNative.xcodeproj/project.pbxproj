@@ -19,6 +19,9 @@
 		F8000000000000000000000A /* ModelStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000009 /* ModelStorageService.swift */; };
 		F8000000000000000000000C /* TaskModelPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8000000000000000000000B /* TaskModelPreferences.swift */; };
 		F80000000000000000000008 /* ModelCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000007 /* ModelCatalogTests.swift */; };
+		F80000000000000000000012 /* ModelMemoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000011 /* ModelMemoryManager.swift */; };
+		F80000000000000000000014 /* ParakeetEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000013 /* ParakeetEngine.swift */; };
+		F80000000000000000000016 /* ParakeetEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80000000000000000000015 /* ParakeetEngineTests.swift */; };
 		1100000000000007 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000007 /* TranscriptionService.swift */; };
 		110000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000F /* Assets.xcassets */; };
 		1100000000000010 /* DependencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000000000000011 /* DependencyManager.swift */; };
@@ -172,6 +175,9 @@
 		F80000000000000000000009 /* ModelStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStorageService.swift; sourceTree = "<group>"; };
 		F8000000000000000000000B /* TaskModelPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskModelPreferences.swift; sourceTree = "<group>"; };
 		F80000000000000000000007 /* ModelCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalogTests.swift; sourceTree = "<group>"; };
+		F80000000000000000000011 /* ModelMemoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelMemoryManager.swift; sourceTree = "<group>"; };
+		F80000000000000000000013 /* ParakeetEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParakeetEngine.swift; sourceTree = "<group>"; };
+		F80000000000000000000015 /* ParakeetEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParakeetEngineTests.swift; sourceTree = "<group>"; };
 		1000000000000007 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		100000000000000F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1000000000000010 /* TranscriptorNative.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TranscriptorNative.entitlements; sourceTree = "<group>"; };
@@ -407,6 +413,8 @@
 				F80000000000000000000005 /* TranscriptionSchema.swift */,
 				F80000000000000000000009 /* ModelStorageService.swift */,
 				F8000000000000000000000B /* TaskModelPreferences.swift */,
+				F80000000000000000000011 /* ModelMemoryManager.swift */,
+				F80000000000000000000013 /* ParakeetEngine.swift */,
 				EA1000000000000F /* URLTranscriptionService.swift */,
 				1000000000000045 /* DictationManager.swift */,
 				D1C7A7E00000000000000001 /* DictationSupport.swift */,
@@ -693,6 +701,7 @@
 				EB7E57000000000002 /* FormattingAndLibraryTests.swift */,
 				EB7E57000000000020 /* SpeakerAssignmentTests.swift */,
 				F80000000000000000000007 /* ModelCatalogTests.swift */,
+				F80000000000000000000015 /* ParakeetEngineTests.swift */,
 			);
 			path = TranscriptorNativeTests;
 			sourceTree = "<group>";
@@ -856,6 +865,8 @@
 				F80000000000000000000006 /* TranscriptionSchema.swift in Sources */,
 				F8000000000000000000000A /* ModelStorageService.swift in Sources */,
 				F8000000000000000000000C /* TaskModelPreferences.swift in Sources */,
+				F80000000000000000000012 /* ModelMemoryManager.swift in Sources */,
+				F80000000000000000000014 /* ParakeetEngine.swift in Sources */,
 				1100000000000007 /* TranscriptionService.swift in Sources */,
 				EA6384292F2AB30500FC5152 /* AudioPreprocessor.swift in Sources */,
 				EA63842A2F2AB40000FC5152 /* AudioEngineManager.swift in Sources */,
@@ -958,6 +969,7 @@
 				EB7E57000000000004 /* FormattingAndLibraryTests.swift in Sources */,
 				EB7E57000000000021 /* SpeakerAssignmentTests.swift in Sources */,
 				F80000000000000000000008 /* ModelCatalogTests.swift in Sources */,
+				F80000000000000000000016 /* ParakeetEngineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

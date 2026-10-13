@@ -365,6 +365,9 @@ struct ModelsSettingsDetailView: View {
                     ) {
                         if inUse != nil {
                             Button(TXL.t("models.memory.freeNow", "Liberar ahora")) {
+                                Task {
+                                    await ModelMemoryManager.shared.unloadAll()
+                                }
                                 if let activeId = JobManager.shared.jobs.first(where: { $0.status == .processing })?.id {
                                     _ = JobManager.shared.cancel(jobId: activeId)
                                 }

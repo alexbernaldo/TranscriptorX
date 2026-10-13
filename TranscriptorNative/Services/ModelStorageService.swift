@@ -4,20 +4,19 @@ import AppKit
 /// Gestión unificada de almacenamiento, comprobación en disco y tamaños de modelos.
 /// Regla del prompt:
 /// «Tamaños: no los escribas a mano. Léelos del manifiesto del repo antes de descargar y de disco después. Muestra «≈» mientras sean estimados.»
-@MainActor
 final class ModelStorageService: ObservableObject {
     static let shared = ModelStorageService()
 
-    @Published private(set) var revision: Int = 0
+    @MainActor @Published private(set) var revision: Int = 0
 
-    private nonisolated let fileManager = FileManager.default
+    private let fileManager = FileManager.default
 
-    private nonisolated var whisperModelsDir: URL {
+    private var whisperModelsDir: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return appSupport.appendingPathComponent("Transcriptor/whisper.cpp/models")
     }
 
-    private nonisolated var fluidAudioBaseDir: URL {
+    private var fluidAudioBaseDir: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return appSupport.appendingPathComponent("FluidAudio/Models")
     }
@@ -42,7 +41,9 @@ final class ModelStorageService: ObservableObject {
     private init() {}
 
     func notifyChanged() {
-        revision += 1
+        Task { @MainActor in
+            self.revision += 1
+        }
     }
 
     // MARK: - Localización de archivos

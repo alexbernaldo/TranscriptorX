@@ -95,8 +95,11 @@ final class JobManager: ObservableObject {
         return idx + (waiting.contains { $0.status == .processing } ? 0 : 1)
     }
 
-    /// Model actually loaded in a running whisper process (sidebar footer, spec 8.6).
+    /// Model actually loaded in a running whisper process or retained in memory by FluidAudio (sidebar footer, spec 8.6).
     var modelInUse: String? {
+        if let memoryModel = ModelMemoryManager.shared.activeModelId {
+            return memoryModel
+        }
         guard let job = currentJob else { return nil }
         switch job.phase {
         case .loadingModel, .transcribing: return job.settings.selectedModelId

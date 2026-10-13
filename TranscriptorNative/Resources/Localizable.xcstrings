@@ -23558,6 +23558,57 @@
           }
         }
       }
+    },
+    "settings.dictation.fastSuggestion": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is a faster and more accurate dictation model: Fast (Parakeet)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay un modelo de dictado más rápido y preciso: Rápido (Parakeet)."
+          }
+        }
+      }
+    },
+    "settings.dictation.changeToFast": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch to Fast"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar a Rápido"
+          }
+        }
+      }
+    },
+    "settings.dictation.keepLight": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep Lightweight"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantener Ligero"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

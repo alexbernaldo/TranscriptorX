@@ -122,6 +122,9 @@ class TranscriptionService: NSObject, ObservableObject {
     }
     
     func isModelDownloaded(_ modelId: String) -> Bool {
+        if let descriptor = ModelCatalog.descriptor(id: modelId), descriptor.engine == .parakeet {
+            return ModelStorageService.shared.isDownloaded(modelId)
+        }
         guard let path = getModelPath(for: modelId) else {
             print("DEBUG: isModelDownloaded - model '\(modelId)' not found in available models")
             return false
@@ -132,6 +135,13 @@ class TranscriptionService: NSObject, ObservableObject {
     }
     
     func downloadModel(_ modelId: String, progress: @escaping (Double) -> Void) async throws {
+        if let descriptor = ModelCatalog.descriptor(id: modelId), descriptor.engine == .parakeet {
+            guard let version = ParakeetEngine.asrModelVersion(for: modelId) else {
+                throw TranscriptionError.modelNotFound
+            }
+            try await ParakeetEngine.shared.download(version: version, progress: progress)
+            return
+        }
         guard let model = Self.availableModels.first(where: { $0.id == modelId }) else {
             throw TranscriptionError.modelNotFound
         }
@@ -559,6 +569,18 @@ class TranscriptionService: NSObject, ObservableObject {
         onSegment: ((LiveSegment) -> Void)? = nil,
         onPhase: ((JobPhase) -> Void)? = nil
     ) async throws -> TranscriptionResult {
+        
+        if let descriptor = ModelCatalog.descriptor(id: modelId), descriptor.engine == .parakeet {
+            return try await ParakeetEngine.shared.transcribe(
+                file: file,
+                modelId: modelId,
+                settings: settings,
+                preprocessOptions: preprocessOptions,
+                onProgress: onProgress,
+                onSegment: onSegment,
+                onPhase: onPhase
+            )
+        }
         
         guard let modelPath = getModelPath(for: modelId),
               FileManager.default.fileExists(atPath: modelPath.path) else {

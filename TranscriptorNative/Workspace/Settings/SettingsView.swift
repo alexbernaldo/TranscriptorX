@@ -618,6 +618,7 @@ private struct DictationSettings: View {
     @AppStorage("dictation.autoSubmit") private var autoSubmit = DictationPreferences.AutoSubmit.off.rawValue
     @AppStorage("dictation.trailingSpace") private var trailingSpace = true
     @AppStorage("dictation.overlay") private var overlay = DictationPreferences.OverlayPosition.bottom.rawValue
+    @AppStorage("hasSeenFastDictationNotice") private var hasSeenFastDictationNotice = false
     @State private var axTrusted = AXIsProcessTrusted()
 
     var body: some View {
@@ -711,6 +712,30 @@ private struct DictationSettings: View {
                         }
                     }
                     .labelsHidden().fixedSize()
+                }
+                if model == "base" && !hasSeenFastDictationNotice {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(TXL.t("settings.dictation.fastSuggestion", "Hay un modelo de dictado más rápido y preciso: Rápido (Parakeet)."))
+                            .font(.system(size: 11))
+                            .foregroundStyle(TX.Colors.textPrimary)
+                        HStack(spacing: 8) {
+                            Button(TXL.t("settings.dictation.changeToFast", "Cambiar a Rápido")) {
+                                model = "parakeet-tdt-0.6b-v3"
+                                hasSeenFastDictationNotice = true
+                            }
+                            .buttonStyle(TXPrimaryButtonStyle())
+                            .controlSize(.small)
+                            Button(TXL.t("settings.dictation.keepLight", "Mantener Ligero")) {
+                                hasSeenFastDictationNotice = true
+                            }
+                            .buttonStyle(TXSecondaryButtonStyle())
+                            .controlSize(.small)
+                        }
+                    }
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(TX.Colors.purpleX.opacity(0.08)))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 6)
                 }
                 TXSeparator()
                 SettingsRow(label: TXL.t("settings.dictation.translate", "Traducir al inglés")) {
