@@ -122,7 +122,8 @@ class TranscriptionService: NSObject, ObservableObject {
     }
     
     func isModelDownloaded(_ modelId: String) -> Bool {
-        if let descriptor = ModelCatalog.descriptor(id: modelId), descriptor.engine == .parakeet {
+        if let descriptor = ModelCatalog.descriptor(id: modelId),
+           descriptor.engine == .parakeet || descriptor.engine == .nemotron {
             return ModelStorageService.shared.isDownloaded(modelId)
         }
         guard let path = getModelPath(for: modelId) else {
@@ -135,12 +136,17 @@ class TranscriptionService: NSObject, ObservableObject {
     }
     
     func downloadModel(_ modelId: String, progress: @escaping (Double) -> Void) async throws {
-        if let descriptor = ModelCatalog.descriptor(id: modelId), descriptor.engine == .parakeet {
-            guard let version = ParakeetEngine.asrModelVersion(for: modelId) else {
-                throw TranscriptionError.modelNotFound
+        if let descriptor = ModelCatalog.descriptor(id: modelId) {
+            if descriptor.engine == .parakeet {
+                guard let version = ParakeetEngine.asrModelVersion(for: modelId) else {
+                    throw TranscriptionError.modelNotFound
+                }
+                try await ParakeetEngine.shared.download(version: version, progress: progress)
+                return
+            } else if descriptor.engine == .nemotron {
+                try await NemotronStreamingEngine.shared.download(modelId: modelId, progress: progress)
+                return
             }
-            try await ParakeetEngine.shared.download(version: version, progress: progress)
-            return
         }
         guard let model = Self.availableModels.first(where: { $0.id == modelId }) else {
             throw TranscriptionError.modelNotFound
@@ -570,16 +576,28 @@ class TranscriptionService: NSObject, ObservableObject {
         onPhase: ((JobPhase) -> Void)? = nil
     ) async throws -> TranscriptionResult {
         
-        if let descriptor = ModelCatalog.descriptor(id: modelId), descriptor.engine == .parakeet {
-            return try await ParakeetEngine.shared.transcribe(
-                file: file,
-                modelId: modelId,
-                settings: settings,
-                preprocessOptions: preprocessOptions,
-                onProgress: onProgress,
-                onSegment: onSegment,
-                onPhase: onPhase
-            )
+        if let descriptor = ModelCatalog.descriptor(id: modelId) {
+            if descriptor.engine == .parakeet {
+                return try await ParakeetEngine.shared.transcribe(
+                    file: file,
+                    modelId: modelId,
+                    settings: settings,
+                    preprocessOptions: preprocessOptions,
+                    onProgress: onProgress,
+                    onSegment: onSegment,
+                    onPhase: onPhase
+                )
+            } else if descriptor.engine == .nemotron {
+                return try await NemotronStreamingEngine.shared.transcribe(
+                    file: file,
+                    modelId: modelId,
+                    settings: settings,
+                    preprocessOptions: preprocessOptions,
+                    onProgress: onProgress,
+                    onSegment: onSegment,
+                    onPhase: onPhase
+                )
+            }
         }
         
         guard let modelPath = getModelPath(for: modelId),

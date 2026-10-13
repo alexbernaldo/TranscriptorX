@@ -92,13 +92,20 @@ struct LiveRecordingView: View {
             }
             TXChip(text: controller.usesMicrophone ? TXL.t("record.source.mic", "Micrófono") : TXL.t("record.source.system", "Audio del sistema"))
             Spacer()
+            let s = QuickSettingsModel.settings(forPreset: controller.presetId)
+            let langCode = String(s.language.prefix(2)).lowercased()
+            let captionsAvailable = s.language == "auto" || ModelCatalog.languagesNemotronMultilingual.contains(langCode)
+
             Button { captionsEnabled.toggle() } label: {
-                Image(systemName: captionsEnabled ? "captions.bubble.fill" : "captions.bubble")
+                Image(systemName: (captionsEnabled && captionsAvailable) ? "captions.bubble.fill" : "captions.bubble")
             }
-            .buttonStyle(TXIconButtonStyle(isActive: captionsEnabled))
-            .help(captionsEnabled ? TXL.t("captions.off.help", "Desactivar subtítulos en pantalla") : TXL.t("captions.on.help", "Activar subtítulos en pantalla"))
+            .buttonStyle(TXIconButtonStyle(isActive: captionsEnabled && captionsAvailable))
+            .disabled(!captionsAvailable)
+            .help(!captionsAvailable
+                  ? TXL.t("record.captions.unavailable", "No disponible en este idioma")
+                  : (captionsEnabled ? TXL.t("captions.off.help", "Desactivar subtítulos en pantalla") : TXL.t("captions.on.help", "Activar subtítulos en pantalla")))
             .accessibilityLabel(TXL.t("captions.toggle", "Subtítulos en pantalla"))
-            .accessibilityValue(captionsEnabled ? TXL.t("a11y.on", "activado") : TXL.t("a11y.off", "desactivado"))
+            .accessibilityValue((captionsEnabled && captionsAvailable) ? TXL.t("a11y.on", "activado") : TXL.t("a11y.off", "desactivado"))
             if controller.phase == .recording {
                 Button(TXL.t("recording.stop", "Detener")) { controller.stop() }
                     .buttonStyle(RecordStopButtonStyle())

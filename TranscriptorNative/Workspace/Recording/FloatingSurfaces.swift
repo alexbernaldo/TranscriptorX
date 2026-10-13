@@ -285,6 +285,11 @@ final class LiveCaptionCenter: ObservableObject {
     /// Recording has no live text (spec 12.1 #3): captions start with the final transcription.
     func recordingStarted() {}
 
+    /// Emite un segmento de texto en vivo para subtítulos en pantalla (Nemotron streaming).
+    func emitLiveSegment(_ sentence: String) {
+        received(sentence)
+    }
+
     private func received(_ sentence: String) {
         guard isEnabled else { return }
         let task = Task { [weak self] in
