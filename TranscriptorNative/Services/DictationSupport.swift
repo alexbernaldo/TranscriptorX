@@ -430,7 +430,8 @@ enum DockVisibility {
 
     static func apply() {
         if isHidden { UserDefaults.standard.set(true, forKey: "showMenuBarExtra") }
-        let hide = isHidden || (hidesDockWhenNoWindow && !hasOpenMainWindow)
+        // «Ocultar del Dock» también deja ver el icono mientras la ventana está abierta.
+        let hide = (isHidden || hidesDockWhenNoWindow) && !hasOpenMainWindow
         let policy: NSApplication.ActivationPolicy = hide ? .accessory : .regular
         guard NSApp.activationPolicy() != policy else { return }
         let visible = NSApp.windows.filter { $0.isVisible && $0.canBecomeKey }

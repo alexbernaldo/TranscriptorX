@@ -17253,13 +17253,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Transcriptor X only appears in the menu bar. Open it from its icon."
+            "value": "Transcriptor X only shows in the Dock while its window is open. Open it again from the menu bar icon."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Transcriptor X solo aparece en la barra de menús. Ábrelo desde su icono."
+            "value": "Transcriptor X solo aparece en el Dock mientras su ventana está abierta. Ábrelo de nuevo desde el icono de la barra de menús."
           }
         }
       }
