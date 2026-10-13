@@ -543,6 +543,10 @@ struct Transcription: Identifiable, Codable {
     var fullTextTranslations: [String: String]?
     /// Nombres de hablantes por índice (claves String "0","1",…). #8
     var speakerNames: [String: String]?
+    /// ID técnico y motor con que se generó la transcripción. `nil` = registro anterior («Desconocido»).
+    var modelId: String?
+    var engine: String?
+    var engineVersion: String?
     
     init(
         id: UUID = UUID(),
@@ -558,8 +562,14 @@ struct Transcription: Identifiable, Codable {
         aiSummary: String? = nil,
         aiTags: [String]? = nil,
         fullTextTranslations: [String: String]? = nil,
-        speakerNames: [String: String]? = nil
+        speakerNames: [String: String]? = nil,
+        modelId: String? = nil,
+        engine: String? = nil,
+        engineVersion: String? = nil
     ) {
+        self.modelId = modelId
+        self.engine = engine
+        self.engineVersion = engineVersion
         self.id = id
         self.title = title
         self.text = text

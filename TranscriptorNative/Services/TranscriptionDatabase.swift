@@ -76,6 +76,7 @@ final class TranscriptionDatabase {
         CREATE INDEX IF NOT EXISTS idx_trans_deleted ON transcriptions(deleted_at);
         CREATE VIRTUAL TABLE IF NOT EXISTS transcriptions_fts USING fts5(title, text, content='');
         """)
+        TranscriptionSchema.migrate(handle)
         importLegacyJSONIfNeeded()
     }
 
@@ -150,8 +151,8 @@ final class TranscriptionDatabase {
             // 2. Upsert de la fila
             guard let stmt = prepare("""
                 INSERT OR REPLACE INTO transcriptions
-                    (id, payload, title, created_at, duration, is_favorite, language, deleted_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+                    (id, payload, title, created_at, duration, is_favorite, language, deleted_at, model_id, engine)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """) else { return false }
             defer { sqlite3_finalize(stmt) }
             guard let payload = try? String(data: encoder.encode(t), encoding: .utf8) else {
@@ -171,6 +172,8 @@ final class TranscriptionDatabase {
             } else {
                 bindNull(stmt, 8)
             }
+            if let m = t.modelId { bind(stmt, 9, m) } else { bindNull(stmt, 9) }
+            if let e = t.engine { bind(stmt, 10, e) } else { bindNull(stmt, 10) }
             guard sqlite3_step(stmt) == SQLITE_DONE else {
                 AppLogger.shared.log("SQLite upsert error: \(String(cString: sqlite3_errmsg(db)))",
                                      level: .error, category: .app)

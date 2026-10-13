@@ -759,7 +759,9 @@ final class JobManager: ObservableObject {
             duration: job.fileDuration ?? result.segments.last?.endTime ?? 0,
             createdAt: Date(),
             sourceURL: persistedAudioURL,
-            segments: result.segments.isEmpty ? nil : result.segments
+            segments: result.segments.isEmpty ? nil : result.segments,
+            modelId: job.settings.selectedModelId,
+            engine: ModelCatalog.descriptor(id: job.settings.selectedModelId)?.engine.rawValue
         )
 
         storage.saveTranscription(transcription)
