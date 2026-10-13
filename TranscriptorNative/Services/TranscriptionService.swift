@@ -144,7 +144,8 @@ class TranscriptionService: NSObject, ObservableObject {
                 try await ParakeetEngine.shared.download(version: version, progress: progress)
                 return
             } else if descriptor.engine == .nemotron {
-                try await NemotronStreamingEngine.shared.download(modelId: modelId, progress: progress)
+                try await NemotronStreamingEngine.shared.download(
+                    modelId: modelId, chunkMs: ModelEngineSettings.nemotronChunkMs(for: modelId), progress: progress)
                 return
             }
         }
@@ -561,8 +562,44 @@ class TranscriptionService: NSObject, ObservableObject {
         return hours * 3600 + minutes * 60 + seconds + milliseconds
     }
     
+    // MARK: - Language probe
+
+    /// Idioma de los primeros 30 s con Whisper (`-dl`: detecta y sale). Solo para «Automático»:
+    /// decide si Rápido puede transcribir el archivo. Devuelve el código ISO o `nil`.
+    func detectLanguage(file: URL, modelId: String) async -> String? {
+        guard let modelPath = getModelPath(for: modelId),
+              FileManager.default.fileExists(atPath: modelPath.path),
+              FileManager.default.fileExists(atPath: whisperCliPath.path) else { return nil }
+        let ffmpeg = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
+            .first { FileManager.default.fileExists(atPath: $0) }
+        guard let ffmpeg else { return nil }
+        let clip = FileManager.default.temporaryDirectory.appendingPathComponent("probe_\(UUID().uuidString).wav")
+        defer { try? FileManager.default.removeItem(at: clip) }
+        let cliPath = whisperCliPath
+        return await Task.detached(priority: .userInitiated) { () -> String? in
+            func run(_ exe: String, _ args: [String]) -> String? {
+                let p = Process()
+                p.executableURL = URL(fileURLWithPath: exe)
+                p.arguments = args
+                let pipe = Pipe()
+                p.standardOutput = pipe
+                p.standardError = pipe
+                do { try p.run() } catch { return nil }
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                p.waitUntilExit()
+                return p.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil
+            }
+            guard run(ffmpeg, ["-nostdin", "-y", "-i", file.path, "-t", "30", "-ar", "16000", "-ac", "1",
+                               "-c:a", "pcm_s16le", clip.path]) != nil,
+                  let log = run(cliPath.path, ["-m", modelPath.path, "-f", clip.path, "-l", "auto", "-dl"]),
+                  let range = log.range(of: #"auto-detected language: ([a-z]{2,3})"#, options: .regularExpression)
+            else { return nil }
+            return log[range].components(separatedBy: ": ").last
+        }.value
+    }
+
     // MARK: - Transcription
-    
+
     /// Full transcription pipeline with preprocessing - returns structured result
     /// - Parameters:
     ///   - onSegment: Called for each segment as it's transcribed (for live streaming)
@@ -593,6 +630,7 @@ class TranscriptionService: NSObject, ObservableObject {
                     modelId: modelId,
                     settings: settings,
                     preprocessOptions: preprocessOptions,
+                    chunkMs: ModelEngineSettings.nemotronChunkMs(for: modelId),
                     onProgress: onProgress,
                     onSegment: onSegment,
                     onPhase: onPhase

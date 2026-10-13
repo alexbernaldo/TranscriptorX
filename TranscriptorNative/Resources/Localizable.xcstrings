@@ -23609,6 +23609,91 @@
           }
         }
       }
+    },
+    "job.languageDetected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected language: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma detectado: %@"
+          }
+        }
+      }
+    },
+    "models.notice.generic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is not available here (%2$@). This transcription will use %3$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ no está disponible aquí (%2$@). Esta transcripción usará %3$@."
+          }
+        }
+      }
+    },
+    "models.notice.language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ does not support %2$@. This transcription will use %3$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ no admite %2$@. Esta transcripción usará %3$@."
+          }
+        }
+      }
+    },
+    "models.notice.translate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ does not translate to English. This transcription will use %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ no traduce al inglés. Esta transcripción usará %2$@."
+          }
+        }
+      }
+    },
+    "models.renameNotice.auto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Models now have new names. Your selection has not changed: Automatic."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los modelos tienen nombres nuevos. Tu selección no ha cambiado: Automático."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -136,6 +136,8 @@ final class JobManager: ObservableObject {
         atFront: Bool = false,
         userInitiated: Bool = false
     ) -> UUID {
+        let task: ModelTask
+        if case .recording = source { task = .recording } else { task = .files }
         var job = TranscriptionJob(
             fileURL: fileURL,
             fileName: fileName,
@@ -144,6 +146,7 @@ final class JobManager: ObservableObject {
             source: source,
             presetName: presetName
         )
+        applyModelSelection(to: &job, task: task)
         applyModelAvailability(to: &job, userInitiated: userInitiated)
         insert(job, atFront: atFront)
         AppLogger.shared.log("Job enqueued: \(fileName) (ID: \(job.id))", category: .transcription)
@@ -182,6 +185,7 @@ final class JobManager: ObservableObject {
             urlMethod: method,
             presetName: presetName
         )
+        applyModelSelection(to: &job, task: .files)
         if method == .audio { applyModelAvailability(to: &job, userInitiated: true) }
         insert(job, atFront: false)
         startWorkerIfNeeded()
@@ -246,6 +250,8 @@ final class JobManager: ObservableObject {
         guard let index = jobs.firstIndex(where: { $0.id == jobId }) else { return }
         jobs[index].settings.selectedModelId = modelId
         jobs[index].presetName = nil
+        jobs[index].modelWasAutomatic = false
+        jobs[index].modelNotice = nil
         retry(jobId: jobId)
     }
 
@@ -325,6 +331,22 @@ final class JobManager: ObservableObject {
     }
 
     // MARK: Models
+
+    /// «Automático» (o un modelo que no admite el idioma) pasa a un modelo concreto antes de
+    /// entrar en la cola. Si el modelo cambia, un banner lo explica (nunca una alerta modal).
+    private func applyModelSelection(to job: inout TranscriptionJob, task: ModelTask) {
+        let prepared = ModelSelection.prepare(job.settings, task: task,
+                                              filesAssignment: TaskModelPreferences.shared.filesAssignment)
+        job.settings = prepared.settings
+        job.modelWasAutomatic = prepared.wasAutomatic
+        job.modelNotice = prepared.notice
+        if case .incompatible(let requested, let used, let reason)? = prepared.notice {
+            WorkspaceState.shared.post(BannerItem(
+                key: "model-switch:\(job.id)", kind: .info,
+                title: ModelNoticeText.switched(requested: requested, used: used, reason: reason, language: job.settings.language),
+                message: nil, details: nil))
+        }
+    }
 
     private func applyModelAvailability(to job: inout TranscriptionJob, userInitiated: Bool) {
         if job.isLink && job.urlMethod == .subtitles { return }
@@ -468,7 +490,19 @@ final class JobManager: ObservableObject {
             }
         }
 
-        guard let jobIndex = jobs.firstIndex(where: { $0.id == id }) else { currentJobId = nil; return }
+        // Automático sin idioma: Whisper escucha 30 s y, si el idioma lo admite Rápido, se usa Rápido.
+        if let pending = self.job(id), pending.modelWasAutomatic, pending.settings.language == "auto",
+           ModelCatalog.descriptor(id: pending.settings.selectedModelId)?.engine == .whisper,
+           let refined = await refineAutomaticModel(for: pending),
+           let i = jobs.firstIndex(where: { $0.id == id }), jobs[i].status == .processing {
+            jobs[i].settings.selectedModelId = refined.modelId
+            jobs[i].languageNotice = refined.notice
+            jobs[i].detectedLanguage = refined.language
+        }
+
+        guard let jobIndex = jobs.firstIndex(where: { $0.id == id }), jobs[jobIndex].status == .processing else {
+            currentJobId = nil; return
+        }
         let job = jobs[jobIndex]
 
         // The model could have been removed after queueing.
@@ -526,6 +560,7 @@ final class JobManager: ObservableObject {
                     }
                     Task { @MainActor in
                         self?.appendStreamSegment(id: id, segment: segment)
+                        self?.noteDetectedLanguage(id: id)
                     }
                 },
                 onPhase: { [weak self] phase in
@@ -572,6 +607,34 @@ final class JobManager: ObservableObject {
 
         onJobFinished?(id)
         currentJobId = nil
+    }
+
+    /// Probe de idioma (Whisper, 30 s) para Automático. Devuelve el modelo afinado o `nil`.
+    private func refineAutomaticModel(for job: TranscriptionJob) async -> (modelId: String, notice: String, language: String)? {
+        let fast = ModelEngineSettings.fastModelId
+        let installed = ModelStorageService.shared.installedModelIds()
+        guard installed.contains(fast),
+              let whisper = ModelResolver.whisperFallbackOrder.reversed().first(where: { installed.contains($0) }),
+              let language = await transcriptionService.detectLanguage(file: job.fileURL, modelId: whisper) else { return nil }
+        let task: ModelTask
+        if case .recording = job.source { task = .recording } else { task = .files }
+        var probe = job.settings
+        probe.language = language
+        probe.selectedModelId = ModelSelection.autoToken
+        let refined = ModelSelection.prepare(probe, task: task).settings.selectedModelId
+        guard installed.contains(refined) else { return nil }
+        AppLogger.shared.log("Language probe: \(language) → \(refined)", category: .transcription)
+        return (refined, TXL.f("job.languageDetected", "Idioma detectado: %@", TXFormat.languageName(language)), language)
+    }
+
+    /// Rápido no dice qué idioma oye: se deduce del texto en cuanto llegan los segmentos.
+    private func noteDetectedLanguage(id: UUID) {
+        guard let i = jobs.firstIndex(where: { $0.id == id }), jobs[i].languageNotice == nil,
+              jobs[i].settings.language == "auto",
+              ModelCatalog.descriptor(id: jobs[i].settings.selectedModelId)?.engine == .parakeet,
+              let code = ParakeetEngine.detectLanguage(of: jobs[i].streamingText) else { return }
+        jobs[i].languageNotice = TXL.f("job.languageDetected", "Idioma detectado: %@", TXFormat.languageName(code))
+        jobs[i].detectedLanguage = code
     }
 
     /// Maps engine errors to the user-facing kinds of spec 8.4.
@@ -758,7 +821,7 @@ final class JobManager: ObservableObject {
             id: transcriptionId,
             title: title,
             text: result.plainText,
-            language: job.settings.language,
+            language: job.settings.language == "auto" ? (job.detectedLanguage ?? job.settings.language) : job.settings.language,
             duration: job.fileDuration ?? result.segments.last?.endTime ?? 0,
             createdAt: Date(),
             sourceURL: persistedAudioURL,

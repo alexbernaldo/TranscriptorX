@@ -62,14 +62,20 @@ final class ModelResolverTests: XCTestCase {
         XCTAssertEqual(r.notice, .noLiveModel(language: "ru"))
     }
 
-    func testDictationChainFastThenTurboThenFilesModel() {
-        XCTAssertEqual(ModelResolver.resolve(task: .dictation, assignment: .automatic, in: ctx()).model?.id, ModelResolver.fast)
-        let noFast = all.subtracting([ModelResolver.fast])
-        XCTAssertEqual(ModelResolver.resolve(task: .dictation, assignment: .automatic, in: ctx(installed: noFast)).model?.id, ModelResolver.turbo)
+    func testDictationChainTurboThenFastThenFilesModel() {
+        XCTAssertEqual(ModelResolver.resolve(task: .dictation, assignment: .automatic, in: ctx()).model?.id, ModelResolver.turbo)
+        let noTurbo = all.subtracting([ModelResolver.turbo])
+        XCTAssertEqual(ModelResolver.resolve(task: .dictation, assignment: .automatic, in: ctx(installed: noTurbo)).model?.id, ModelResolver.fast)
         let onlySmall: Set<String> = ["small"]
         let r = ModelResolver.resolve(task: .dictation, assignment: .automatic, filesAssignment: .model("small"), in: ctx(installed: onlySmall))
         XCTAssertEqual(r.model?.id, "small")
-        XCTAssertEqual(r.needsDownload?.id, ModelResolver.fast)
+        XCTAssertEqual(r.needsDownload?.id, ModelResolver.turbo)
+    }
+
+    func testFastVersionPreferenceSwapsRapidoForUltra() {
+        var c = ctx(lang: "es")
+        c.fastModelId = "parakeet-ultra"
+        XCTAssertEqual(ModelResolver.resolve(task: .files, assignment: .automatic, in: c).model?.id, "parakeet-ultra")
     }
 
     // MARK: Explícito
@@ -126,6 +132,34 @@ final class ModelResolverTests: XCTestCase {
 }
 
 final class ModelCatalogTests: XCTestCase {
+    func testMigrationReadsOldNamesWithTheirOldMeaning() {
+        XCTAssertEqual(ModelCatalog.migratedId(fromStored: "Rápido"), "base")
+        XCTAssertEqual(ModelCatalog.migratedId(fromStored: "Profesional"), "large-v3-turbo")
+        XCTAssertEqual(ModelCatalog.migratedId(fromStored: "base"), "base")
+        XCTAssertEqual(ModelCatalog.migratedId(fromStored: "Turbo"), "large-v3-turbo")
+        XCTAssertNil(ModelCatalog.migratedId(fromStored: "nope"))
+    }
+
+    func testStoredNamesMigrateOnceAndFlagTheNotice() throws {
+        let d = try XCTUnwrap(UserDefaults(suiteName: "tx.tests.migration"))
+        d.removePersistentDomain(forName: "tx.tests.migration")
+        var s = TranscriptionSettings.default
+        s.selectedModelId = "Equilibrado"
+        d.set(try JSONEncoder().encode(s), forKey: "transcription_settings")
+        d.set("Máxima Calidad", forKey: TaskModelPreferences.keyDictation)
+        TaskModelPreferences.migrateStoredModelNames(d)
+        let saved = try JSONDecoder().decode(TranscriptionSettings.self, from: XCTUnwrap(d.data(forKey: "transcription_settings")))
+        XCTAssertEqual(saved.selectedModelId, "small")
+        XCTAssertEqual(d.string(forKey: TaskModelPreferences.keyDictation), "large-v3")
+        XCTAssertTrue(d.bool(forKey: TaskModelPreferences.keyRenameNoticePending))
+        d.removePersistentDomain(forName: "tx.tests.migration")
+    }
+
+    func testLegacyDictationDefaultBecomesAutomatic() {
+        XCTAssertNil(TaskModelPreferences.dictationStorage("useDefault"))
+        XCTAssertEqual(ModelAssignment(storage: TaskModelPreferences.dictationStorage("useDefault")), .automatic)
+    }
+
     func testIDsAreUniqueAndPersistentLegacyIDsExist() {
         let ids = ModelCatalog.all.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)

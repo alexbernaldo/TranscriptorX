@@ -92,13 +92,14 @@ enum DictationPreferences {
     /// The defaults of Ajustes › Idioma with the dictation overrides on top.
     static func transcriptionSettings() -> TranscriptionSettings {
         var settings = QuickSettingsModel.defaultSettings()
-        let model = defaults.string(forKey: "dictation.model") ?? useDefault
-        if model != useDefault {
-            let canonical = ModelCatalog.canonicalId(from: model) ?? model
-            settings.selectedModelId = canonical
-        }
+        let filesAssignment = ModelAssignment(storage: settings.selectedModelId)
+        // Modelo del dictado (Ajustes › Modelos): «auto» se resuelve aquí a un modelo concreto.
+        settings.selectedModelId = TaskModelPreferences.dictationStorage(defaults.string(forKey: "dictation.model"))
+            ?? ModelSelection.autoToken
         let language = defaults.string(forKey: "dictation.language") ?? useDefault
         if language != useDefault { settings.language = language }
+        settings.translate = translate
+        settings = ModelSelection.prepare(settings, task: .dictation, filesAssignment: filesAssignment).settings
         settings.translate = translate && !ModelCapabilities.isEnglishOnly(settings.selectedModelId)
         // Speakers make no sense for a dictation and add seconds of work.
         settings.enableDiarization = false

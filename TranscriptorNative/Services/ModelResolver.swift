@@ -29,6 +29,8 @@ struct ModelResolverContext: Sendable {
     var translateToEnglish: Bool = false
     /// Idioma detectado previamente (por ejemplo, con el probe de 30 s de Whisper).
     var detectedLanguage: String?
+    /// Versión que usa «Rápido» en Automático (Ajustes › Modelos › Avanzado: v3 o Ultra).
+    var fastModelId: String = ModelResolver.fast
 
     var knownLanguage: String? {
         if let l = language?.lowercased(), !l.isEmpty, l != "auto" {
@@ -106,6 +108,7 @@ enum ModelResolver {
     static func automaticTarget(task: ModelTask, filesAssignment: ModelAssignment = .automatic,
                                 in ctx: ModelResolverContext) -> ModelDescriptor? {
         func byId(_ id: String) -> ModelDescriptor? { ModelCatalog.descriptor(id: id) }
+        let fast = ctx.fastModelId
         func pickFiles() -> ModelDescriptor? {
             if let _ = ctx.knownLanguage {
                 let fastOK = byId(fast).map { incompatibility(of: $0, task: .files, in: ctx) == nil } ?? false
@@ -125,7 +128,8 @@ enum ModelResolver {
         case .files, .recording:
             return pickFiles()
         case .dictation:
-            return byId(fast)
+            // Turbo sigue siendo el modelo de fábrica del dictado; Rápido es una sugerencia opcional.
+            return byId(turbo)
         case .liveCaptions:
             if let m = byId(live), incompatibility(of: m, task: .liveCaptions, in: ctx) == nil { return m }
             if ctx.knownLanguage == "en" { return byId(liveEnglish) }
@@ -163,7 +167,7 @@ enum ModelResolver {
         }
         if let ok = usable(target.id, task: task, ctx) {
             var notice: ModelNotice? = nil
-            if (task == .files || task == .recording), ctx.knownLanguage == nil, !ctx.hasInstalledWhisper, target.id == fast {
+            if (task == .files || task == .recording), ctx.knownLanguage == nil, !ctx.hasInstalledWhisper, target.id == ctx.fastModelId {
                 notice = .languageAutoDetectedByParakeet
             }
             return ModelResolution(model: ok, needsDownload: nil, notice: notice)
@@ -176,22 +180,40 @@ enum ModelResolver {
     }
 
     /// Cadena de fallback cuando falta el modelo deseado.
-    /// Dictado: Rápido → Turbo → modelo de archivos. Resto: Turbo → cualquier compatible instalado.
+    /// Dictado: Turbo → Rápido → modelo de archivos. Resto: Turbo → Rápido → cualquier Whisper instalado.
     private static func fallbackInstalled(task: ModelTask, excluding: String, filesAssignment: ModelAssignment,
                                           _ ctx: ModelResolverContext) -> ModelDescriptor? {
         if task == .liveCaptions {
             return [live, liveEnglish].filter { $0 != excluding }.compactMap { usable($0, task: task, ctx) }.first
         }
-        var chain: [String] = []
-        if task == .dictation { chain.append(fast) }
-        chain.append(turbo)
+        var chain: [String] = [turbo, ctx.fastModelId]
         if task == .dictation, case .model(let id) = filesAssignment { chain.append(id) }
-        chain.append(contentsOf: [fast])
+        chain.append(fast)
         chain.append(contentsOf: whisperFallbackOrder)
         var seen = Set<String>([excluding])
         for id in chain where seen.insert(id).inserted {
             if let m = usable(id, task: task, ctx) { return m }
         }
         return nil
+    }
+}
+
+/// Textos de los avisos del resolver (banners de 6.4).
+enum ModelNoticeText {
+    /// «Rápido no admite japonés. Esta transcripción usará Turbo.»
+    static func switched(requested: String, used: String, reason: ModelIncompatibility, language: String?) -> String {
+        let from = ModelCatalog.descriptor(id: requested)?.displayName ?? requested
+        let to = ModelCatalog.descriptor(id: used)?.displayName ?? used
+        switch reason {
+        case .language:
+            let code = String((language ?? "").prefix(2))
+            let name = TXFormat.languageName(code)
+            let inline = TXL.isSpanish ? name.lowercased() : name
+            return TXL.f("models.notice.language", "%@ no admite %@. Esta transcripción usará %@.", from, inline, to)
+        case .translateNeedsWhisper:
+            return TXL.f("models.notice.translate", "%@ no traduce al inglés. Esta transcripción usará %@.", from, to)
+        case .notRealtime, .needsOS:
+            return TXL.f("models.notice.generic", "%@ no está disponible aquí (%@). Esta transcripción usará %@.", from, reason.reason, to)
+        }
     }
 }

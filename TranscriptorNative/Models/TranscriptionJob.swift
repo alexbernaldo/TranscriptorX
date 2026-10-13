@@ -180,6 +180,12 @@ struct TranscriptionJob: Identifiable, Equatable {
     var presetName: String?
     /// Aviso o idioma detectado en proceso (p. ej. "Idioma detectado: ko").
     var languageNotice: String?
+    /// El modelo venía de «Automático» (puede afinarse con el idioma detectado antes de empezar).
+    var modelWasAutomatic = false
+    /// El resolver cambió el modelo pedido (banner «Rápido no admite japonés…»).
+    var modelNotice: ModelNotice?
+    /// Idioma deducido durante el trabajo (probe o texto de Rápido).
+    var detectedLanguage: String?
 
     // MARK: - Initialization
 

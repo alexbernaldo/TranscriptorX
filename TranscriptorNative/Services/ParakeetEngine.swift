@@ -2,6 +2,36 @@ import Foundation
 import AVFoundation
 import CoreML
 import FluidAudio
+import NaturalLanguage
+
+/// Bloquea la red de FluidAudio salvo durante una descarga que ha pedido el usuario.
+///
+/// FluidAudio descarga por su cuenta cuando falta un archivo (`downloadAndLoad`, `loadModels`
+/// con recuperación, reparación del tokenizer…). Con `ModelHub.offlineMode` activado esas rutas
+/// lanzan `networkDisabled` / `modelMissing` en lugar de conectarse. Solo `withUserDownload`
+/// lo abre, y únicamente mientras dura la descarga explícita.
+enum FluidNetworkGate {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var permits = 0
+
+    /// Se llama al arrancar, antes de tocar cualquier cargador de FluidAudio.
+    static func lockDown() {
+        lock.lock(); defer { lock.unlock() }
+        if permits == 0 { ModelHub.offlineMode = true }
+    }
+
+    static func withUserDownload<T>(_ body: () async throws -> T) async rethrows -> T {
+        lock.lock(); permits += 1; ModelHub.offlineMode = false; lock.unlock()
+        AppLogger.shared.log("FluidAudio network opened for a user download", category: .model)
+        defer {
+            lock.lock(); permits -= 1
+            if permits == 0 { ModelHub.offlineMode = true }
+            lock.unlock()
+            AppLogger.shared.log("FluidAudio network closed", category: .model)
+        }
+        return try await body()
+    }
+}
 
 /// Motor de transcripción local basado en NVIDIA Parakeet (TDT 0.6B) sobre CoreML y Neural Engine vía FluidAudio.
 actor ParakeetEngine {
@@ -51,6 +81,23 @@ actor ParakeetEngine {
         }
     }
 
+    static func modelId(for version: AsrModelVersion) -> String {
+        switch version {
+        case .v2: return "parakeet-tdt-0.6b-v2"
+        case .ultra: return "parakeet-ultra"
+        case .redux: return "parakeet-redux"
+        default: return "parakeet-tdt-0.6b-v3"
+        }
+    }
+
+    /// Parakeet no informa del idioma: se deduce del texto con NaturalLanguage, en este Mac.
+    static func detectLanguage(of text: String) -> String? {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageConstraints = ModelCatalog.languagesParakeetV3.map { NLLanguage(rawValue: $0) }
+        recognizer.processString(text)
+        return recognizer.dominantLanguage?.rawValue
+    }
+
     // MARK: - Soporte de plataforma y versión
 
     static func checkPlatformSupport(for version: AsrModelVersion) throws {
@@ -73,12 +120,15 @@ actor ParakeetEngine {
         progress: @escaping @Sendable (Double) -> Void
     ) async throws {
         try Self.checkPlatformSupport(for: version)
-        _ = try await AsrModels.download(
-            version: version,
-            progressHandler: { p in
-                progress(p.fractionCompleted)
-            }
-        )
+        try await FluidNetworkGate.withUserDownload {
+            _ = try await AsrModels.download(
+                version: version,
+                progressHandler: { p in
+                    progress(p.fractionCompleted)
+                }
+            )
+        }
+        ModelStorageService.shared.notifyChanged()
     }
 
     func loadManager(
@@ -95,18 +145,15 @@ actor ParakeetEngine {
             { @Sendable p in cb(p.fractionCompleted) }
         }
 
-        let models: AsrModels
-        if isDownloaded(version: version) {
-            models = try await AsrModels.loadFromCache(
-                version: version,
-                progressHandler: handler
-            )
-        } else {
-            models = try await AsrModels.downloadAndLoad(
-                version: version,
-                progressHandler: handler
-            )
+        // Nunca descarga aquí: sin archivos, error y la UI ofrece «Descargar».
+        guard isDownloaded(version: version) else {
+            throw ParakeetError.modelNotFound(Self.modelId(for: version))
         }
+        await cleanup()
+        let models = try await AsrModels.loadFromCache(
+            version: version,
+            progressHandler: handler
+        )
 
         let manager = AsrManager(config: .default, models: models)
         self.currentVersion = version

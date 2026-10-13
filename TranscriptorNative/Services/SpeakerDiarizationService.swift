@@ -71,14 +71,19 @@ actor SpeakerDiarizationService {
         if !Self.areModelsDownloaded { progress(.downloadingModels(fraction: 0)) }
         let models: OfflineDiarizerModels
         do {
-            models = try await OfflineDiarizerModels.load(from: directory, configuration: nil) { update in
-                switch update.phase {
-                case .listing, .downloading:
-                    progress(.downloadingModels(fraction: update.fractionCompleted))
-                case .compiling:
-                    progress(.downloadingModels(fraction: nil))
+            let load = {
+                try await OfflineDiarizerModels.load(from: directory, configuration: nil) { update in
+                    switch update.phase {
+                    case .listing, .downloading:
+                        progress(.downloadingModels(fraction: update.fractionCompleted))
+                    case .compiling:
+                        progress(.downloadingModels(fraction: nil))
+                    }
                 }
             }
+            // La primera vez, «Quién habla» descarga el modelo de hablantes (lo avisa la ayuda de la
+            // opción): es la única descarga ligada a una acción del usuario en un trabajo.
+            models = Self.areModelsDownloaded ? try await load() : try await FluidNetworkGate.withUserDownload(load)
         } catch {
             throw DiarizationError.modelsUnavailable(error.localizedDescription)
         }

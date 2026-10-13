@@ -133,7 +133,12 @@ final class RecordingController: ObservableObject {
         Task {
             let url = await recorder.stopRecording()
             if let url {
-                let settings = QuickSettingsModel.settings(forPreset: presetId)
+                var settings = QuickSettingsModel.settings(forPreset: presetId)
+                // Sin preset, la grabación usa su propio modelo (Ajustes › Modelos › Grabación).
+                if !QuickSettingsModel.presetIds.contains(presetId),
+                   case .model(let id) = TaskModelPreferences.shared.recordingAssignment {
+                    settings.selectedModelId = id
+                }
                 let name = TXL.f("recording.fileName", "Grabación %@", TXFormat.longDateTime(Date()))
                 let id = JobManager.shared.enqueue(
                     fileURL: url, fileName: name, fileDuration: recorder.recordingDuration,

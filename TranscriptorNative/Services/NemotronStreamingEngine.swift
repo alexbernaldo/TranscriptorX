@@ -27,7 +27,12 @@ actor NemotronStreamingEngine {
         }
     }
 
+    static let multilingualId = "nemotron-streaming-multilingual-0.6b"
+    static let englishId = "nemotron-streaming-en-0.6b"
+
     private var currentModelId: String?
+    private var currentChunkMs: Int?
+    private var currentVariantDir: URL?
     private var currentMultilingualManager: StreamingNemotronMultilingualAsrManager?
     private var currentEnglishManager: StreamingNemotronAsrManager?
 
@@ -49,102 +54,166 @@ actor NemotronStreamingEngine {
         }
     }
 
-    // MARK: - Descarga y verificación
+    // MARK: - Variantes en disco
 
-    func isDownloaded(modelId: String, chunkMs: Int = 2240) -> Bool {
-        return ModelStorageService.shared.isDownloaded(modelId)
+    /// Tramos que ofrece cada modelo (el inglés no tiene 4480 ms).
+    static func supportedChunks(modelId: String) -> [Int] {
+        modelId == englishId ? [560, 1120, 2240] : [560, 1120, 2240, 4480]
     }
 
+    private static var modelsBaseDir: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("FluidAudio/Models", isDirectory: true)
+    }
+
+    /// Carpetas posibles de un modelo y tramo en la caché de FluidAudio.
+    /// Multilingüe: `nemotron-multilingual/{latin|multilingual}/<tramo>ms`; inglés: `nemotron-streaming/<tramo>ms`.
+    static func variantDirectories(modelId: String, chunkMs: Int) -> [URL] {
+        switch modelId {
+        case multilingualId:
+            let repo = modelsBaseDir.appendingPathComponent(Repo.nemotronMultilingual.folderName)
+            return ["multilingual", "latin"].map { repo.appendingPathComponent("\($0)/\(chunkMs)ms") }
+        case englishId:
+            guard let size = NemotronChunkSize(rawValue: chunkMs) else { return [] }
+            return [modelsBaseDir.appendingPathComponent(size.repo.folderName)]
+        default:
+            return []
+        }
+    }
+
+    /// Variante descargada para el idioma (la de alfabeto latino, más ligera, si existe), o `nil`.
+    static func installedVariant(modelId: String, chunkMs: Int, language: String? = nil) -> URL? {
+        let fm = FileManager.default
+        let candidates = variantDirectories(modelId: modelId, chunkMs: chunkMs).filter { dir in
+            if modelId == englishId {
+                return fm.fileExists(atPath: dir.appendingPathComponent("encoder/encoder_int8.mlmodelc").path)
+                    && fm.fileExists(atPath: dir.appendingPathComponent(ModelNames.NemotronStreaming.tokenizer).path)
+            }
+            return fm.fileExists(atPath: dir.appendingPathComponent(ModelNames.NemotronMultilingualStreaming.metadata).path)
+        }
+        if let language, StreamingNemotronMultilingualAsrManager.languageDirectory(for: language) == "latin",
+           let latin = candidates.first(where: { $0.path.contains("/latin/") }) {
+            return latin
+        }
+        return candidates.first { !$0.path.contains("/latin/") } ?? (language == nil ? candidates.first : nil)
+    }
+
+    func isDownloaded(modelId: String, chunkMs: Int) -> Bool {
+        Self.installedVariant(modelId: modelId, chunkMs: chunkMs) != nil
+    }
+
+    // MARK: - Descarga (solo por acción del usuario)
+
+    /// Descarga el tramo elegido. El multilingüe baja la variante completa, que cubre sus 8 idiomas.
     func download(
         modelId: String,
-        chunkMs: Int = 2240,
-        language: String = "auto",
+        chunkMs: Int,
         progress: @escaping @Sendable (Double) -> Void
     ) async throws {
         try Self.checkPlatformSupport()
-
-        let progressHandler: ProgressHandler = { p in
-            progress(p.fractionCompleted)
+        let progressHandler: ProgressHandler = { p in progress(p.fractionCompleted) }
+        try await FluidNetworkGate.withUserDownload {
+            switch modelId {
+            case Self.multilingualId:
+                _ = try await StreamingNemotronMultilingualAsrManager.downloadVariant(
+                    languageCode: "auto", chunkMs: chunkMs, progressHandler: progressHandler)
+            case Self.englishId:
+                let size = NemotronChunkSize(rawValue: chunkMs) ?? .ms2240
+                let manager = StreamingNemotronAsrManager(requestedChunkSize: size)
+                try await manager.loadModels(progressHandler: progressHandler)
+                await manager.cleanup()
+            default:
+                throw NemotronError.unsupportedModel(modelId)
+            }
         }
-
-        switch modelId {
-        case "nemotron-streaming-multilingual-0.6b":
-            _ = try await StreamingNemotronMultilingualAsrManager.downloadVariant(
-                languageCode: language,
-                chunkMs: chunkMs,
-                progressHandler: progressHandler
-            )
-        case "nemotron-streaming-en-0.6b":
-            let manager = StreamingNemotronAsrManager(
-                requestedChunkSize: chunkMs == 560 ? .ms560 : (chunkMs == 1120 ? .ms1120 : .ms2240)
-            )
-            try await manager.loadModels(progressHandler: progressHandler)
-        default:
-            throw NemotronError.unsupportedModel(modelId)
-        }
-
         ModelStorageService.shared.notifyChanged()
     }
 
-    // MARK: - Carga de modelos
+    // MARK: - Carga (nunca descarga)
 
-    private func loadMultilingual(
-        language: String = "auto",
-        chunkMs: Int = 2240,
-        progress: (@Sendable (Double) -> Void)? = nil
-    ) async throws -> StreamingNemotronMultilingualAsrManager {
-        if let current = currentMultilingualManager, currentModelId == "nemotron-streaming-multilingual-0.6b" {
-            await current.setLanguage(language)
+    private func loadMultilingual(language: String, chunkMs: Int) async throws -> StreamingNemotronMultilingualAsrManager {
+        try Self.checkPlatformSupport()
+        guard let dir = Self.installedVariant(modelId: Self.multilingualId, chunkMs: chunkMs, language: language) else {
+            throw NemotronError.modelNotFound(Self.multilingualId)
+        }
+        let hint = language == "auto" ? nil : language
+        if let current = currentMultilingualManager, currentVariantDir == dir {
+            await current.setLanguage(hint)
             return current
         }
-
-        try Self.checkPlatformSupport()
-
-        let progressHandler: ProgressHandler? = progress.map { cb in
-            { @Sendable p in cb(p.fractionCompleted) }
-        }
-
-        let variantDir = try await StreamingNemotronMultilingualAsrManager.downloadVariant(
-            languageCode: language,
-            chunkMs: chunkMs,
-            progressHandler: progressHandler
-        )
-
+        await cleanup()
         let manager = StreamingNemotronMultilingualAsrManager()
-        try await manager.loadModels(from: variantDir)
-        await manager.setLanguage(language)
-
-        self.currentModelId = "nemotron-streaming-multilingual-0.6b"
-        self.currentMultilingualManager = manager
-        self.currentEnglishManager = nil
-
+        try await manager.loadModels(from: dir)
+        await manager.setLanguage(hint)
+        currentModelId = Self.multilingualId
+        currentChunkMs = chunkMs
+        currentVariantDir = dir
+        currentMultilingualManager = manager
         return manager
     }
 
-    private func loadEnglish(
-        chunkMs: Int = 2240,
-        progress: (@Sendable (Double) -> Void)? = nil
-    ) async throws -> StreamingNemotronAsrManager {
-        if let current = currentEnglishManager, currentModelId == "nemotron-streaming-en-0.6b" {
-            return current
-        }
-
+    private func loadEnglish(chunkMs: Int) async throws -> StreamingNemotronAsrManager {
         try Self.checkPlatformSupport()
-
-        let progressHandler: ProgressHandler? = progress.map { cb in
-            { @Sendable p in cb(p.fractionCompleted) }
+        guard let dir = Self.installedVariant(modelId: Self.englishId, chunkMs: chunkMs) else {
+            throw NemotronError.modelNotFound(Self.englishId)
         }
-
-        let manager = StreamingNemotronAsrManager(
-            requestedChunkSize: chunkMs == 560 ? .ms560 : (chunkMs == 1120 ? .ms1120 : .ms2240)
-        )
-        try await manager.loadModels(progressHandler: progressHandler)
-
-        self.currentModelId = "nemotron-streaming-en-0.6b"
-        self.currentEnglishManager = manager
-        self.currentMultilingualManager = nil
-
+        if let current = currentEnglishManager, currentVariantDir == dir { return current }
+        await cleanup()
+        let manager = StreamingNemotronAsrManager(requestedChunkSize: NemotronChunkSize(rawValue: chunkMs))
+        try await manager.loadModels(from: dir)
+        currentModelId = Self.englishId
+        currentChunkMs = chunkMs
+        currentVariantDir = dir
+        currentEnglishManager = manager
         return manager
+    }
+
+    // MARK: - Sesión en vivo (grabación)
+
+    private var liveModelId: String?
+
+    /// Prepara una sesión en vivo. Lanza `modelNotFound` si el tramo elegido no está descargado.
+    func startLiveSession(modelId: String, language: String, chunkMs: Int) async throws {
+        await ModelMemoryManager.shared.notifyModelInUse(modelId)
+        if modelId == Self.englishId {
+            let m = try await loadEnglish(chunkMs: chunkMs)
+            await m.reset()
+        } else {
+            let m = try await loadMultilingual(language: language, chunkMs: chunkMs)
+            await m.reset()
+        }
+        liveModelId = modelId
+    }
+
+    /// Añade audio de la grabación y devuelve el texto acumulado de la sesión.
+    func feed(_ buffer: AVAudioPCMBuffer) async throws -> String {
+        guard let liveModelId else { return "" }
+        await ModelMemoryManager.shared.notifyModelInUse(liveModelId)
+        if liveModelId == Self.englishId, let m = currentEnglishManager {
+            _ = try await m.process(audioBuffer: buffer)
+            return await m.getPartialTranscript()
+        } else if let m = currentMultilingualManager {
+            _ = try await m.process(audioBuffer: buffer)
+            return await m.getPartialTranscript()
+        }
+        return ""
+    }
+
+    /// Cierra la sesión y devuelve el texto final (el modelo sigue en memoria hasta que lo libere el gestor).
+    func endLiveSession() async -> String {
+        defer { liveModelId = nil }
+        if liveModelId == Self.englishId, let m = currentEnglishManager {
+            let partial = await m.getPartialTranscript()
+            let text = (try? await m.finish()) ?? partial
+            await m.reset()
+            return text
+        } else if liveModelId != nil, let m = currentMultilingualManager {
+            let partial = await m.getPartialTranscript()
+            let text = (try? await m.finish()) ?? partial
+            await m.reset()
+            return text
+        }
+        return ""
     }
 
     // MARK: - Transcripción
@@ -188,7 +257,7 @@ actor NemotronStreamingEngine {
         onPhase?(.loadingModel)
         onProgress(0.18, "Cargando motor Nemotron Streaming…")
 
-        let isMultilingual = modelId == "nemotron-streaming-multilingual-0.6b"
+        let isMultilingual = modelId == Self.multilingualId
         let audioFile = try AVAudioFile(forReading: processedFile)
         let sampleRate = audioFile.processingFormat.sampleRate
         let totalFrames = audioFile.length
@@ -200,6 +269,13 @@ actor NemotronStreamingEngine {
 
         var finalTranscript = ""
         var rawTimings: [TokenTiming] = []
+        var emitted = ""
+        /// Texto nuevo respecto a lo ya emitido (el gestor devuelve la transcripción acumulada).
+        func delta(_ partial: String) -> String {
+            defer { emitted = partial }
+            guard partial.hasPrefix(emitted) else { return partial }
+            return String(partial.dropFirst(emitted.count)).trimmingCharacters(in: .whitespaces)
+        }
 
         onPhase?(.transcribing)
         onProgress(0.25, "Transcribiendo en vivo…")
@@ -208,9 +284,7 @@ actor NemotronStreamingEngine {
             let manager = try await loadMultilingual(
                 language: settings.language.isEmpty ? "auto" : settings.language,
                 chunkMs: chunkMs
-            ) { fraction in
-                onProgress(0.18 + fraction * 0.07, "Descargando componentes…")
-            }
+            )
 
             while audioFile.framePosition < audioFile.length {
                 let remaining = AVAudioFrameCount(audioFile.length - audioFile.framePosition)
@@ -220,7 +294,8 @@ actor NemotronStreamingEngine {
                 }
                 try audioFile.read(into: block, frameCount: thisFrames)
                 let blockSamples = try converter.resampleBuffer(block)
-                let chunkText = try await manager.process(samples: blockSamples)
+                _ = try await manager.process(samples: blockSamples)
+                let chunkText = delta(await manager.getPartialTranscript())
 
                 let currentPos = Double(audioFile.framePosition) / sampleRate
                 let fraction = totalDuration > 0 ? min(0.85, 0.25 + (currentPos / totalDuration) * 0.60) : 0.5
@@ -245,9 +320,7 @@ actor NemotronStreamingEngine {
             await manager.reset()
 
         } else {
-            let manager = try await loadEnglish(chunkMs: chunkMs) { fraction in
-                onProgress(0.18 + fraction * 0.07, "Descargando componentes…")
-            }
+            let manager = try await loadEnglish(chunkMs: chunkMs)
 
             while audioFile.framePosition < audioFile.length {
                 let remaining = AVAudioFrameCount(audioFile.length - audioFile.framePosition)
@@ -256,7 +329,8 @@ actor NemotronStreamingEngine {
                     break
                 }
                 try audioFile.read(into: block, frameCount: thisFrames)
-                let chunkText = try await manager.process(audioBuffer: block)
+                _ = try await manager.process(audioBuffer: block)
+                let chunkText = delta(await manager.getPartialTranscript())
 
                 let currentPos = Double(audioFile.framePosition) / sampleRate
                 let fraction = totalDuration > 0 ? min(0.85, 0.25 + (currentPos / totalDuration) * 0.60) : 0.5
@@ -387,8 +461,13 @@ actor NemotronStreamingEngine {
     // MARK: - Liberación de recursos
 
     func cleanup() async {
+        await currentMultilingualManager?.cleanup()
+        await currentEnglishManager?.cleanup()
         currentMultilingualManager = nil
         currentEnglishManager = nil
         currentModelId = nil
+        currentChunkMs = nil
+        currentVariantDir = nil
+        liveModelId = nil
     }
 }

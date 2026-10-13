@@ -9,6 +9,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastMemoryLevel: DispatchSource.MemoryPressureEvent = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Ninguna descarga implícita de FluidAudio: solo «Descargar» abre la red (FluidNetworkGate).
+        FluidNetworkGate.lockDown()
+        TaskModelPreferences.migrateStoredModelNames()
         // Claves de la app con defaults (#10): menú de barra + segundo plano
         UserDefaults.standard.register(defaults: [
             "showMenuBarExtra": true,

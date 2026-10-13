@@ -17,8 +17,10 @@ struct ModelAppEntity: AppEntity {
 
 struct ModelAppEntityQuery: EntityQuery {
     func entities(for identifiers: [String]) async throws -> [ModelAppEntity] {
-        ModelCatalog.all
-            .filter { identifiers.contains($0.id) }
+        // Un atajo guardado con un nombre (no un ID) se traduce al ID técnico.
+        let ids = Set(identifiers.compactMap { ModelCatalog.migratedId(fromStored: $0) })
+        return ModelCatalog.all
+            .filter { ids.contains($0.id) }
             .map { ModelAppEntity(id: $0.id, name: $0.displayName) }
     }
 
@@ -59,8 +61,11 @@ struct TranscribeFileIntent: AppIntent {
             throw $file.needsValueError("Unsupported media type.")
         }
 
-        let settings = TranscriptionSettings.default
-        let chosenModelId = model?.id ?? settings.selectedModelId
+        var settings = TranscriptionSettings.default
+        // Atajo con modelo concreto o «Automático» resuelto como un archivo más.
+        settings.selectedModelId = model?.id ?? ModelSelection.autoToken
+        settings = ModelSelection.prepare(settings, task: .files).settings
+        let chosenModelId = settings.selectedModelId
 
         let preprocessOptions = AudioPreprocessor.Options(
             isolateVoice: settings.isolateVoice, denoise: settings.deepfilter,

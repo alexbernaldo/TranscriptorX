@@ -285,6 +285,18 @@ enum ModelCatalog {
         "large-v3": "Máxima Calidad",
     ]
 
+    /// ID técnico para un valor guardado por una versión anterior. Un nombre visible se interpreta
+    /// con el significado que tenía entonces («Rápido» era `base`), no con el actual.
+    static func migratedId(fromStored stored: String) -> String? {
+        let raw = stored.trimmingCharacters(in: .whitespacesAndNewlines)
+        if descriptor(id: raw) != nil { return raw }
+        let folded = raw.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+        if let legacy = legacyDisplayNames.first(where: {
+            $0.value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil) == folded
+        }) { return legacy.key }
+        return canonicalId(from: raw)
+    }
+
     /// Modelos visibles, por grupo, aplicando el ajuste «Mostrar modelos experimentales».
     static func visible(showExperimental: Bool) -> [ModelDescriptor] {
         all.filter { showExperimental || $0.group != .experimental }

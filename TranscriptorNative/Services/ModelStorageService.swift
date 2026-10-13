@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import FluidAudio
 
 /// Gestión unificada de almacenamiento, comprobación en disco y tamaños de modelos.
 /// Regla del prompt:
@@ -48,6 +49,8 @@ final class ModelStorageService: ObservableObject {
 
     // MARK: - Localización de archivos
 
+    /// Archivos de un modelo en disco. Las rutas de Parakeet y Nemotron son las de la caché de
+    /// FluidAudio (`Application Support/FluidAudio/Models/<repo>`), la única que sus cargadores leen.
     nonisolated func localURLs(for modelId: String) -> [URL] {
         guard let descriptor = ModelCatalog.descriptor(id: modelId) else { return [] }
         switch descriptor.engine {
@@ -55,10 +58,13 @@ final class ModelStorageService: ObservableObject {
             let binURL = whisperModelsDir.appendingPathComponent("ggml-\(modelId).bin")
             let encoderURL = whisperModelsDir.appendingPathComponent("ggml-\(modelId)-encoder.mlmodelc")
             return [binURL, encoderURL]
-        case .parakeet, .nemotron, .cohere:
-            let folderName = descriptor.sourceRepo.replacingOccurrences(of: "/", with: "_")
-            let dir = fluidAudioBaseDir.appendingPathComponent(folderName)
-            return [dir]
+        case .parakeet:
+            guard let version = ParakeetEngine.asrModelVersion(for: modelId) else { return [] }
+            return [AsrModels.defaultCacheDirectory(for: version)]
+        case .nemotron:
+            return NemotronStreamingEngine.variantDirectories(modelId: modelId, chunkMs: ModelEngineSettings.nemotronChunkMs(for: modelId))
+        case .cohere:
+            return []
         }
     }
 
@@ -68,11 +74,13 @@ final class ModelStorageService: ObservableObject {
         case .whisper:
             let bin = whisperModelsDir.appendingPathComponent("ggml-\(modelId).bin")
             return fileManager.fileExists(atPath: bin.path)
-        case .parakeet, .nemotron, .cohere:
-            let urls = localURLs(for: modelId)
-            guard let dir = urls.first else { return false }
-            var isDir: ObjCBool = false
-            return fileManager.fileExists(atPath: dir.path, isDirectory: &isDir) && isDir.boolValue
+        case .parakeet:
+            guard let version = ParakeetEngine.asrModelVersion(for: modelId) else { return false }
+            return AsrModels.modelsExist(at: AsrModels.defaultCacheDirectory(for: version), version: version)
+        case .nemotron:
+            return NemotronStreamingEngine.installedVariant(modelId: modelId, chunkMs: ModelEngineSettings.nemotronChunkMs(for: modelId)) != nil
+        case .cohere:
+            return false
         }
     }
 
@@ -136,6 +144,13 @@ final class ModelStorageService: ObservableObject {
     }
 
     // MARK: - Acciones
+
+    /// Carpeta de modelos de un motor («Mostrar en Finder» de Ajustes › Modelos › Almacenamiento).
+    func revealStorageFolder(engine: ModelEngineKind) {
+        let dir = engine == .whisper ? whisperModelsDir : fluidAudioBaseDir
+        try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        NSWorkspace.shared.activateFileViewerSelecting([dir])
+    }
 
     func revealInFinder(for modelId: String) {
         let urls = localURLs(for: modelId).filter { fileManager.fileExists(atPath: $0.path) }
