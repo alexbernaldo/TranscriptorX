@@ -55,11 +55,12 @@ final class RecordingController: ObservableObject {
 
     // MARK: Entry points
 
-    /// Click on the body of «Grabar»: records if configured, otherwise opens the popover.
-    func primaryAction() {
+    /// Botón «Grabar»: siempre abre las opciones (fuente, modelo, preset). Con `quick` (atajo global)
+    /// empieza directamente si ya se configuró una vez.
+    func primaryAction(quick: Bool = false) {
         if isActive {
             stop()
-        } else if isConfigured && permissionState(for: recorder.selectedSource) != .notDetermined {
+        } else if quick && isConfigured && permissionState(for: recorder.selectedSource) != .notDetermined {
             start()
         } else {
             WorkspaceState.shared.showRecordPopover = true

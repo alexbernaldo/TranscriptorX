@@ -390,7 +390,7 @@ final class WorkspaceState: ObservableObject {
         nc.publisher(for: .showNewTranscription).receive(on: RunLoop.main)
             .sink { [weak self] _ in WindowCoordinator.showMainWindow(); self?.goHome() }.store(in: &cancellables)
         nc.publisher(for: .showRecorder).receive(on: RunLoop.main)
-            .sink { _ in WindowCoordinator.showMainWindow(); RecordingController.shared.primaryAction() }.store(in: &cancellables)
+            .sink { _ in WindowCoordinator.showMainWindow(); RecordingController.shared.primaryAction(quick: true) }.store(in: &cancellables)
         nc.publisher(for: .transcribeURL).receive(on: RunLoop.main)
             .sink { [weak self] note in
                 WindowCoordinator.showMainWindow()
