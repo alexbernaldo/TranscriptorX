@@ -403,11 +403,11 @@ struct ModelsSettingsDetailView: View {
 
                 SettingsGroup(title: TXL.t("models.licenses.title", "Licencias de los modelos")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        licenseRow("Whisper (tiny, base, small, medium, large)", license: "MIT", author: "OpenAI / ggerganov")
-                        licenseRow("Parakeet TDT (v3, v2, Ultra, Redux)", license: "CC-BY-4.0", author: "NVIDIA / FluidInference / moondream")
-                        licenseRow("Nemotron Streaming (multilingüe y EN)", license: "NVIDIA Open Model License", author: "NVIDIA / FluidInference")
-                        licenseRow("Silero VAD", license: "MIT", author: "Silero Team")
-                        licenseRow("pyannote audio (diarización)", license: "CC-BY-4.0", author: "pyannote / FluidAudio")
+                        licenseRow("Whisper (tiny, base, small, medium, large)", license: "MIT", author: "OpenAI / ggerganov", url: URL(string: "https://github.com/openai/whisper/blob/main/LICENSE"))
+                        licenseRow("Parakeet TDT (v3, v2, Ultra, Redux)", license: "CC-BY-4.0", author: "NVIDIA / FluidInference / moondream", url: URL(string: "https://creativecommons.org/licenses/by/4.0/"))
+                        licenseRow("Nemotron Streaming (multilingüe y EN)", license: "NVIDIA Open Model License", author: "NVIDIA / FluidInference", url: URL(string: "https://developer.nvidia.com/open-model-license"))
+                        licenseRow("Silero VAD", license: "MIT", author: "Silero Team", url: URL(string: "https://github.com/snakers4/silero-vad/blob/master/LICENSE"))
+                        licenseRow("pyannote audio (diarización vía FluidAudio)", license: "CC-BY-4.0", author: "pyannote / FluidAudio", url: URL(string: "https://github.com/FluidInference/FluidAudio/blob/main/LICENSE"))
                     }
                     .padding(.vertical, 4)
                 }
@@ -420,11 +420,17 @@ struct ModelsSettingsDetailView: View {
         }
     }
 
-    private func licenseRow(_ name: String, license: String, author: String) -> some View {
+    private func licenseRow(_ name: String, license: String, author: String, url: URL? = nil) -> some View {
         HStack {
             Text(name).font(.system(size: 11, weight: .medium)).foregroundStyle(TX.Colors.textPrimary)
             Spacer()
-            Text("\(license) · \(author)").font(.system(size: 10)).foregroundStyle(TX.Colors.textSecondary)
+            if let url {
+                Link("\(license) · \(author)", destination: url)
+                    .font(.system(size: 10))
+                    .foregroundStyle(TX.Colors.purpleX)
+            } else {
+                Text("\(license) · \(author)").font(.system(size: 10)).foregroundStyle(TX.Colors.textSecondary)
+            }
         }
     }
 

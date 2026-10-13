@@ -99,7 +99,14 @@ final class CLIServer {
             send(CLIServerEvent(type: .version, jobId: nil, text: nil, percent: nil,
                                 message: nil, payload: v), to: client)
         case .models:
-            let list = ModelInfo.allModels.map { "\($0.id)\t\($0.name)" }.joined(separator: "\n")
+            let lines = ModelCatalog.visible(showExperimental: true).map { m in
+                let downloaded = ModelStorageService.shared.isDownloaded(m.id)
+                let status = downloaded ? "Descargado" : "No descargado"
+                let size = ModelStorageService.shared.displaySize(for: m.id)
+                return "\(m.displayName)\t\(m.id)\t\(m.engine.badge)\t\(status)\t\(size)"
+            }
+            let header = "Nombre\tID técnico\tMotor\tEstado\tTamaño"
+            let list = ([header] + lines).joined(separator: "\n")
             send(CLIServerEvent(type: .models, jobId: nil, text: nil, percent: nil,
                                 message: nil, payload: list), to: client)
         case .transcribe:
@@ -119,7 +126,13 @@ final class CLIServer {
         }
         var settings = TranscriptionSettings.default
         if let lang = req.language { settings.language = lang }
-        if let model = req.model { settings.selectedModelId = model }
+        if let rawModel = req.model {
+            if let matched = ModelCatalog.descriptor(matching: rawModel) {
+                settings.selectedModelId = matched.id
+            } else {
+                settings.selectedModelId = rawModel
+            }
+        }
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { close(client); return }

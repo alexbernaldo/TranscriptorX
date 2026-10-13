@@ -136,14 +136,27 @@ final class ModelCatalogTests: XCTestCase {
 
     func testLookupByNameIsCaseAndAccentInsensitive() {
         XCTAssertEqual(ModelCatalog.descriptor(matching: "turbo")?.id, "large-v3-turbo")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Turbo")?.id, "large-v3-turbo")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "MÁXIMA PRECISION")?.id, "large-v3")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "Large-V3-Turbo")?.id, "large-v3-turbo")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Rápido")?.id, "parakeet-tdt-0.6b-v3")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "rapido")?.id, "parakeet-tdt-0.6b-v3")
+        XCTAssertEqual(ModelCatalog.descriptor(matching: "Ligero")?.id, "base")
         // Nombres legados
         XCTAssertEqual(ModelCatalog.descriptor(matching: "Ultra Rápido")?.id, "tiny")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "Profesional")?.id, "large-v3-turbo")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "Equilibrado")?.id, "small")
         XCTAssertEqual(ModelCatalog.descriptor(matching: "Mini")?.id, "parakeet-redux")
         XCTAssertNil(ModelCatalog.descriptor(matching: "nope"))
+    }
+
+    @MainActor
+    func testAppIntentsModelResolution() async throws {
+        let entities = try await GetAvailableModelsIntent().perform()
+        XCTAssertFalse(entities.value?.isEmpty ?? true)
+        let query = ModelAppEntityQuery()
+        let found = try await query.entities(for: ["large-v3-turbo"])
+        XCTAssertEqual(found.first?.id, "large-v3-turbo")
     }
 
     func testParakeetReduxMiniIsExperimentalAndRequiresMacOS15() {
