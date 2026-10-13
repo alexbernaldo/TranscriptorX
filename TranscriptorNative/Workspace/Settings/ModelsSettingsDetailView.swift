@@ -115,6 +115,7 @@ struct ModelsSettingsDetailView: View {
                 Spacer()
                 ModelPickerView(
                     task: task,
+                    showsManage: false,
                     assignment: assignment
                 )
             }

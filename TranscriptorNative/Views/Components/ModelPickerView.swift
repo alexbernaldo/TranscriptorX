@@ -6,6 +6,8 @@ struct ModelPickerView: View {
     let task: ModelTask
     var currentLanguage: String? = nil
     var translate: Bool = false
+    /// «Gestionar modelos…» no se ofrece dentro de Ajustes › Modelos.
+    var showsManage: Bool = true
     @Binding var assignment: ModelAssignment
 
     @ObservedObject private var prefs = TaskModelPreferences.shared
@@ -84,9 +86,11 @@ struct ModelPickerView: View {
                 }
             }
 
-            Divider()
-            Button(TXL.t("models.manage", "Gestionar modelos…")) {
-                SettingsNavigator.open(.models)
+            if showsManage {
+                Divider()
+                Button(TXL.t("models.manage", "Gestionar modelos…")) {
+                    SettingsNavigator.open(.models)
+                }
             }
         } label: {
             Text(buttonLabelText)

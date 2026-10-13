@@ -293,6 +293,17 @@ final class DictationManager: ObservableObject {
             return
         }
 
+        // Sin modelo, se descarga el del dictado (Turbo o el de Automático) y se avisa; no se graba en vano.
+        let dictationModel = DictationPreferences.transcriptionSettings().selectedModelId
+        if !TranscriptionService.shared.isModelDownloaded(dictationModel) {
+            ModelDownloadCenter.shared.download(dictationModel)
+            let name = ModelCatalog.descriptor(id: dictationModel)?.displayName ?? dictationModel
+            statusText = localized("Descargando \(name)… vuelve a dictar al terminar", "Downloading \(name)… dictate again when it finishes")
+            show(.unavailable(statusText), hideAfter: 5)
+            AppLogger.shared.log("Dictation: model \(dictationModel) missing, download started", category: .app)
+            return
+        }
+
         show(.arming)
         previousSource = recorder.selectedSource
         recorder.selectedSource = .microphone
