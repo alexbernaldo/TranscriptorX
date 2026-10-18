@@ -186,14 +186,19 @@ final class DictationManager: ObservableObject {
     // MARK: - Shortcut → flow
 
     private var pressedAt: Date?
+    /// When the microphone actually finished opening and entered `.listening`.
+    private var listeningStartedAt: Date?
     /// The press that started this dictation (its release decides hold vs tap).
     private var startedByPress = false
 
     private func shortcutPressed() {
         pressedAt = Date()
-        if isDictating || isStarting {
+        if isDictating {
             // Second press of a tap-started dictation: paste.
             finish()
+        } else if isStarting {
+            // Pressed again while the microphone was still opening: cancel.
+            cancel()
         } else {
             startedByPress = true
             Task { await startDictation() }
@@ -202,26 +207,43 @@ final class DictationManager: ObservableObject {
 
     private func shortcutReleased() {
         defer { pressedAt = nil; startedByPress = false; isHolding = false }
-        guard startedByPress, let pressedAt else { return }
-        let held = Date().timeIntervalSince(pressedAt)
+        guard startedByPress, pressedAt != nil else { return }
         switch DictationPreferences.activation {
         case .toggle:
             return
         case .hold:
-            finish()
+            if isStarting {
+                cancel()
+            } else {
+                finish()
+            }
         case .automatic:
-            if held >= DictationPreferences.holdThreshold { finish() }
+            // Only treat the release as hold-to-dictate if the key was kept held after
+            // the microphone finished opening (.listening). Releasing while the sound
+            // plays / the mic opens (.arming) or right as .listening appears is a tap
+            // to start dictation.
+            guard isDictating, let listeningStartedAt else { return }
+            let heldWhileListening = Date().timeIntervalSince(listeningStartedAt)
+            if heldWhileListening >= DictationPreferences.holdThreshold {
+                finish()
+            }
         }
     }
 
     /// Menu bar and the overlay button: start, or stop and paste.
     func toggleDictation() {
-        if isDictating || isStarting { finish() } else { Task { await startDictation() } }
+        if isDictating {
+            finish()
+        } else if isStarting {
+            cancel()
+        } else {
+            Task { await startDictation() }
+        }
     }
 
     /// Stops and pastes (or cancels if the recording has not started yet).
     func finish() {
-        if isStarting { pendingStop = true; return }
+        if isStarting { pendingCancel = true; return }
         guard isDictating else { return }
         Task { await stopAndTranscribe(discard: false) }
     }
@@ -251,7 +273,6 @@ final class DictationManager: ObservableObject {
     // MARK: - Flow
 
     private var isStarting = false
-    private var pendingStop = false
     private var pendingCancel = false
     private var previousSource: SystemAudioRecorder.AudioSource?
     private var previousMicrophone: SystemAudioRecorder.AudioDevice??
@@ -259,7 +280,7 @@ final class DictationManager: ObservableObject {
     private func startDictation() async {
         guard !isDictating, !isStarting else { return }
         isStarting = true
-        pendingStop = false
+        listeningStartedAt = nil
         pendingCancel = false
         defer { isStarting = false }
 
@@ -323,17 +344,16 @@ final class DictationManager: ObservableObject {
 
         statusText = localized("Escuchando…", "Listening…")
         isDictating = true
+        listeningStartedAt = Date()
         isHolding = startedByPress && DictationPreferences.activation != .toggle
         registerCancelKey()
         show(.listening)
         AccessibilityAnnouncer.announce(localized("Escuchando", "Listening"))
         AppLogger.shared.log("Dictation started", category: .app)
 
-        // A release or Esc that arrived while the microphone was opening.
+        // An Esc or hold-release that arrived while the microphone was opening.
         if pendingCancel {
             await stopAndTranscribe(discard: true)
-        } else if pendingStop {
-            await stopAndTranscribe(discard: false)
         }
     }
 
@@ -358,6 +378,7 @@ final class DictationManager: ObservableObject {
         guard isDictating else { return }
         isDictating = false
         isHolding = false
+        listeningStartedAt = nil
         unregisterCancelKey()
         let url = await recorder.stopRecording()
         SystemOutputMute.restore()
@@ -371,6 +392,17 @@ final class DictationManager: ObservableObject {
             AppLogger.shared.log("Dictation cancelled", category: .app)
             return
         }
+
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        guard fileSize > 4096 else {
+            try? FileManager.default.removeItem(at: url)
+            await playFeedback(.cancel)
+            statusText = localized("No se ha oído nada", "Nothing was heard")
+            show(.unavailable(statusText), hideAfter: 1.5)
+            AppLogger.shared.log("Dictation produced empty audio (\(fileSize) bytes)", category: .app)
+            return
+        }
+
         await playFeedback(.stop)
         statusText = localized("Transcribiendo…", "Transcribing…")
         discardTranscription = false

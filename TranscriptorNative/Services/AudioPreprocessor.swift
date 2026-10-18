@@ -207,6 +207,10 @@ class AudioPreprocessor {
         if isCancelled {
             throw PreprocessorError.cancelled
         }
+        let inputSize = (try? FileManager.default.attributesOfItem(atPath: input.path)[.size] as? Int) ?? 0
+        guard inputSize > 44 else {
+            throw PreprocessorError.emptyAudioFile
+        }
         print("DEBUG AudioPreprocessor: Converting \(input.path) to WAV")
         
         let process = Process()
@@ -219,6 +223,8 @@ class AudioPreprocessor {
         // -c:a pcm_s16le: 16-bit PCM encoding
         // -y: overwrite output
         process.arguments = [
+            "-hide_banner",
+            "-loglevel", "error",
             "-i", input.path,
             "-ar", "16000",
             "-ac", "1",
@@ -252,7 +258,8 @@ class AudioPreprocessor {
                 throw PreprocessorError.cancelled
             }
             let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            let errorMessage = (String(data: errorData, encoding: .utf8) ?? "Unknown error")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             print("DEBUG AudioPreprocessor: FFmpeg error: \(errorMessage)")
             throw PreprocessorError.conversionFailed(errorMessage)
         }
@@ -278,6 +285,8 @@ class AudioPreprocessor {
         // Two-pass loudnorm for EBU R128 compliance
         // Target: -16 LUFS (good for speech)
         process.arguments = [
+            "-hide_banner",
+            "-loglevel", "error",
             "-i", input.path,
             "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
             "-ar", "16000",
@@ -310,7 +319,8 @@ class AudioPreprocessor {
                 throw PreprocessorError.cancelled
             }
             let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            let errorMessage = (String(data: errorData, encoding: .utf8) ?? "Unknown error")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             print("DEBUG AudioPreprocessor: Normalization error: \(errorMessage)")
             throw PreprocessorError.normalizationFailed(errorMessage)
         }
@@ -326,6 +336,7 @@ enum PreprocessorError: LocalizedError {
     case normalizationFailed(String)
     case voiceIsolationFailed(String)
     case denoiserFailed(String)
+    case emptyAudioFile
     case outputNotFound
     case ffmpegNotFound
     case cancelled
@@ -348,6 +359,8 @@ enum PreprocessorError: LocalizedError {
             return localized("Error al aislar voz: \(msg)", "Voice isolation failed: \(msg)")
         case .denoiserFailed(let msg):
             return localized("Error al eliminar ruido: \(msg)", "Noise reduction failed: \(msg)")
+        case .emptyAudioFile:
+            return localized("El archivo de audio está vacío", "The audio file is empty")
         case .outputNotFound:
             return localized("No se generó el archivo de salida", "No output file was generated")
         case .ffmpegNotFound:

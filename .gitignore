@@ -17,6 +17,7 @@ __pycache__/
 # Estado local de herramientas y artefactos de agentes (no se publican)
 .opencode/
 .agents/
+.codegraph/
 docs/superpowers/
 AGENTS.md
 CLAUDE.md
