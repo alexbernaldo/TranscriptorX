@@ -7,6 +7,30 @@ el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [No publicado]
 
+## [4.1.0] - 2026-10-18
+
+### Added
+
+- Model catalogue: models are downloaded on demand from Settings, and a picker chooses which model each job, recording or dictation uses. Each entry shows its name, task and whether it is in use.
+- Parakeet engine alongside Whisper, with speaker identification and a memory manager that keeps long recordings from filling RAM.
+- Nemotron Streaming for live transcription: the Live view and a floating panel show the text as you speak.
+- Live subtitles for system audio recording, available as soon as it starts.
+- New CLI with `--plain` output, a `model=` link parameter and license handling; the shortcuts run the same functions through App Intents.
+- `tx-eval` evaluation tool and its report under `docs/`.
+- Dictation picks the model itself, shows download progress and gains a model selector.
+
+### Changed
+
+- Automatic now resolves the model for jobs, recordings, dictation and shortcuts, and it is the factory default. Nothing is downloaded implicitly.
+- A missing model is downloaded when a function needs it, and "Manage models…" is removed from where it only duplicated Settings.
+- The Record button always opens its options first.
+- The Dock icon follows the window: with "Hide from Dock" on, the icon is shown while a window is open.
+
+### Fixed
+
+- An empty audio file is reported as such instead of failing quietly.
+- FFmpeg runs quietly and its errors are reported without banner noise.
+
 ## [4.0.2] - 2026-10-12
 
 ### Fixed
