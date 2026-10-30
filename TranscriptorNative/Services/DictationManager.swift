@@ -357,12 +357,18 @@ final class DictationManager: ObservableObject {
         }
     }
 
-    /// The microphone chosen in Ajustes › Dictado, if it is connected.
+    /// The microphone chosen in Ajustes › Dictado (or the current system default when empty).
     private func selectDictationMicrophone() {
-        let name = DictationPreferences.microphone
-        guard !name.isEmpty else { return }
         recorder.refreshMicrophoneList()
-        guard let device = recorder.availableMicrophones.first(where: { $0.name == name }) else { return }
+        let name = DictationPreferences.microphone
+        let target: SystemAudioRecorder.AudioDevice?
+        if name.isEmpty {
+            target = recorder.availableMicrophones.first(where: { $0.isDefault })
+                ?? recorder.availableMicrophones.first
+        } else {
+            target = recorder.availableMicrophones.first(where: { $0.name == name })
+        }
+        guard let device = target else { return }
         previousMicrophone = .some(recorder.selectedMicrophone)
         recorder.selectedMicrophone = device
     }
