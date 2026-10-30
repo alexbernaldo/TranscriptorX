@@ -101,6 +101,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
     private var assetWriter: AVAssetWriter?
     private var audioInput: AVAssetWriterInput?
     private var systemSessionStarted = false
+    private var micSamplesWritten: Int64 = 0
     private var audioEngine: AVAudioEngine?
     private var audioConverter: AVAudioConverter?
     private var durationTimer: Timer?
@@ -266,9 +267,14 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         
         availableMicrophones = microphones
         
-        // Select default if none selected
-        if selectedMicrophone == nil, let defaultMic = microphones.first(where: { $0.isDefault }) ?? microphones.first {
+        // Keep selectedMicrophone updated (or fall back to default if disconnected/unset)
+        if let current = selectedMicrophone,
+           let updated = microphones.first(where: { $0.id == current.id }) {
+            selectedMicrophone = updated
+        } else if let defaultMic = microphones.first(where: { $0.isDefault }) ?? microphones.first {
             selectedMicrophone = defaultMic
+        } else {
+            selectedMicrophone = nil
         }
         
         AppLogger.shared.log("Found \(microphones.count) microphones. Default: \(microphones.first(where: { $0.isDefault })?.name ?? "none")", level: .info, category: .recording)
@@ -674,22 +680,44 @@ class SystemAudioRecorder: NSObject, ObservableObject {
     // MARK: - Microphone Capture (AVAudioEngine) - Optimized for Whisper
     
     private func startMicrophoneCapture(outputURL: URL) async throws {
-        audioEngine = AVAudioEngine()
-        
-        guard let audioEngine = audioEngine else {
-            throw RecordingError.audioEngineFailure(
-                localized("No se pudo inicializar AVAudioEngine", "Could not initialize AVAudioEngine")
-            )
-        }
-        
-        // Set selected microphone if available
+        // Set selected microphone BEFORE creating AVAudioEngine so the engine binds
+        // to the settled hardware device rather than mid-transition.
         if let selectedMic = selectedMicrophone {
-            try setInputDevice(deviceID: selectedMic.id)
+            if !selectedMic.isDefault {
+                try setInputDevice(deviceID: selectedMic.id)
+                try? await Task.sleep(nanoseconds: 60_000_000)
+            }
             AppLogger.shared.log("Using microphone: \(selectedMic.name)", level: .info, category: .recording)
         }
         
-        let inputNode = audioEngine.inputNode
-        let nativeFormat = inputNode.outputFormat(forBus: 0)
+        var engine = AVAudioEngine()
+        var inputNode = engine.inputNode
+        var hwFormat = inputNode.inputFormat(forBus: 0)
+        var nativeFormat = inputNode.outputFormat(forBus: 0)
+        
+        // If CoreAudio is mid-transition (e.g. AirPods connecting/disconnecting),
+        // inputFormat and outputFormat transiently disagree (e.g. 48kHz vs 44.1kHz).
+        // Wait briefly and re-create the engine so installTap never raises NSException.
+        if hwFormat.sampleRate != nativeFormat.sampleRate || hwFormat.sampleRate <= 0 || hwFormat.channelCount == 0 {
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            engine = AVAudioEngine()
+            inputNode = engine.inputNode
+            hwFormat = inputNode.inputFormat(forBus: 0)
+            nativeFormat = inputNode.outputFormat(forBus: 0)
+        }
+        
+        guard hwFormat.sampleRate > 0, hwFormat.channelCount > 0,
+              nativeFormat.sampleRate > 0, nativeFormat.channelCount > 0 else {
+            throw RecordingError.audioEngineFailure(
+                localized(
+                    "El micrófono seleccionado no está disponible en este momento",
+                    "The selected microphone is currently unavailable"
+                )
+            )
+        }
+        
+        audioEngine = engine
+        micSamplesWritten = 0
         
         AppLogger.shared.log("Native mic format: \(nativeFormat.sampleRate)Hz, \(nativeFormat.channelCount) channels", level: .info, category: .recording)
         
@@ -713,7 +741,7 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         guard let converter = AVAudioConverter(from: nativeFormat, to: targetFormat) else {
             // Fallback: use native format if conversion fails
             AppLogger.shared.log("Could not create converter, using native format", level: .warning, category: .recording)
-            try await startMicrophoneCaptureNative(outputURL: outputURL, audioEngine: audioEngine, inputNode: inputNode, format: nativeFormat)
+            try await startMicrophoneCaptureNative(outputURL: outputURL, audioEngine: engine, inputNode: inputNode, format: nativeFormat)
             return
         }
         audioConverter = converter
@@ -744,12 +772,13 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         assetWriter?.startWriting()
         assetWriter?.startSession(atSourceTime: .zero)
         
-        // Install tap on input node with native format, convert in callback
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: nativeFormat) { [weak self] buffer, time in
-            self?.handleMicrophoneBufferWithConversion(buffer, time: time, converter: converter, targetFormat: targetFormat)
+        // Pass format: nil so AVAudioInputNode uses its live bus format and never
+        // raises an Objective-C NSInternalInconsistencyException on format mismatch.
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: nil) { [weak self] buffer, _ in
+            self?.handleMicrophoneBufferWithConversion(buffer, targetFormat: targetFormat)
         }
         
-        try audioEngine.start()
+        try engine.start()
         
         // Start flush timer for extra safety
         startFlushTimer()
@@ -785,8 +814,8 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         assetWriter?.startWriting()
         assetWriter?.startSession(atSourceTime: .zero)
         
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, time in
-            self?.handleMicrophoneBuffer(buffer, time: time)
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: nil) { [weak self] buffer, _ in
+            self?.handleMicrophoneBuffer(buffer)
         }
         
         try audioEngine.start()
@@ -819,19 +848,35 @@ class SystemAudioRecorder: NSObject, ObservableObject {
     }
     
     /// Handle microphone buffer with conversion to 16kHz mono
-    private func handleMicrophoneBufferWithConversion(_ buffer: AVAudioPCMBuffer, time: AVAudioTime, converter: AVAudioConverter, targetFormat: AVAudioFormat) {
-        guard !isPaused else { return }
+    private func handleMicrophoneBufferWithConversion(_ buffer: AVAudioPCMBuffer, targetFormat: AVAudioFormat) {
+        guard !isPaused, buffer.frameLength > 0 else { return }
+        
+        let converter: AVAudioConverter
+        if let existing = audioConverter, existing.inputFormat == buffer.format {
+            converter = existing
+        } else if let created = AVAudioConverter(from: buffer.format, to: targetFormat) {
+            audioConverter = created
+            converter = created
+        } else {
+            return
+        }
         
         // Calculate output frame capacity based on sample rate ratio
         let ratio = targetFormat.sampleRate / buffer.format.sampleRate
-        let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+        let outputFrameCapacity = max(1, AVAudioFrameCount(ceil(Double(buffer.frameLength) * ratio)))
         
         guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputFrameCapacity) else {
             return
         }
         
         var error: NSError?
+        var hasProvidedData = false
         let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+            if hasProvidedData {
+                outStatus.pointee = .noDataNow
+                return nil
+            }
+            hasProvidedData = true
             outStatus.pointee = .haveData
             return buffer
         }
@@ -843,8 +888,13 @@ class SystemAudioRecorder: NSObject, ObservableObject {
             return
         }
         
+        guard convertedBuffer.frameLength > 0 else { return }
+        
+        let pts = CMTime(value: micSamplesWritten, timescale: CMTimeScale(targetFormat.sampleRate))
+        micSamplesWritten += Int64(convertedBuffer.frameLength)
+        
         // Convert to CMSampleBuffer and write
-        if let sampleBuffer = convertedBuffer.toCMSampleBuffer(presentationTime: time) {
+        if let sampleBuffer = convertedBuffer.toCMSampleBuffer(presentationTimeStamp: pts) {
             if audioInput?.isReadyForMoreMediaData == true {
                 audioInput?.append(sampleBuffer)
             }
@@ -888,11 +938,14 @@ class SystemAudioRecorder: NSObject, ObservableObject {
         AppLogger.shared.log("Microphone capture stopped", category: .recording)
     }
     
-    private func handleMicrophoneBuffer(_ buffer: AVAudioPCMBuffer, time: AVAudioTime) {
-        guard !isPaused else { return }
+    private func handleMicrophoneBuffer(_ buffer: AVAudioPCMBuffer) {
+        guard !isPaused, buffer.frameLength > 0 else { return }
+        
+        let pts = CMTime(value: micSamplesWritten, timescale: CMTimeScale(buffer.format.sampleRate))
+        micSamplesWritten += Int64(buffer.frameLength)
         
         // Convert buffer to CMSampleBuffer for asset writer
-        if let sampleBuffer = buffer.toCMSampleBuffer(presentationTime: time) {
+        if let sampleBuffer = buffer.toCMSampleBuffer(presentationTimeStamp: pts) {
             if audioInput?.isReadyForMoreMediaData == true {
                 audioInput?.append(sampleBuffer)
             }
@@ -1216,7 +1269,7 @@ extension AVAudioPCMBuffer {
         return status == noErr ? buffer : nil
     }
 
-    func toCMSampleBuffer(presentationTime: AVAudioTime) -> CMSampleBuffer? {
+    func toCMSampleBuffer(presentationTimeStamp: CMTime) -> CMSampleBuffer? {
         let format = self.format
         
         var sampleBuffer: CMSampleBuffer?
@@ -1237,7 +1290,7 @@ extension AVAudioPCMBuffer {
         
         var timing = CMSampleTimingInfo(
             duration: CMTime(value: 1, timescale: CMTimeScale(format.sampleRate)),
-            presentationTimeStamp: CMTime(seconds: presentationTime.audioTimeStamp.mSampleTime / format.sampleRate, preferredTimescale: 1000000),
+            presentationTimeStamp: presentationTimeStamp,
             decodeTimeStamp: .invalid
         )
         
